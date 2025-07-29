@@ -5,3 +5,12 @@ pytesseract
 opencv-python-headless
 Pillow
 PyGithub
+streamlit
+pandas
+watchdog
+pytesseract
+opencv-python-headless
+Pillow
+PyGithub
+streamlit-authenticator
+PyYAML
