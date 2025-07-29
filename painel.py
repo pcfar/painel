@@ -1,5 +1,7 @@
 import streamlit as st
 import os
+from PIL import Image
+import pytesseract
 
 # --- Configuração da Página ---
 st.set_page_config(
@@ -12,7 +14,7 @@ st.set_page_config(
 st.title("SISTEMA MULTIAGENTE DE INTELIGÊNCIA TÁTICA")
 st.subheader("Plataforma de Análise de Padrões para Trading Esportivo")
 
-# --- MUDANÇA FINAL: O script agora procura os arquivos na pasta principal ('.') ---
+# --- Caminho para a pasta de prints ---
 PRINTS_DIR = "."
 
 
@@ -42,21 +44,25 @@ else:
 
         # Botão para iniciar a análise
         if st.button("Analisar Print e Gerar Dossiê"):
-            with st.spinner("Análise em andamento... (Simulação)"):
-                # Futuramente, a lógica de OCR e análise será inserida aqui
-                st.header("Dossiê Técnico (Exemplo)")
-                st.markdown("""
-                ---
-                **Equipe:** Nome da Equipe (extraído do print)
-                **Padrão Esperado:** Domínio territorial + linha alta.
-                **Dados Chave:**
-                - **Posse de Bola Média:** 62%
-                - **xG (Gols Esperados):** 2.1 por jogo
+            with st.spinner("Análise de imagem em andamento... O OCR pode levar alguns segundos."):
+                try:
+                    # --- LÓGICA DE OCR ---
+                    # Abrir a imagem com a biblioteca Pillow
+                    imagem = Image.open(caminho_completo)
 
-                **Atenção in-live:** Vulnerabilidade defensiva após os 70'.
-                """)
-                st.success("Análise concluída.")
+                    # Extrair o texto da imagem usando o Tesseract (em português)
+                    texto_extraido = pytesseract.image_to_string(imagem, lang='por')
+
+                    st.success("Texto extraído da imagem com sucesso!")
+
+                    # Exibir o texto bruto extraído
+                    st.header("2. Texto Bruto Extraído (OCR)")
+                    st.text_area("Conteúdo lido da imagem:", texto_extraido, height=400)
+
+                except Exception as e:
+                    st.error("Ocorreu um erro durante a análise OCR.")
+                    st.exception(e)
 
 # --- Rodapé ---
 st.markdown("---")
-st.text("Painel em desenvolvimento. Versão 2.0")
+st.text("Painel em desenvolvimento. Versão 2.1 (OCR Ativado)")
