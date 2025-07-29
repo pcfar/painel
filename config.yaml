@@ -3,11 +3,11 @@ credentials:
     admin:
       email: admin@example.com
       name: Admin
-      password: '$2b$12$EHL33j2dBO4p85y8cwQ.6e9xDWJ9oQo2.Lz9.dZ5.l4F7Y6a9M9mC'
+      password: '$2b$12$f.f91/gA..Hw.2Z8a/C5Q.eB6G.S2/j5.H4K5L6M7N8O9P0q1R2S'
     visitante:
       email: visitante@example.com
       name: Visitante
-      password: '$2b$12$EHL33j2dBO4p85y8cwQ.6e9xDWJ9oQo2.Lz9.dZ5.l4F7Y6a9M9mC'
+      password: '$2b$12$f.f91/gA..Hw.2Z8a/C5Q.eB6G.S2/j5.H4K5L6M7N8O9P0q1R2S'
 cookie:
   expiry_days: 30
   key: 'a1b2c3d4e5f6g7h8i9j0'
