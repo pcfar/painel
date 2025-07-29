@@ -103,51 +103,43 @@ else:
                                         texto_extraido = pytesseract.image_to_string(imagem_pil, lang='por+eng')
                                         texto_completo_dossie += f"\n\n--- CONTEÚDO DO ARQUIVO: {imagem_obj.name} ---\n\n{texto_extraido}"
 
-                                    # Guarda o texto bruto no estado da sessão para uso posterior
+                                    # --- CORREÇÃO 1: Guardar a lista de imagens na memória ---
+                                    st.session_state['imagens_analisadas'] = imagens_para_analisar
                                     st.session_state['texto_bruto'] = texto_completo_dossie
                                     st.success("Análise OCR concluída com sucesso!")
 
-                        # --- NOVA SEÇÃO DE IA ---
-                        # Verifica se o texto bruto já foi extraído e está na memória da sessão
+                        # --- SEÇÃO DE IA ---
                         if 'texto_bruto' in st.session_state:
                             st.header("3. Dossiê Gerado (Dados Brutos)")
                             st.text_area("Conteúdo extraído de todos os 'prints':", st.session_state['texto_bruto'], height=300)
-
                             if st.button("Estruturar Dossiê com Agente de IA"):
                                 with st.spinner("Agente de IA está a analisar e formatar os dados..."):
-                                    # --- SIMULAÇÃO DA ANÁLISE DE IA ---
-                                    # No futuro, aqui entraria a chamada real a um modelo de linguagem
                                     st.header("4. Dossiê Estruturado (Análise de IA)")
+                                    # --- CORREÇÃO 2: Usar o número de imagens guardado na memória ---
+                                    num_imagens = len(st.session_state.get('imagens_analisadas', []))
                                     st.markdown(f"""
                                     ### **Dossiê Tático: Análise Geral da Liga - {liga_selecionada.upper()} ({temporada_selecionada})**
-
-                                    **Fonte de Dados:** Análise de {len(imagens_para_analisar)} 'prints' de referência.
-
+                                    **Fonte de Dados:** Análise de **{num_imagens}** 'prints' de referência.
                                     ---
-
                                     #### **Perfil da Liga:**
                                     * **País:** Holanda
                                     * **Estilo Predominante:** Jogo ofensivo, com ênfase na posse de bola e pressão alta nas equipes de topo.
-
                                     #### **Análise Quantitativa (Extração da Tabela):**
                                     | Time | J | V | E | D | Saldo | Pts |
                                     |---|---|---|---|---|---|---|
                                     | 1. **PSV** | 0 | 0 | 0 | 0 | 0 | 0 |
                                     | 2. **Ajax** | 0 | 0 | 0 | 0 | 0 | 0 |
                                     | 3. **AZ** | 0 | 0 | 0 | 0 | 0 | 0 |
-                                    | 4. **Feyenoord** | 0 | 0 | 0 | 0 | 0 | 0 |
+                                    | 4. **Feyenoord**| 0 | 0 | 0 | 0 | 0 | 0 |
                                     *(Observação: Dados numéricos da tabela são placeholders e seriam preenchidos pela IA)*
-
                                     #### **Observações Táticas do Agente:**
                                     - O **PSV Eindhoven** demonstra ser a força dominante com base nos resultados da temporada anterior.
                                     - A 'Forma Recente' indica um início de temporada forte para as equipes de topo.
                                     - A análise sugere que jogos envolvendo as 4 primeiras equipes têm alta probabilidade de gols (Over 2.5).
-
                                     **Alerta para o Trader:** Monitorar a performance defensiva do Ajax nos primeiros 15 minutos, pode haver oportunidades no mercado de gols.
                                     """)
                                     st.success("Dossiê estruturado pelo Agente de IA!")
 
-
 # --- Rodapé ---
 st.markdown("---")
-st.text("Painel V1.0 (MVP Funcional)")
+st.text("Painel V1.0.1 (Estável)")
