@@ -5,20 +5,17 @@ from github.GithubException import UnknownObjectException
 from PIL import Image
 import pytesseract
 import io
+from datetime import datetime
 
 # --- Configuração da Página ---
 st.set_page_config(page_title="Painel de Inteligência Tática", page_icon="🧠", layout="wide")
 
-# --- SISTEMA DE LOGIN COM PERFIS ---
+# --- SISTEMA DE SENHA ÚNICA ---
 def check_password():
     def password_entered():
-        if st.session_state["password"] == st.secrets["ADMIN_PASSWORD"]:
+        if st.session_state["password"] == st.secrets.get("APP_PASSWORD"):
             st.session_state["password_correct"] = True
-            st.session_state["role"] = "admin"
-            del st.session_state["password"]
-        elif st.session_state["password"] == st.secrets["VISITOR_PASSWORD"]:
-            st.session_state["password_correct"] = True
-            st.session_state["role"] = "visitor"
+            st.session_state["role"] = "admin" # Acesso total com a senha única
             del st.session_state["password"]
         else:
             st.session_state["password_correct"] = False
@@ -38,7 +35,7 @@ if check_password():
     st.title("SISTEMA MULTIAGENTE DE INTELIGÊNCIA TÁTICA")
     st.subheader("Plataforma de Análise de Padrões para Trading Esportivo")
 
-    # --- Autenticação no GitHub ---
+    # --- Conexão com o GitHub ---
     @st.cache_resource
     def get_github_connection():
         try:
@@ -58,42 +55,19 @@ if check_password():
         except UnknownObjectException:
             return []
 
-    # --- CENTRAL DE UPLOAD (APENAS PARA ADMIN) ---
-    if role == "admin":
-        st.header("1. Central de Upload e Organização")
-        with st.expander("Clique aqui para enviar novos 'prints' para análise"):
-            with st.form("form_upload_dossie", clear_on_submit=True):
-                st.write("Preencha os dados para enviar os 'prints' para a análise.")
-                temporada = st.text_input("Temporada:", placeholder="Ex: 2025-2026")
-                tipo_dossie = st.selectbox("Tipo de Dossiê:", ["Dossiê 1: Análise Geral da Liga", "Dossiê 2: Análise do Clube", "Dossiê 3: Pré-Jogo", "Dossiê 4: Pós-Jogo"])
-                liga = st.text_input("Liga (código):", placeholder="Ex: HOL")
-                clube = st.text_input("Clube (código ou 'GERAL'):", placeholder="Ex: FEY")
-                rodada = st.text_input("Rodada (se aplicável):", placeholder="Ex: R01")
-                arquivos = st.file_uploader("Upload dos 'prints':", accept_multiple_files=True, type=['png', 'jpg'])
+    # --- CENTRAL DE UPLOAD ---
+    st.header("1. Central de Upload Guiado")
+    with st.expander("Clique aqui para enviar novos 'prints' para análise"):
+        # (Aqui entrará a interface de upload com abas que planejamos)
+        st.info("Interface de upload guiado em desenvolvimento.")
 
-                if st.form_submit_button("Enviar Arquivos para Análise"):
-                    if not all([temporada, liga, clube, arquivos]):
-                        st.error("Preencha todos os campos obrigatórios e envie pelo menos um arquivo.")
-                    else:
-                        with st.spinner("Enviando arquivos..."):
-                            temporada_fmt = temporada.replace('/', '-')
-                            caminho_base = f"{temporada_fmt}/{liga.upper()}/{clube.upper()}"
-                            if "Rodada" in tipo_dossie and rodada:
-                                caminho_base = os.path.join(caminho_base, rodada.upper())
-                            for arq in arquivos:
-                                caminho_repo = os.path.join(caminho_base, arq.name)
-                                repo.create_file(caminho_repo, f"Adiciona {arq.name}", arq.getvalue())
-                                st.success(f"Arquivo `{arq.name}` salvo em `{caminho_repo}`!")
-                            st.balloons()
-
-    # --- CENTRAL DE ANÁLISE (VISÍVEL PARA TODOS) ---
+    # --- CENTRAL DE ANÁLISE ---
     st.markdown("---")
     st.header("2. Central de Análise: Gerar Dossiês")
 
-    # Navegação em Cascata
     temporadas = [item.path for item in listar_conteudo_pasta("") if item.type == "dir"]
     if not temporadas:
-        st.info("Nenhum dado disponível para análise. Comece enviando arquivos pela Central de Upload.")
+        st.info("Nenhum dado disponível. Use a Central de Upload para enviar 'prints'.")
     else:
         sel_temporada = st.selectbox("Passo 1: Selecione a Temporada", [""] + temporadas)
         if sel_temporada:
@@ -106,30 +80,73 @@ if check_password():
                     if clubes:
                         sel_clube = st.selectbox("Passo 3: Selecione o Clube/Alvo", [""] + clubes)
                         if sel_clube:
-                            path_clube = os.path.join(path_liga, sel_clube)
-                            st.success(f"Seleção: **{path_clube}**")
-                            if st.button(f"Analisar e Gerar Dossiê para {sel_clube}"):
-                                with st.spinner(f"Analisando..."):
-                                    imagens = [f for f in listar_conteudo_pasta(path_clube) if f.name.lower().endswith(('.png', '.jpg'))]
+                            path_final = os.path.join(path_liga, sel_clube)
+                            st.success(f"Seleção: **{path_final}**")
+
+                            if st.button(f"Gerar Dossiê para {sel_clube} ({sel_liga})"):
+                                with st.spinner(f"AGENTE DE COLETA a extrair dados de '{path_final}'..."):
+                                    imagens = [f for f in listar_conteudo_pasta(path_final) if f.name.lower().endswith(('.png', '.jpg'))]
                                     if not imagens:
-                                        st.warning("Nenhuma imagem encontrada para análise nesta seleção.")
+                                        st.warning("Nenhuma imagem encontrada nesta pasta para análise.")
                                     else:
-                                        texto_completo = ""
+                                        texto_bruto_completo = ""
                                         for img_obj in imagens:
-                                            st.write(f"Lendo `{img_obj.name}`...")
                                             conteudo_img = io.BytesIO(img_obj.decoded_content)
                                             imagem = Image.open(conteudo_img)
-                                            texto_extraido = pytesseract.image_to_string(imagem, lang='por+eng')
-                                            texto_completo += f"\n\n--- CONTEÚDO DE: {img_obj.name} ---\n{texto_extraido}"
-                                        st.session_state['texto_bruto'] = texto_completo
-                                        st.session_state['imagens_analisadas'] = imagens
+                                            texto_bruto_completo += f"\n\n--- [INÍCIO DO PRINT: {img_obj.name}] ---\n"
+                                            texto_bruto_completo += pytesseract.image_to_string(imagem, lang='por+eng')
+                                            texto_bruto_completo += f"\n--- [FIM DO PRINT: {img_obj.name}] ---\n"
+
+                                        st.session_state['texto_bruto_pronto'] = texto_bruto_completo
+                                        st.session_state['contexto'] = {'liga': sel_liga, 'temporada': sel_temporada}
                                         st.rerun()
 
-    # Seção de Resultados da Análise
-    if 'texto_bruto' in st.session_state:
-        st.header("3. Dossiê Gerado (Dados Brutos)")
-        st.text_area("Conteúdo extraído:", st.session_state['texto_bruto'], height=300)
-        if st.button("Estruturar Dossiê com Agente de IA"):
-            st.header("4. Dossiê Estruturado (Análise de IA)")
-            st.markdown("*(Simulação de IA a processar os dados brutos e a gerar um relatório tático formatado...)*")
-            st.success("Dossiê estruturado!")
+    # --- SEÇÃO DE RESULTADO FINAL ---
+    if 'texto_bruto_pronto' in st.session_state:
+        st.markdown("---")
+        st.header("3. Dossiê Final Gerado")
+
+        # Monta o Prompt Mestre
+        contexto = st.session_state['contexto']
+        prompt = f"""
+        **PERSONA:** Você é um Analista de Dados de Futebol Sênior.
+        **CONTEXTO:** Liga: {contexto['liga']}, Temporada de Referência: {contexto['temporada']}
+        **DADOS BRUTOS PARA ANÁLISE:**
+        {st.session_state['texto_bruto_pronto']}
+        **TAREFA:** Analise o texto bruto e gere um relatório conciso em Markdown.
+        **MODELO DE SAÍDA:**
+        ---
+        ### **DOSSIÊ DE LIGA: {contexto['liga'].upper()}**
+        **Temporada de Referência:** {contexto['temporada']}
+        #### **1. Visão Histórica**
+        * **Principais Campeões:** [Liste as equipes e o número de títulos encontrados.]
+        #### **2. Análise da Última Temporada**
+        * **Campeão:** [Extraia o nome do campeão.]
+        * **Top 4:** [Liste as 4 primeiras equipes.]
+        #### **3. Veredito do Analista**
+        Com base nos dados, as seguintes equipes são selecionadas para monitoramento:
+        * **1. [Nome da Equipe 1]**
+        * **2. [Nome da Equipe 2]**
+        * **3. [Nome da Equipe 3]**
+        ---
+        """
+
+        with st.spinner("AGENTE REDATOR TÉCNICO a processar o dossiê..."):
+            # AQUI SERIA A CHAMADA REAL PARA A IA. POR AGORA, MOSTRAMOS UMA SIMULAÇÃO.
+            # No futuro, o resultado de uma chamada a uma API de LLM com o prompt acima entraria aqui.
+            st.markdown("### **DOSSIÊ DE LIGA: HOL**")
+            st.markdown("**Temporada de Referência:** 2025-2026")
+            st.markdown("#### **1. Visão Histórica**")
+            st.markdown("* **Principais Campeões:** PSV (3), Ajax (3), Feyenoord (2)")
+            st.markdown("#### **2. Análise da Última Temporada**")
+            st.markdown("* **Campeão:** PSV Eindhoven")
+            st.markdown("* **Top 4:** 1. PSV, 2. Feyenoord, 3. Ajax, 4. AZ")
+            st.markdown("#### **3. Veredito do Analista**")
+            st.markdown("Com base nos dados, as seguintes equipes são selecionadas para monitoramento:")
+            st.markdown("* **1. PSV Eindhoven**")
+            st.markdown("* **2. Feyenoord**")
+            st.markdown("* **3. Ajax**")
+
+        # Limpa a memória para a próxima análise
+        del st.session_state['texto_bruto_pronto']
+        del st.session_state['contexto']
