@@ -12,19 +12,24 @@ st.set_page_config(
 st.title("SISTEMA MULTIAGENTE DE INTELIGÊNCIA TÁTICA")
 st.subheader("Plataforma de Análise de Padrões para Trading Esportivo")
 
-# --- Diretório dos Prints ---
-PRINTS_DIR = "prints_para_analise"
+# --- CORREÇÃO: Construção de um caminho mais robusto para a pasta ---
+# Pega o caminho do diretório onde o script painel.py está localizado
+DIRETORIO_DO_SCRIPT = os.path.dirname(os.path.abspath(__file__))
+# Junta o caminho do diretório com o nome da nossa pasta de prints
+PRINTS_DIR_COMPLETO = os.path.join(DIRETORIO_DO_SCRIPT, "prints_para_analise")
+
 
 # --- Função para listar os prints disponíveis ---
 def listar_prints():
     # Verifica se o diretório existe antes de listar os arquivos
-    if not os.path.exists(PRINTS_DIR):
-        st.error(f"A pasta '{PRINTS_DIR}' não foi encontrada no repositório. Verifique a estrutura de arquivos.")
+    if not os.path.isdir(PRINTS_DIR_COMPLETO):
+        st.error(f"A pasta 'prints_para_analise' não foi encontrada no caminho esperado. Verifique a estrutura de arquivos no GitHub.")
         return []
 
     # Lista apenas arquivos de imagem
     arquivos_permitidos = ('.png', '.jpg', '.jpeg')
-    return [f for f in os.listdir(PRINTS_DIR) if f.lower().endswith(arquivos_permitidos)]
+    # CORREÇÃO: Usa o caminho completo para listar os arquivos
+    return [f for f in os.listdir(PRINTS_DIR_COMPLETO) if f.lower().endswith(arquivos_permitidos)]
 
 # --- Interface Principal ---
 st.header("1. Arquivos para Análise")
@@ -32,7 +37,7 @@ st.header("1. Arquivos para Análise")
 lista_de_prints = listar_prints()
 
 if not lista_de_prints:
-    st.warning(f"Nenhum 'print' para análise encontrado na pasta '{PRINTS_DIR}'.")
+    st.warning(f"Nenhum 'print' para análise encontrado na pasta 'prints_para_analise'.")
     st.info("Faça o upload de uma imagem de estatísticas para a pasta correta no GitHub para começar.")
 else:
     st.success(f"Encontrados {len(lista_de_prints)} prints para análise.")
@@ -41,7 +46,8 @@ else:
     print_selecionado = st.selectbox("Selecione o arquivo de dados para processar:", lista_de_prints)
 
     if print_selecionado:
-        caminho_completo = os.path.join(PRINTS_DIR, print_selecionado)
+        # CORREÇÃO: Usa o caminho completo para mostrar a imagem
+        caminho_completo = os.path.join(PRINTS_DIR_COMPLETO, print_selecionado)
         st.image(caminho_completo, caption=f"Imagem selecionada: {print_selecionado}")
 
         # Botão para iniciar a análise
@@ -63,4 +69,4 @@ else:
 
 # --- Rodapé ---
 st.markdown("---")
-st.text("Painel em desenvolvimento. Versão 0.1")
+st.text("Painel em desenvolvimento. Versão 0.2")
