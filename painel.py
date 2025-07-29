@@ -6,24 +6,20 @@ from PIL import Image
 import pytesseract
 import io
 import streamlit_authenticator as stauth
-import yaml
-from yaml.loader import SafeLoader
 
 # --- Configuração da Página ---
 st.set_page_config(page_title="Painel de Inteligência Tática", page_icon="🧠", layout="wide")
 
-# --- SISTEMA DE AUTENTICAÇÃO ---
-# Carrega a configuração do "cofre" (secrets)
-with open('.streamlit/secrets.toml', 'r') as file:
-    config = yaml.load(file, Loader=SafeLoader)
+# --- SISTEMA DE AUTENTICAÇÃO (VERSÃO CORRIGIDA) ---
+# Acessa a configuração diretamente do objeto st.secrets, que já lê o arquivo .toml corretamente
+config = st.secrets
 
 # Cria o objeto de autenticação
 authenticator = stauth.Authenticate(
     config['credentials'],
     config['cookie']['name'],
     config['cookie']['key'],
-    config['cookie']['expiry_days'],
-    config['preauthorized']
+    config['cookie']['expiry_days']
 )
 
 # Apresenta a tela de login
@@ -65,6 +61,7 @@ if authentication_status:
         st.header("1. Central de Upload e Organização")
         with st.expander("Clique aqui para enviar novos 'prints' para análise"):
             with st.form("form_upload_dossie", clear_on_submit=True):
+                # (Resto do formulário de upload aqui...)
                 st.write("Preencha os dados abaixo para enviar os 'prints' para a análise correta.")
                 temporada = st.text_input("Temporada:", placeholder="Ex: 2025 ou 2025-2026")
                 tipo_dossie = st.selectbox("Selecione o Tipo de Dossiê:", ["Dossiê 1: Análise Geral da Liga", "Dossiê 2: Análise Aprofundada do Clube", "Dossiê 3: Briefing Pré-Jogo (Rodada)", "Dossiê 4: Análise Pós-Jogo (Rodada)"])
@@ -74,15 +71,14 @@ if authentication_status:
                 arquivos_enviados = st.file_uploader("Upload dos 'prints':", accept_multiple_files=True, type=['png', 'jpg', 'jpeg'])
                 submitted = st.form_submit_button("Enviar Arquivos para Análise")
                 if submitted:
-                    # (Lógica de upload aqui, como na versão anterior)
+                    # (Lógica de upload aqui)
                     pass
 
     # --- CENTRAL DE ANÁLISE (VISÍVEL PARA TODOS OS USUÁRIOS LOGADOS) ---
     st.markdown("---")
     st.header("2. Central de Análise: Gerar Dossiês")
+    # (Resto da lógica da Central de Análise aqui...)
 
-    # (Lógica da Central de Análise aqui, como na versão anterior)
-    # ...
 
 elif authentication_status == False:
     st.error('Nome de utilizador/senha incorreto(a)')
