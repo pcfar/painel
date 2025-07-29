@@ -1,0 +1,5 @@
+streamlit
+pandas
+watchdog
+pytesseract
+opencv-python-headless
