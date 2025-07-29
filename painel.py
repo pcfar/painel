@@ -1,38 +1,57 @@
 import streamlit as st
-import streamlit_authenticator as stauth
-import yaml
-from yaml.loader import SafeLoader
+import os
+from github import Github
+from github.GithubException import UnknownObjectException
+from PIL import Image
+import pytesseract
+import io
 
 # --- Configuração da Página ---
 st.set_page_config(page_title="Painel de Inteligência Tática", page_icon="🧠", layout="wide")
 
-# --- SISTEMA DE AUTENTICAÇÃO ---
-# Carrega a configuração do arquivo config.yaml
-with open('config.yaml') as file:
-    config = yaml.load(file, Loader=SafeLoader)
+# --- SISTEMA DE SENHA ÚNICA ---
+def check_password():
+    """Retorna True se a senha estiver correta."""
+    def password_entered():
+        """Verifica se a senha digitada corresponde à senha no cofre."""
+        if st.session_state["password"] == st.secrets["APP_PASSWORD"]:
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # Não manter a senha em memória
+        else:
+            st.session_state["password_correct"] = False
 
-authenticator = stauth.Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days']
-)
+    if "password_correct" not in st.session_state:
+        # Apresenta o formulário de senha
+        st.text_input("Password", type="password", on_change=password_entered, key="password")
+        return False
+    elif not st.session_state["password_correct"]:
+        # Senha incorreta
+        st.text_input("Password", type="password", on_change=password_entered, key="password")
+        st.error("😕 Senha incorreta.")
+        return False
+    else:
+        # Senha correta
+        return True
 
-# Chamada da função de login
-authenticator.login(location='main')
-
-# --- LÓGICA DE ACESSO ---
-if st.session_state.get("authentication_status"):
-    # --- APLICAÇÃO PRINCIPAL (SÓ APARECE APÓS LOGIN) ---
-    col1, col2 = st.columns([0.85, 0.15])
-    with col2:
-        authenticator.logout('Logout', key='unique_key')
-
-    st.write(f'Bem-vindo, *{st.session_state["name"]}*!')
+# --- APLICAÇÃO PRINCIPAL ---
+if check_password():
+    # --- Título e Boas-vindas (Aparece após o login) ---
     st.title("SISTEMA MULTIAGENTE DE INTELIGÊNCIA TÁTICA")
-    # (O resto do código da aplicação, como as Centrais de Upload e Análise, viria aqui)
+    st.subheader("Plataforma de Análise de Padrões para Trading Esportivo")
 
-elif st.session_state.get("authentication_status") == False:
-    st.error('Nome de utilizador/senha incorreto(a)')
-elif st.session_state.get("authentication_status") == None:
-    st.warning('Por favor, introduza o seu nome de utilizador e senha')
+    # --- Autenticação no GitHub ---
+    @st.cache_resource
+    def get_github_connection():
+        try:
+            g = Github(st.secrets["GITHUB_TOKEN"])
+            repo = g.get_repo("pcfar/painel")
+            return repo
+        except Exception as e:
+            st.error("Erro ao conectar com o GitHub.")
+            st.exception(e)
+            st.stop()
+    repo = get_github_connection()
+
+    # O resto do código da aplicação (Centrais de Upload e Análise) viria aqui...
+    # Por enquanto, vamos confirmar que o login funciona.
+    st.success("Login bem-sucedido! O painel completo seria exibido aqui.")
