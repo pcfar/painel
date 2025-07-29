@@ -1,7 +1,5 @@
 import streamlit as st
 import os
-from PIL import Image
-import pytesseract
 
 # --- Configuração da Página ---
 st.set_page_config(
@@ -14,55 +12,80 @@ st.set_page_config(
 st.title("SISTEMA MULTIAGENTE DE INTELIGÊNCIA TÁTICA")
 st.subheader("Plataforma de Análise de Padrões para Trading Esportivo")
 
-# --- Caminho para a pasta de prints ---
+# --- Caminho para a pasta de prints (pasta principal) ---
 PRINTS_DIR = "."
 
-
 # --- Função para listar os prints disponíveis ---
-def listar_prints():
-    # Lista apenas arquivos de imagem no diretório atual
+def listar_prints_nao_processados():
+    # Esta função, no futuro, será mais inteligente,
+    # mostrando apenas os prints que ainda não foram usados em nenhum dossiê.
+    # Por enquanto, ela lista todos os prints.
     arquivos_permitidos = ('.png', '.jpg', '.jpeg')
     return [f for f in os.listdir(PRINTS_DIR) if f.lower().endswith(arquivos_permitidos)]
 
 # --- Interface Principal ---
-st.header("1. Arquivos para Análise")
 
-lista_de_prints = listar_prints()
+st.header("1. Central de Comando: Criar Novo Dossiê")
 
-if not lista_de_prints:
-    st.warning(f"Nenhum 'print' para análise encontrado na pasta principal.")
-    st.info("Faça o upload de uma imagem de estatísticas para a pasta principal no GitHub para começar.")
-else:
-    st.success(f"Encontrados {len(lista_de_prints)} prints para análise.")
+# --- Formulário para etiquetar e criar um dossiê ---
+with st.form("form_criar_dossie"):
+    st.write("Preencha os dados abaixo para iniciar uma nova análise.")
 
-    # Menu para selecionar o print
-    print_selecionado = st.selectbox("Selecione o arquivo de dados para processar:", lista_de_prints)
+    # Menus para o usuário definir o contexto da análise
+    tipo_dossie = st.selectbox(
+        "Selecione o Tipo de Dossiê:",
+        [
+            "Dossiê 1: Análise Geral da Liga",
+            "Dossiê 2: Análise Aprofundada do Clube",
+            "Dossiê 3: Briefing Pré-Jogo (Rodada)",
+            "Dossiê 4: Análise Pós-Jogo (Rodada)"
+        ]
+    )
 
-    if print_selecionado:
-        caminho_completo = os.path.join(PRINTS_DIR, print_selecionado)
-        st.image(caminho_completo, caption=f"Imagem selecionada: {print_selecionado}")
+    liga_analisada = st.text_input("Qual a Liga ou País?", placeholder="Ex: HOL, ING, BRA")
 
-        # Botão para iniciar a análise
-        if st.button("Analisar Print e Gerar Dossiê"):
-            with st.spinner("Análise de imagem em andamento... O OCR pode levar alguns segundos."):
-                try:
-                    # --- LÓGICA DE OCR ---
-                    # Abrir a imagem com a biblioteca Pillow
-                    imagem = Image.open(caminho_completo)
+    clube_analisado = st.text_input("Qual o Clube? (Deixe 'GERAL' para análise da liga)", value="GERAL")
 
-                    # Extrair o texto da imagem usando o Tesseract (em português)
-                    texto_extraido = pytesseract.image_to_string(imagem, lang='por')
+    # Menu de múltipla seleção para escolher os prints
+    prints_disponiveis = listar_prints_nao_processados()
 
-                    st.success("Texto extraído da imagem com sucesso!")
+    prints_selecionados = st.multiselect(
+        "Selecione os 'prints' para esta análise:",
+        prints_disponiveis,
+        help="Você pode selecionar vários arquivos."
+    )
 
-                    # Exibir o texto bruto extraído
-                    st.header("2. Texto Bruto Extraído (OCR)")
-                    st.text_area("Conteúdo lido da imagem:", texto_extraido, height=400)
+    # Botão de envio do formulário
+    submitted = st.form_submit_button("Iniciar Análise e Criar Dossiê")
 
-                except Exception as e:
-                    st.error("Ocorreu um erro durante a análise OCR.")
-                    st.exception(e)
+# --- Lógica após o envio do formulário ---
+if submitted:
+    if not liga_analisada or not clube_analisado or not prints_selecionados:
+        st.error("Por favor, preencha todos os campos e selecione pelo menos um print para continuar.")
+    else:
+        st.success("Comando de análise recebido!")
+        st.write("---")
+        st.subheader("Resumo do Comando:")
+        st.write(f"**Tipo de Dossiê:** {tipo_dossie}")
+        st.write(f"**Liga:** {liga_analisada}")
+        st.write(f"**Clube/Alvo:** {clube_analisado}")
+        st.write(f"**Prints a serem analisados:**")
+        for p in prints_selecionados:
+            st.write(f"- `{p}`")
+
+        with st.spinner("Análise dos prints selecionados em andamento... (Simulação)"):
+            # Futuramente, a lógica de OCR e criação do dossiê será inserida aqui
+            st.write("---")
+            st.header("Dossiê Gerado (Exemplo)")
+            st.info("A análise foi concluída e o dossiê abaixo foi gerado e salvo no sistema.")
+            st.markdown(f"""
+            ### Dossiê de Análise da Liga: {liga_analisada.upper()}
+            - **Padrão Identificado:** Liga com alta tendência ofensiva.
+            - **Clubes Dominantes (sugestão):** PSV, Feyenoord, Ajax.
+            - **Dados extraídos de:** {len(prints_selecionados)} arquivos de imagem.
+            """)
+
 
 # --- Rodapé ---
 st.markdown("---")
-st.text("Painel em desenvolvimento. Versão 2.1 (OCR Ativado)")
+st.text("Painel em desenvolvimento. Versão 3.0 (Interface Interativa)")
