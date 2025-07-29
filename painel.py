@@ -33,7 +33,7 @@ if st.session_state.get("authentication_status"):
 
     st.write(f'Bem-vindo, *{st.session_state["name"]}*!')
     st.title("SISTEMA MULTIAGENTE DE INTELIGÊNCIA TÁTICA")
-    # (O resto do código da aplicação viria aqui...)
+    # (O resto do código da aplicação, como as Centrais de Upload e Análise, viria aqui)
 
 
 elif st.session_state.get("authentication_status") == False:
