@@ -106,4 +106,3 @@ if check_password():
                                     else:
                                         # Lógica de OCR e Geração de Dossiê
                                         st.info(f"Simulação: Análise de {len(imagens)} imagens concluída.")
-```
