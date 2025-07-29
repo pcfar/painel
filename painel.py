@@ -1,57 +1,52 @@
 import streamlit as st
 import os
 from github import Github
-from github.GithubException import UnknownObjectException
-from PIL import Image
-import pytesseract
-import io
+# ... (outros imports que usaremos depois)
 
 # --- Configuração da Página ---
 st.set_page_config(page_title="Painel de Inteligência Tática", page_icon="🧠", layout="wide")
 
-# --- SISTEMA DE SENHA ÚNICA ---
+# --- SISTEMA DE LOGIN COM PERFIS ---
 def check_password():
-    """Retorna True se a senha estiver correta."""
     def password_entered():
-        """Verifica se a senha digitada corresponde à senha no cofre."""
-        if st.session_state["password"] == st.secrets["APP_PASSWORD"]:
+        # Verifica se a senha corresponde a Admin ou Visitante
+        if st.session_state["password"] == st.secrets["ADMIN_PASSWORD"]:
             st.session_state["password_correct"] = True
-            del st.session_state["password"]  # Não manter a senha em memória
+            st.session_state["role"] = "admin" # Define o perfil
+            del st.session_state["password"]
+        elif st.session_state["password"] == st.secrets["VISITOR_PASSWORD"]:
+            st.session_state["password_correct"] = True
+            st.session_state["role"] = "visitor" # Define o perfil
+            del st.session_state["password"]
         else:
             st.session_state["password_correct"] = False
 
-    if "password_correct" not in st.session_state:
-        # Apresenta o formulário de senha
-        st.text_input("Password", type="password", on_change=password_entered, key="password")
-        return False
-    elif not st.session_state["password_correct"]:
-        # Senha incorreta
-        st.text_input("Password", type="password", on_change=password_entered, key="password")
-        st.error("😕 Senha incorreta.")
-        return False
-    else:
-        # Senha correta
+    if st.session_state.get("password_correct", False):
         return True
+
+    # Apresenta o formulário de senha
+    st.text_input("Password", type="password", on_change=password_entered, key="password")
+    if "password_correct" in st.session_state and not st.session_state["password_correct"]:
+        st.error("😕 Senha incorreta.")
+    return False
 
 # --- APLICAÇÃO PRINCIPAL ---
 if check_password():
-    # --- Título e Boas-vindas (Aparece após o login) ---
+    # --- Título e Boas-vindas ---
+    role = st.session_state.get("role", "visitor")
+    st.sidebar.write(f"Bem-vindo! Perfil: **{role.upper()}**")
     st.title("SISTEMA MULTIAGENTE DE INTELIGÊNCIA TÁTICA")
     st.subheader("Plataforma de Análise de Padrões para Trading Esportivo")
 
-    # --- Autenticação no GitHub ---
-    @st.cache_resource
-    def get_github_connection():
-        try:
-            g = Github(st.secrets["GITHUB_TOKEN"])
-            repo = g.get_repo("pcfar/painel")
-            return repo
-        except Exception as e:
-            st.error("Erro ao conectar com o GitHub.")
-            st.exception(e)
-            st.stop()
-    repo = get_github_connection()
+    # --- CENTRAL DE UPLOAD (APENAS PARA ADMIN) ---
+    if role == "admin":
+        st.header("1. Central de Upload e Organização")
+        with st.expander("Clique aqui para enviar novos 'prints' para análise"):
+            st.success("Área de Upload disponível para Administradores.")
+            # (O formulário de upload completo viria aqui)
 
-    # O resto do código da aplicação (Centrais de Upload e Análise) viria aqui...
-    # Por enquanto, vamos confirmar que o login funciona.
-    st.success("Login bem-sucedido! O painel completo seria exibido aqui.")
+    # --- CENTRAL DE ANÁLISE (VISÍVEL PARA TODOS) ---
+    st.markdown("---")
+    st.header("2. Central de Análise: Gerar Dossiês")
+    st.info("Área de Análise disponível para todos os usuários logados.")
+    # (A lógica da Central de Análise completa viria aqui)
