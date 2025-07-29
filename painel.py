@@ -12,8 +12,15 @@ import copy
 st.set_page_config(page_title="Painel de Inteligência Tática", page_icon="🧠", layout="wide")
 
 # --- SISTEMA DE AUTENTICAÇÃO ---
-config = copy.deepcopy(st.secrets)
+# CORREÇÃO v1.0.4: Criamos um dicionário python normal a partir dos segredos
+config = {
+    'credentials': {
+        'usernames': dict(st.secrets['credentials']['usernames'])
+    },
+    'cookie': dict(st.secrets['cookie'])
+}
 
+# Cria o objeto de autenticação com o dicionário copiado
 authenticator = stauth.Authenticate(
     config['credentials'],
     config['cookie']['name'],
@@ -21,7 +28,7 @@ authenticator = stauth.Authenticate(
     config['cookie']['expiry_days']
 )
 
-# --- CORREÇÃO FINAL: Simplificamos a chamada para usar os valores padrão da biblioteca ---
+# CORREÇÃO v1.0.5: Simplificamos a chamada para usar os valores padrão da biblioteca
 name, authentication_status, username = authenticator.login('Login')
 
 # --- LÓGICA DE ACESSO ---
@@ -60,6 +67,7 @@ if authentication_status:
         st.header("1. Central de Upload e Organização")
         with st.expander("Clique aqui para enviar novos 'prints' para análise"):
             with st.form("form_upload_dossie", clear_on_submit=True):
+                # (Resto do formulário de upload aqui...)
                 st.write("Preencha os dados abaixo para enviar os 'prints' para a análise correta.")
                 temporada = st.text_input("Temporada:", placeholder="Ex: 2025 ou 2025-2026")
                 tipo_dossie = st.selectbox("Selecione o Tipo de Dossiê:", ["Dossiê 1: Análise Geral da Liga", "Dossiê 2: Análise Aprofundada do Clube", "Dossiê 3: Briefing Pré-Jogo (Rodada)", "Dossiê 4: Análise Pós-Jogo (Rodada)"])
