@@ -6,15 +6,16 @@ from PIL import Image
 import pytesseract
 import io
 import streamlit_authenticator as stauth
+import copy # Importamos a ferramenta de "fotocópia"
 
 # --- Configuração da Página ---
 st.set_page_config(page_title="Painel de Inteligência Tática", page_icon="🧠", layout="wide")
 
 # --- SISTEMA DE AUTENTICAÇÃO (VERSÃO CORRIGIDA) ---
-# Acessa a configuração diretamente do objeto st.secrets, que já lê o arquivo .toml corretamente
-config = st.secrets
+# CORREÇÃO: Fazemos uma cópia dos segredos para que o autenticador possa modificá-la em memória
+config = copy.deepcopy(st.secrets)
 
-# Cria o objeto de autenticação
+# Cria o objeto de autenticação com a cópia
 authenticator = stauth.Authenticate(
     config['credentials'],
     config['cookie']['name'],
@@ -28,6 +29,7 @@ name, authentication_status, username = authenticator.login('Login', 'main')
 # --- LÓGICA DE ACESSO ---
 if authentication_status:
     # --- APLICAÇÃO PRINCIPAL (SÓ APARECE APÓS LOGIN) ---
+    # (O resto do código permanece exatamente o mesmo)
     authenticator.logout('Logout', 'main', key='unique_key')
     st.write(f'Bem-vindo, *{name}*!')
     st.title("SISTEMA MULTIAGENTE DE INTELIGÊNCIA TÁTICA")
