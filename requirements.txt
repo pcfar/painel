@@ -3,3 +3,4 @@ pandas
 watchdog
 pytesseract
 opencv-python-headless
+Pillow
