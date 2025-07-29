@@ -4,3 +4,4 @@ watchdog
 pytesseract
 opencv-python-headless
 Pillow
+PyGithub
