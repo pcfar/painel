@@ -26,23 +26,25 @@ authenticator = stauth.Authenticate(
     config['cookie']['expiry_days']
 )
 
-# --- CORREÇÃO: Movemos o login de volta para o centro da página ('main') ---
-name, authentication_status, username = authenticator.login('Login', location='main')
+# --- CORREÇÃO DEFINITIVA ---
+# Chamamos a função de login no centro da página, sem argumentos extras.
+# A função irá guardar os resultados em st.session_state.
+authenticator.login(location='main')
 
 # --- LÓGICA DE ACESSO ---
-if authentication_status:
+# Lemos o status do login a partir de st.session_state.
+if st.session_state.get("authentication_status"):
     # --- APLICAÇÃO PRINCIPAL (SÓ APARECE APÓS LOGIN) ---
-    # Colocamos o botão de logout numa coluna para melhor posicionamento
     col1, col2 = st.columns([0.85, 0.15])
     with col2:
         authenticator.logout('Logout', key='unique_key')
 
-    st.write(f'Bem-vindo, *{name}*!')
+    st.write(f'Bem-vindo, *{st.session_state["name"]}*!')
     st.title("SISTEMA MULTIAGENTE DE INTELIGÊNCIA TÁTICA")
-    # ... (O resto do código da aplicação continua aqui) ...
+    # O resto do seu código da aplicação viria aqui...
 
 
-elif authentication_status == False:
+elif st.session_state.get("authentication_status") == False:
     st.error('Nome de utilizador/senha incorreto(a)')
-elif authentication_status == None:
+elif st.session_state.get("authentication_status") == None:
     st.warning('Por favor, introduza o seu nome de utilizador e senha')
