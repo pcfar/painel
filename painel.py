@@ -26,38 +26,23 @@ authenticator = stauth.Authenticate(
     config['cookie']['expiry_days']
 )
 
-# --- CORREÇÃO FINAL: Chamamos a função de login na barra lateral ---
-# Esta função não retorna valores, mas os guarda em st.session_state
-authenticator.login(location='sidebar')
+# --- CORREÇÃO: Movemos o login de volta para o centro da página ('main') ---
+name, authentication_status, username = authenticator.login('Login', location='main')
 
 # --- LÓGICA DE ACESSO ---
-# Verificamos os valores guardados em st.session_state
-if st.session_state["authentication_status"]:
+if authentication_status:
     # --- APLICAÇÃO PRINCIPAL (SÓ APARECE APÓS LOGIN) ---
-    with st.sidebar:
-        st.write(f'Bem-vindo, *{st.session_state["name"]}*!')
-        authenticator.logout('Logout', location='sidebar', key='unique_key')
+    # Colocamos o botão de logout numa coluna para melhor posicionamento
+    col1, col2 = st.columns([0.85, 0.15])
+    with col2:
+        authenticator.logout('Logout', key='unique_key')
 
+    st.write(f'Bem-vindo, *{name}*!')
     st.title("SISTEMA MULTIAGENTE DE INTELIGÊNCIA TÁTICA")
-    st.subheader("Plataforma de Análise de Padrões para Trading Esportivo")
-
-    # --- CENTRAL DE UPLOAD (APENAS PARA ADMIN) ---
-    if st.session_state["username"] == 'admin':
-        st.header("1. Central de Upload e Organização")
-        with st.expander("Clique aqui para enviar novos 'prints' para análise"):
-            # (O formulário de upload viria aqui)
-            st.success("Área de Upload disponível.")
-
-    # --- CENTRAL DE ANÁLISE (VISÍVEL PARA TODOS OS USUÁRIOS LOGADOS) ---
-    st.markdown("---")
-    st.header("2. Central de Análise: Gerar Dossiês")
-    # (A lógica da Central de Análise viria aqui)
-    st.info("Área de Análise disponível.")
+    # ... (O resto do código da aplicação continua aqui) ...
 
 
-elif st.session_state["authentication_status"] == False:
-    with st.sidebar:
-        st.error('Nome de utilizador/senha incorreto(a)')
-elif st.session_state["authentication_status"] == None:
-    with st.sidebar:
-        st.warning('Por favor, introduza o seu nome de utilizador e senha')
+elif authentication_status == False:
+    st.error('Nome de utilizador/senha incorreto(a)')
+elif authentication_status == None:
+    st.warning('Por favor, introduza o seu nome de utilizador e senha')
