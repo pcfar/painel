@@ -7,7 +7,7 @@ from yaml.loader import SafeLoader
 st.set_page_config(page_title="Painel de Inteligência Tática", page_icon="🧠", layout="wide")
 
 # --- SISTEMA DE AUTENTICAÇÃO ---
-# Carrega a configuração do novo arquivo config.yaml
+# Carrega a configuração do arquivo config.yaml
 with open('config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
 
@@ -30,7 +30,7 @@ if st.session_state.get("authentication_status"):
 
     st.write(f'Bem-vindo, *{st.session_state["name"]}*!')
     st.title("SISTEMA MULTIAGENTE DE INTELIGÊNCIA TÁTICA")
-    # (O resto do código da aplicação viria aqui...)
+    # (O resto do código da aplicação, como as Centrais de Upload e Análise, viria aqui)
 
 elif st.session_state.get("authentication_status") == False:
     st.error('Nome de utilizador/senha incorreto(a)')
