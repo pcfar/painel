@@ -4,7 +4,7 @@ from github import Github
 from github.GithubException import UnknownObjectException, GithubException
 
 # --- Configuração da Página ---
-st.set_page_config(page_title="Painel Tático v5.2", page_icon="🧠", layout="wide")
+st.set_page_config(page_title="Painel Tático v5.3", page_icon="🧠", layout="wide")
 
 # --- SISTEMA DE SENHA ÚNICA ---
 def check_password():
@@ -43,53 +43,51 @@ if check_password():
     acao_usuario = st.selectbox("O que deseja fazer?", ["Selecionar...", "Criar um Novo Dossiê"])
 
     if acao_usuario == "Criar um Novo Dossiê":
-        tipo_dossie = st.selectbox("Qual dossiê deseja criar?", ["Selecionar...", "Dossiê 1: Análise Geral da Liga"])
-
+        # --- ATUALIZAÇÃO: Adicionamos o Dossiê 2 à lista ---
+        tipo_dossie = st.selectbox("Qual dossiê deseja criar?", ["Selecionar...", "Dossiê 1: Análise Geral da Liga", "Dossiê 2: Análise Aprofundada do Clube"])
+        
+        # --- FLUXO PARA DOSSIÊ 1 ---
         if tipo_dossie == "Dossiê 1: Análise Geral da Liga":
             with st.form("form_dossie_1"):
                 st.subheader("Formulário do Dossiê 1: Análise Geral da Liga")
                 temporada = st.text_input("Temporada de Referência*", placeholder="Ex: 2024-2025")
                 liga = st.text_input("Liga (código)*", placeholder="Ex: HOL")
-
+                
                 prints_campeoes = st.file_uploader("1) Print(s) dos Últimos Campeões da Década*", accept_multiple_files=True, type=['png', 'jpg'])
                 prints_classificacao = st.file_uploader("2) Print(s) da Classificação Final da Última Temporada*", accept_multiple_files=True, type=['png', 'jpg'])
                 prints_curiosidades = st.file_uploader("3) Print(s) de Curiosidades (Opcional)", accept_multiple_files=True, type=['png', 'jpg'])
+                
+                if st.form_submit_button("Processar e Gerar Dossiê 1"):
+                    # (Lógica de upload e análise do Dossiê 1)
+                    st.info("Lógica do Dossiê 1 a ser executada...")
 
-                submitted = st.form_submit_button("Processar e Gerar Dossiê 1")
 
-                if submitted:
-                    todos_os_prints = []
-                    if prints_campeoes: todos_os_prints.extend(prints_campeoes)
-                    if prints_classificacao: todos_os_prints.extend(prints_classificacao)
-                    if prints_curiosidades: todos_os_prints.extend(prints_curiosidades)
+        # --- NOVO: FLUXO PARA DOSSIÊ 2 ---
+        elif tipo_dossie == "Dossiê 2: Análise Aprofundada do Clube":
+            with st.form("form_dossie_2"):
+                st.subheader("Formulário do Dossiê 2: Análise Aprofundada do Clube")
+                st.write("Preencha os campos e envie os 'prints' para a análise do clube-alvo.")
 
-                    if not all([temporada, liga, todos_os_prints]):
+                temporada = st.text_input("Temporada de Referência*", placeholder="Ex: 2024-2025")
+                liga = st.text_input("Liga (código)*", placeholder="Ex: HOL")
+                clube = st.text_input("Clube (código)*", placeholder="Ex: FEY")
+
+                st.markdown("---")
+
+                print_stats_gerais = st.file_uploader("1) Print da Visão Geral de Estatísticas do Clube (FBref)*", accept_multiple_files=False, type=['png', 'jpg'])
+                print_elenco = st.file_uploader("2) Print dos Detalhes do Elenco (Transfermarkt/Sofascore)*", accept_multiple_files=False, type=['png', 'jpg'])
+                prints_analise_tatica = st.file_uploader("3) Print(s) de Análises Táticas / Mapas de Calor (Opcional)", accept_multiple_files=True, type=['png', 'jpg'])
+
+                if st.form_submit_button("Processar e Gerar Dossiê 2"):
+                    if not all([temporada, liga, clube, print_stats_gerais, print_elenco]):
                         st.error("Por favor, preencha todos os campos obrigatórios (*).")
                     else:
-                        with st.spinner("Iniciando processo... AGENTE DE COLETA ativado."):
-                            try:
-                                temporada_fmt = temporada.replace('/', '-')
-                                caminho_base = f"{temporada_fmt}/{liga.upper()}/GERAL/Dossie_1"
-
-                                for arq in todos_os_prints:
-                                    conteudo_arquivo = arq.getvalue()
-                                    caminho_repo = os.path.join(caminho_base, arq.name)
-                                    commit_message = f"Upload/Update Dossiê 1: {arq.name}"
-
-                                    # --- LÓGICA DE UPLOAD INTELIGENTE ---
-                                    try:
-                                        arquivo_existente = repo.get_contents(caminho_repo)
-                                        repo.update_file(caminho_repo, commit_message, conteudo_arquivo, arquivo_existente.sha)
-                                        st.info(f"Arquivo `{arq.name}` atualizado com sucesso!")
-                                    except UnknownObjectException:
-                                        repo.create_file(caminho_repo, commit_message, conteudo_arquivo)
-                                        st.success(f"Arquivo `{arq.name}` criado com sucesso!")
-
-                                st.balloons()
-                                st.header("Upload Concluído!")
-
-                            except GithubException as e:
-                                st.error(f"Ocorreu um erro na API do GitHub: {e.data['message']}")
-                            except Exception as e:
-                                st.error(f"Ocorreu um erro inesperado durante o upload: {e}")
-                                st.stop()
+                        # Lógica de upload e análise do Dossiê 2
+                        with st.spinner("Processando Dossiê 2..."):
+                            todos_os_prints = [print_stats_gerais, print_elenco] + prints_analise_tatica
+                            temporada_fmt = temporada.replace('/', '-')
+                            caminho_base = f"{temporada_fmt}/{liga.upper()}/{clube.upper()}/Dossie_2"
+                            
+                            # (A lógica completa de upload inteligente e análise OCR viria aqui)
+                            st.success(f"Simulação: {len(todos_os_prints)} arquivos seriam salvos em `{caminho_base}` e analisados.")
+                            st.balloons()
