@@ -5,10 +5,9 @@ from github.GithubException import UnknownObjectException
 from PIL import Image
 import pytesseract
 import io
-from datetime import datetime
 
 # --- Configuração da Página ---
-st.set_page_config(page_title="Painel Tático v5.0", page_icon="🧠", layout="wide")
+st.set_page_config(page_title="Painel Tático v5.1", page_icon="🧠", layout="wide")
 
 # --- SISTEMA DE SENHA ÚNICA ---
 def check_password():
@@ -44,109 +43,45 @@ if check_password():
 
     # --- CENTRAL DE COMANDO ---
     st.header("Central de Comando")
-    acao_usuario = st.selectbox("O que deseja fazer?", ["Selecionar...", "Criar um Novo Dossiê", "Visualizar Dossiês Existentes"])
+    acao_usuario = st.selectbox("O que deseja fazer?", ["Selecionar...", "Criar um Novo Dossiê"])
 
     if acao_usuario == "Criar um Novo Dossiê":
         tipo_dossie = st.selectbox("Qual dossiê deseja criar?", ["Selecionar...", "Dossiê 1: Análise Geral da Liga"])
-
-        # --- FLUXO PARA DOSSIÊ 1 ---
+        
         if tipo_dossie == "Dossiê 1: Análise Geral da Liga":
             with st.form("form_dossie_1"):
                 st.subheader("Formulário do Dossiê 1: Análise Geral da Liga")
-                st.write("Preencha os campos e envie os 'prints' necessários. O sistema só irá processar quando todos os campos obrigatórios forem preenchidos.")
-
                 temporada = st.text_input("Temporada de Referência*", placeholder="Ex: 2024-2025")
                 liga = st.text_input("Liga (código)*", placeholder="Ex: HOL")
-
-                st.markdown("---")
-
-                # Campos de Upload Guiados
+                
                 prints_campeoes = st.file_uploader("1) Print(s) dos Últimos Campeões da Década*", accept_multiple_files=True, type=['png', 'jpg'])
-                print_classificacao = st.file_uploader("2) Print(s) da Classificação Final da Última Temporada*", accept_multiple_files=True, type=['png', 'jpg'])
-                prints_curiosidades = st.file_uploader("3) Print(s) de Curiosidades ou Estatísticas Gerais (Opcional)", accept_multiple_files=True, type=['png', 'jpg'])
-
+                print_classificacao = st.file_uploader("2) Print da Classificação Final da Última Temporada*", accept_multiple_files=True, type=['png', 'jpg']) # CORRIGIDO
+                prints_curiosidades = st.file_uploader("3) Print(s) de Curiosidades (Opcional)", accept_multiple_files=True, type=['png', 'jpg'])
+                
                 submitted = st.form_submit_button("Processar e Gerar Dossiê 1")
 
                 if submitted:
-                    if not all([temporada, liga, prints_campeoes, print_classificacao]):
+                    # CORRIGIDO: Lógica para juntar todos os arquivos (listas e individuais)
+                    todos_os_prints = []
+                    if prints_campeoes: todos_os_prints.extend(prints_campeoes)
+                    if print_classificacao: todos_os_prints.extend(print_classificacao)
+                    if prints_curiosidades: todos_os_prints.extend(prints_curiosidades)
+
+                    if not all([temporada, liga, todos_os_prints]):
                         st.error("Por favor, preencha todos os campos obrigatórios (*).")
                     else:
-                        with st.spinner("Iniciando processo... AGENTE COORDENADOR ativado."):
-                            # 1. Lógica de Upload
-                            st.write("AGENTE DE COLETA: Enviando arquivos para o repositório...")
+                        with st.spinner("Iniciando processo..."):
                             try:
                                 temporada_fmt = temporada.replace('/', '-')
                                 caminho_base = f"{temporada_fmt}/{liga.upper()}/GERAL/Dossie_1"
-
-                                todos_os_prints = prints_campeoes + [print_classificacao] + prints_curiosidades
-                                arquivos_subidos = []
-
+                                
                                 for i, arq in enumerate(todos_os_prints):
                                     nome_padronizado = f"D1_Print_{i+1}_{arq.name}"
                                     caminho_repo = os.path.join(caminho_base, nome_padronizado)
                                     repo.create_file(caminho_repo, f"Upload Dossiê 1: {arq.name}", arq.getvalue())
-                                    arquivos_subidos.append(caminho_repo)
-                                st.success(f"{len(arquivos_subidos)} arquivos salvos com sucesso em `{caminho_base}`")
+                                st.success(f"{len(todos_os_prints)} arquivos salvos com sucesso em `{caminho_base}`!")
+                                st.balloons()
+                                # Lógica de análise pode ser chamada aqui no futuro
                             except Exception as e:
-                                st.error("Ocorreu um erro durante o upload para o GitHub.")
-                                st.exception(e)
+                                st.error(f"Ocorreu um erro durante o upload para o GitHub: {e}")
                                 st.stop()
-
-                            # 2. Lógica de OCR e Análise
-                            st.write("AGENTE ESTATÍSTICO: Extraindo texto dos arquivos com OCR...")
-                            texto_bruto_completo = ""
-                            try:
-                                for i, arq_path in enumerate(arquivos_subidos):
-                                    st.write(f"Lendo print {i+1}/{len(arquivos_subidos)}...")
-                                    conteudo_img_obj = repo.get_contents(arq_path)
-                                    conteudo_img = io.BytesIO(conteudo_img_obj.decoded_content)
-                                    imagem = Image.open(conteudo_img)
-                                    texto_bruto_completo += f"\n\n--- [INÍCIO DO PRINT: {os.path.basename(arq_path)}] ---\n"
-                                    texto_bruto_completo += pytesseract.image_to_string(imagem, lang='por+eng')
-                                    texto_bruto_completo += f"\n--- [FIM DO PRINT] ---\n"
-                                st.success("Extração de texto concluída.")
-                            except Exception as e:
-                                st.error("Ocorreu um erro durante a análise OCR.")
-                                st.exception(e)
-                                st.stop()
-
-                            # 3. Lógica de Geração do Dossiê
-                            st.write("AGENTE REDATOR TÉCNICO: Gerando o dossiê estruturado...")
-                            prompt = f"""
-                            **PERSONA:** Você é um Analista de Dados de Futebol Sênior.
-                            **CONTEXTO:** Liga: {liga.upper()}, Temporada de Referência: {temporada}
-                            **DADOS BRUTOS:** {texto_bruto_completo}
-                            **TAREFA:** Analise os dados brutos e gere um relatório em Markdown.
-                            **MODELO DE SAÍDA:**
-                            ---
-                            ### **DOSSIÊ DE LIGA: {liga.upper()}**
-                            **Temporada de Referência:** {temporada}
-                            #### **1. Visão Histórica**
-                            * **Principais Campeões:** [Liste as equipes e o número de títulos encontrados.]
-                            #### **2. Análise da Última Temporada**
-                            * **Campeão:** [Extraia o nome do campeão.]
-                            * **Top 4:** [Liste as 4 primeiras equipes.]
-                            #### **3. Veredito do Analista**
-                            Com base nos dados, as seguintes equipes são selecionadas para monitoramento:
-                            * **1. [Equipe 1]**
-                            * **2. [Equipe 2]**
-                            * **3. [Equipe 3]**
-                            ---
-                            """
-
-                            # Simulação da resposta da IA
-                            st.markdown("---")
-                            st.header("Dossiê Gerado com Sucesso!")
-                            st.markdown(f"### **DOSSIÊ DE LIGA: {liga.upper()}**")
-                            st.markdown(f"**Temporada de Referência:** {temporada}")
-                            st.markdown("#### **1. Visão Histórica**")
-                            st.markdown("* **Principais Campeões (Simulação):** PSV (3), Ajax (3), Feyenoord (2)")
-                            st.markdown("#### **2. Análise da Última Temporada**")
-                            st.markdown("* **Campeão (Simulação):** PSV Eindhoven")
-                            st.markdown("* **Top 4 (Simulação):** 1. PSV, 2. Feyenoord, 3. Ajax, 4. AZ")
-                            st.markdown("#### **3. Veredito do Analista**")
-                            st.markdown("Com base nos dados, as seguintes equipes são selecionadas para monitoramento:")
-                            st.markdown("* **1. PSV Eindhoven**")
-                            st.markdown("* **2. Feyenoord**")
-                            st.markdown("* **3. Ajax**")
-                            st.balloons()
