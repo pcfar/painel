@@ -1,0 +1,21 @@
+# PAINEL DE INTELIGÊNCIA TÁTICA V5.0
+
+## 🎯 Objetivo do Projeto
+Este repositório contém o código-fonte de um sistema multiagente de inteligência tática voltado para o futebol, com aplicação em trading esportivo. O sistema é servido como uma aplicação web interativa construída com Streamlit e hospedada na Streamlit Cloud.
+
+---
+
+## ✨ Funcionalidades Principais
+* **Login Seguro:** Acesso ao painel protegido por um sistema de senha única.
+* **Central de Comando Guiada:** Interface orientada a tarefas que guia o utilizador na criação de diferentes tipos de dossiês.
+* **Upload Inteligente:** Capacidade de enviar arquivos de imagem ("prints") diretamente pelo painel. O sistema cria e organiza automaticamente a estrutura de pastas (`Temporada/Liga/Clube`) no repositório GitHub.
+* **Motor de Análise (OCR):** Extração automática de texto a partir das imagens enviadas.
+* **Geração de Dossiês (Simulada):** Processamento dos dados brutos e formatação num relatório tático estruturado com base em prompts de IA.
+
+---
+
+## 📖 Diário do Projeto (Histórico de Ações)
+*Esta seção será atualizada no futuro através de um botão de administração no painel.*
+
+* **29/07/2025:** APROVADO - Definição da estrutura e do plano de automação para o arquivo `README.md`.
+* **29/07/2025:** APROVADO - Definição do plano de coleta de dados detalhado e da nova interface guiada para o Dossiê 1.
