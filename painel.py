@@ -62,7 +62,7 @@ if check_password():
 
                 # Campos de Upload Guiados
                 prints_campeoes = st.file_uploader("1) Print(s) dos Últimos Campeões da Década*", accept_multiple_files=True, type=['png', 'jpg'])
-                print_classificacao = st.file_uploader("2) Print da Classificação Final da Última Temporada*", accept_multiple_files=False, type=['png', 'jpg'])
+                print_classificacao = st.file_uploader("2) Print(s) da Classificação Final da Última Temporada*", accept_multiple_files=True, type=['png', 'jpg'])
                 prints_curiosidades = st.file_uploader("3) Print(s) de Curiosidades ou Estatísticas Gerais (Opcional)", accept_multiple_files=True, type=['png', 'jpg'])
 
                 submitted = st.form_submit_button("Processar e Gerar Dossiê 1")
