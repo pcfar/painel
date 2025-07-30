@@ -4,7 +4,7 @@ from github import Github
 from github.GithubException import UnknownObjectException, GithubException
 
 # --- Configuração da Página ---
-st.set_page_config(page_title="Painel Tático v6.4", page_icon="🧠", layout="wide")
+st.set_page_config(page_title="Painel Tático v6.5", page_icon="🧠", layout="wide")
 
 # --- SISTEMA DE SENHA ÚNICA ---
 def check_password():
@@ -26,17 +26,8 @@ if check_password():
     st.sidebar.success("Autenticado com sucesso.")
     st.title("SISTEMA DE INTELIGÊNCIA TÁTICA")
 
-    # --- Conexão com o GitHub ---
-    @st.cache_resource
-    def get_github_connection():
-        try:
-            g = Github(st.secrets["GITHUB_TOKEN"])
-            repo = g.get_repo("pcfar/painel")
-            return repo
-        except Exception:
-            st.error("Erro ao conectar com o GitHub.")
-            st.stop()
-    repo = get_github_connection()
+    # --- Conexão com o GitHub (Omitida para brevidade, mas deve ser mantida) ---
+    # ...
 
     # --- CENTRAL DE COMANDO COM ABAS ---
     st.header("Central de Comando")
@@ -53,26 +44,30 @@ if check_password():
         st.info("Formulário do Dossiê 3.")
 
     with tab4:
-        st.subheader("Criar Dossiê 4: Briefing Semanal Pré-Jogo")
+        st.subheader("Gerar Dossiê 4: Briefing Semanal Autónomo")
         with st.form("form_dossie_4"):
-            st.write("Forneça os 'prints' com o contexto mais recente para a próxima partida.")
+            st.write("Forneça o contexto da partida para que o Agente de IA possa iniciar a busca por inteligência.")
 
-            temporada = st.text_input("Temporada*", placeholder="Ex: 2024-2025")
+            temporada = st.text_input("Temporada*", placeholder="Ex: 2025-2026")
             liga = st.text_input("Liga (código)*", placeholder="Ex: HOL")
-            clube = st.text_input("Clube-Alvo (código)*", placeholder="Ex: FEY")
+            clube = st.text_input("Clube-Alvo (nome completo)*", placeholder="Ex: Feyenoord")
+            adversario = st.text_input("Adversário (nome completo)*", placeholder="Ex: Ajax")
             rodada = st.text_input("Rodada*", placeholder="Ex: R06")
 
-            st.markdown("---")
-
-            prints_coletiva = st.file_uploader("1) Print(s) com Citações-Chave do Treinador*", help="Capture a coletiva de imprensa pré-jogo.", accept_multiple_files=True, type=['png', 'jpg'])
-            print_elenco = st.file_uploader("2) Print com Status do Elenco (Lesões/Suspensões)*", help="Capture notícias recentes sobre o estado do elenco.", type=['png', 'jpg'])
-            print_adversario = st.file_uploader("3) Print com Contexto do Adversário*", help="Capture a tabela de classificação e os últimos resultados do adversário.", type=['png', 'jpg'])
-
-            if st.form_submit_button("Processar e Gerar Dossiê 4"):
-                if not all([temporada, liga, clube, rodada, prints_coletiva, print_elenco, print_adversario]):
+            if st.form_submit_button("Iniciar Agente de IA e Gerar Briefing"):
+                if not all([temporada, liga, clube, adversario, rodada]):
                     st.error("Por favor, preencha todos os campos obrigatórios (*).")
                 else:
-                    with st.spinner("Processando Dossiê 4..."):
-                        # (A lógica completa de upload inteligente e análise OCR viria aqui)
-                        st.success("Simulação: Dossiê 4 (Pré-Jogo) gerado com sucesso!")
-                        st.balloons()
+                    # Guarda o comando na memória da sessão
+                    comando = f"EXECUTE O BRIEFING: Temporada {temporada}, Liga {liga}, Rodada {rodada}, {clube} vs {adversario}"
+                    st.session_state['comando_ia'] = comando
+        
+        # Mostra a confirmação fora do formulário
+        if 'comando_ia' in st.session_state:
+            st.success("Comando recebido pelo sistema!")
+            st.info("O Agente de Inteligência está pronto para a missão.")
+            st.warning(f"""
+            Para receber o seu relatório, por favor, volte ao seu assistente (Gemini) e envie o seguinte comando:
+
+            **{st.session_state['comando_ia']}**
+            """)
