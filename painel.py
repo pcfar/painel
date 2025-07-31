@@ -127,19 +127,17 @@ if check_password():
                 st.write("Agora, forneça os 'prints' que demonstram consistência e dominância ao longo do tempo para uma análise robusta.")
                 
                 # --- NOVOS CAMPOS OTIMIZADOS ---
-                prints_classificacoes = st.file_uploader("1) Print(s) das Classificações Finais (Últimas 10 Temporadas)*", help="Sugestão: No FBref, use o menu 'Previous Seasons' para capturar as tabelas de classificação completas das últimas 10 temporadas (um print por temporada).", accept_multiple_files=True)
-                prints_europa = st.file_uploader("2) Print(s) do Histórico de Performance Europeia (Última Década)*", help="Sugestão: Na Wikipedia, na página de cada temporada da liga, capture a informação de quais equipas se qualificaram para a Liga dos Campeões e Liga Europa.", accept_multiple_files=True)
+                prints_classificacoes = st.file_uploader("1) Print(s) das Classificações Finais (Últimas 10 Temporadas)*", help="Sugestão: No FBref ou Sofascore, capture as tabelas de classificação completas das últimas 10 temporadas (um print por temporada), incluindo a legenda de qualificação europeia.", accept_multiple_files=True)
                 
                 if st.form_submit_button("Analisar Dados e Gerar Dossiê Final"):
-                    if not all([prints_classificacoes, prints_europa]):
-                        st.error("Por favor, preencha todos os campos obrigatórios (*).")
+                    if not prints_classificacoes:
+                        st.error("Por favor, preencha o campo obrigatório (*).")
                     else:
                         with st.spinner("AGENTE DE DADOS a processar 'prints' e AGENTE DE INTELIGÊNCIA a finalizar o dossiê..."):
                             # Lógica de OCR
                             texto_ocr = ""
                             grupos = {
-                                "CLASSIFICAÇÕES RECENTES": prints_classificacoes,
-                                "PERFORMANCE EUROPEIA": prints_europa
+                                "CLASSIFICAÇÕES RECENTES": prints_classificacoes
                             }
                             for nome, prints in grupos.items():
                                 texto_ocr += f"\n--- [DADOS DO UTILIZADOR: {nome}] ---\n"
@@ -156,7 +154,7 @@ if check_password():
 2. **Dados Técnicos Brutos (Extraídos de prints do utilizador):**
 {texto_ocr}
 **MISSÃO FINAL:**
-Use a **Análise Informativa** para a Parte 1 e os **Dados Técnicos Brutos** para a Parte 2 para gerar o dossiê consolidado e final. Na Parte 2, calcule um 'Placar de Dominância' (5 pts para título, 3 pts para Top 2, 1 pt para Top 4, +2 pts bónus para qualificação para a Champions League, +1 pt bónus para Liga Europa), apresente a tabela e justifique a sua 'Playlist de Monitoramento' final.
+Use a **Análise Informativa** para a Parte 1 e os **Dados Técnicos Brutos** para a Parte 2 para gerar o dossiê consolidado e final. Na Parte 2, analise as tabelas de classificação para inferir títulos, posições no Top 4 e qualificações europeias. Calcule um 'Placar de Dominância' (5 pts para título, 3 pts para Top 2, 1 pt para Top 4, +2 pts bónus para qualificação para a Champions League, +1 pt bónus para Liga Europa), apresente a tabela e justifique a sua 'Playlist de Monitoramento' final.
 **MODELO DE SAÍDA:**
 ---
 ### **DOSSIÊ ESTRATÉGICO DE LIGA: {contexto['liga'].upper()}**
