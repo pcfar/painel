@@ -124,24 +124,22 @@ if check_password():
             st.markdown("---")
             st.subheader("Parte 2: Análise Técnica para Identificar Clubes Dominantes")
             with st.form("form_dossie_1_p2"):
-                st.write("Agora, forneça os 'prints' que demonstram consistência e dominância ao longo do tempo.")
+                st.write("Agora, forneça os 'prints' que demonstram consistência e dominância ao longo do tempo para uma análise robusta.")
                 
                 # --- NOVOS CAMPOS OTIMIZADOS ---
-                prints_campeoes = st.file_uploader("1) Print(s) do Histórico de Campeões (Década)*", help="Sugestão: Na Wikipedia, capture a lista dos campeões das últimas 10 temporadas.", accept_multiple_files=True)
-                prints_classificacoes = st.file_uploader("2) Print(s) das Classificações Finais (Últimas 3-5 Temporadas)*", help="Sugestão: No FBref ou Sofascore, capture as tabelas de classificação completas das últimas 3 a 5 temporadas (um print por temporada).", accept_multiple_files=True)
-                print_stats_avancadas = st.file_uploader("3) Print das Estatísticas Avançadas da Liga (Última Temporada)*", help="Sugestão: No FBref, capture a tabela 'Squad Advanced Stats' da última temporada para contexto recente.", accept_multiple_files=True)
-
+                prints_classificacoes = st.file_uploader("1) Print(s) das Classificações Finais (Últimas 10 Temporadas)*", help="Sugestão: No FBref, use o menu 'Previous Seasons' para capturar as tabelas de classificação completas das últimas 10 temporadas (um print por temporada).", accept_multiple_files=True)
+                prints_europa = st.file_uploader("2) Print(s) do Histórico de Performance Europeia (Última Década)*", help="Sugestão: Na Wikipedia, na página de cada temporada da liga, capture a informação de quais equipas se qualificaram para a Liga dos Campeões e Liga Europa.", accept_multiple_files=True)
+                
                 if st.form_submit_button("Analisar Dados e Gerar Dossiê Final"):
-                    if not all([prints_campeoes, prints_classificacoes, print_stats_avancadas]):
+                    if not all([prints_classificacoes, prints_europa]):
                         st.error("Por favor, preencha todos os campos obrigatórios (*).")
                     else:
                         with st.spinner("AGENTE DE DADOS a processar 'prints' e AGENTE DE INTELIGÊNCIA a finalizar o dossiê..."):
                             # Lógica de OCR
                             texto_ocr = ""
                             grupos = {
-                                "HISTÓRICO DE CAMPEÕES": prints_campeoes,
                                 "CLASSIFICAÇÕES RECENTES": prints_classificacoes,
-                                "ESTATÍSTICAS AVANÇADAS": print_stats_avancadas
+                                "PERFORMANCE EUROPEIA": prints_europa
                             }
                             for nome, prints in grupos.items():
                                 texto_ocr += f"\n--- [DADOS DO UTILIZADOR: {nome}] ---\n"
@@ -158,7 +156,7 @@ if check_password():
 2. **Dados Técnicos Brutos (Extraídos de prints do utilizador):**
 {texto_ocr}
 **MISSÃO FINAL:**
-Use a **Análise Informativa** para a Parte 1 e os **Dados Técnicos Brutos** para a Parte 2 para gerar o dossiê consolidado e final. Na Parte 2, calcule um 'Placar de Dominância' (5 pts para título na década, 3 pts para Top 2 recente, 1 pt para Top 4 recente), apresente a tabela e justifique a sua 'Playlist de Monitoramento' final.
+Use a **Análise Informativa** para a Parte 1 e os **Dados Técnicos Brutos** para a Parte 2 para gerar o dossiê consolidado e final. Na Parte 2, calcule um 'Placar de Dominância' (5 pts para título, 3 pts para Top 2, 1 pt para Top 4, +2 pts bónus para qualificação para a Champions League, +1 pt bónus para Liga Europa), apresente a tabela e justifique a sua 'Playlist de Monitoramento' final.
 **MODELO DE SAÍDA:**
 ---
 ### **DOSSIÊ ESTRATÉGICO DE LIGA: {contexto['liga'].upper()}**
@@ -167,7 +165,7 @@ Use a **Análise Informativa** para a Parte 1 e os **Dados Técnicos Brutos** pa
 #### **PARTE 1: VISÃO GERAL E HISTÓRICA**
 [Copie e cole a análise informativa que você já gerou aqui.]
 #### **PARTE 2: ANÁLISE TÉCNICA E IDENTIFICAÇÃO DE ALVOS**
-* **Placar de Dominância:**
+* **Placar de Dominância (Última Década):**
 | Posição | Equipa | Pontuação |
 | :--- | :--- | :--- |
 | 1 | [Sua análise aqui] | [Pts] |
