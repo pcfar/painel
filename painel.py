@@ -110,7 +110,6 @@ if check_password():
 * **Curiosidades e Recordes:** [Seus factos aqui]
 ---
 """
-                        # Chamada real à IA
                         resultado_p1 = gerar_dossie_com_ia(prompt_p1)
                         if resultado_p1:
                             st.session_state['dossie_p1_resultado'] = resultado_p1
@@ -123,21 +122,27 @@ if check_password():
             st.markdown(st.session_state['dossie_p1_resultado'])
             
             st.markdown("---")
-            st.subheader("Parte 2: Análise Técnica (Fornecer Dados)")
+            st.subheader("Parte 2: Análise Técnica para Identificar Clubes Dominantes")
             with st.form("form_dossie_1_p2"):
-                st.write("Agora, forneça os 'prints' técnicos para a IA completar o dossiê.")
-                temporada = st.text_input("Temporada de Referência*", placeholder="Ex: 2024-2025")
-                print_classificacao = st.file_uploader("1) Print da Tabela de Classificação Final*", help="Sugestão: No Sofascore ou FBref, capture a tabela de classificação completa da última temporada.", accept_multiple_files=True)
-                print_stats = st.file_uploader("2) Print das Estatísticas Avançadas*", help="Sugestão: No FBref, capture a tabela 'Squad Advanced Stats'.", accept_multiple_files=True)
+                st.write("Agora, forneça os 'prints' que demonstram consistência e dominância ao longo do tempo.")
+                
+                # --- NOVOS CAMPOS OTIMIZADOS ---
+                prints_campeoes = st.file_uploader("1) Print(s) do Histórico de Campeões (Década)*", help="Sugestão: Na Wikipedia, capture a lista dos campeões das últimas 10 temporadas.", accept_multiple_files=True)
+                prints_classificacoes = st.file_uploader("2) Print(s) das Classificações Finais (Últimas 3-5 Temporadas)*", help="Sugestão: No FBref ou Sofascore, capture as tabelas de classificação completas das últimas 3 a 5 temporadas (um print por temporada).", accept_multiple_files=True)
+                print_stats_avancadas = st.file_uploader("3) Print das Estatísticas Avançadas da Liga (Última Temporada)*", help="Sugestão: No FBref, capture a tabela 'Squad Advanced Stats' da última temporada para contexto recente.", accept_multiple_files=True)
 
                 if st.form_submit_button("Analisar Dados e Gerar Dossiê Final"):
-                    if not all([temporada, print_classificacao, print_stats]):
+                    if not all([prints_campeoes, prints_classificacoes, print_stats_avancadas]):
                         st.error("Por favor, preencha todos os campos obrigatórios (*).")
                     else:
                         with st.spinner("AGENTE DE DADOS a processar 'prints' e AGENTE DE INTELIGÊNCIA a finalizar o dossiê..."):
                             # Lógica de OCR
                             texto_ocr = ""
-                            grupos = {"TABELA DE CLASSIFICAÇÃO": print_classificacao, "ESTATÍSTICAS AVANÇADAS": print_stats}
+                            grupos = {
+                                "HISTÓRICO DE CAMPEÕES": prints_campeoes,
+                                "CLASSIFICAÇÕES RECENTES": prints_classificacoes,
+                                "ESTATÍSTICAS AVANÇADAS": print_stats_avancadas
+                            }
                             for nome, prints in grupos.items():
                                 texto_ocr += f"\n--- [DADOS DO UTILIZADOR: {nome}] ---\n"
                                 for p in prints:
@@ -146,26 +151,29 @@ if check_password():
                             # Construção do Prompt Final
                             contexto = st.session_state['contexto_liga']
                             prompt_final = f"""
-**PERSONA:** Você é um Analista de Futebol Sênior.
-**CONTEXTO:** Liga: {contexto['liga']}, País: {contexto['pais']}, Temporada: {temporada}
+**PERSONA:** Você é um Analista de Dados Quantitativo especializado em modelagem de performance desportiva.
 **DADOS DISPONÍVEIS:**
 1. **Análise Informativa (Gerada por si anteriormente):**
 {st.session_state['dossie_p1_resultado']}
 2. **Dados Técnicos Brutos (Extraídos de prints do utilizador):**
 {texto_ocr}
 **MISSÃO FINAL:**
-Use a **Análise Informativa** para a Parte 1 e os **Dados Técnicos Brutos** para a Parte 2 para gerar o dossiê consolidado e final, preenchendo o modelo de saída abaixo.
+Use a **Análise Informativa** para a Parte 1 e os **Dados Técnicos Brutos** para a Parte 2 para gerar o dossiê consolidado e final. Na Parte 2, calcule um 'Placar de Dominância' (5 pts para título na década, 3 pts para Top 2 recente, 1 pt para Top 4 recente), apresente a tabela e justifique a sua 'Playlist de Monitoramento' final.
 **MODELO DE SAÍDA:**
 ---
 ### **DOSSIÊ ESTRATÉGICO DE LIGA: {contexto['liga'].upper()}**
-**TEMPORADA:** {temporada} | **DATA:** {datetime.now().strftime('%d/%m/%Y')}
+**DATA:** {datetime.now().strftime('%d/%m/%Y')}
 ---
 #### **PARTE 1: VISÃO GERAL E HISTÓRICA**
 [Copie e cole a análise informativa que você já gerou aqui.]
-#### **PARTE 2: ANÁLISE TÉCNICA**
-* **Panorama da Temporada:** [Sua análise dos dados técnicos aqui.]
-* **Equipes Dominantes:** [Sua análise dos dados técnicos aqui.]
-#### **VEREDITO FINAL: PLAYLIST DE MONITORAMENTO**
+#### **PARTE 2: ANÁLISE TÉCNICA E IDENTIFICAÇÃO DE ALVOS**
+* **Placar de Dominância:**
+| Posição | Equipa | Pontuação |
+| :--- | :--- | :--- |
+| 1 | [Sua análise aqui] | [Pts] |
+...
+* **Análise do Analista:** [Sua justificativa aqui.]
+#### **VEREDITO FINAL: PLAYLIST DE MONITORAMENTO PARA O DOSSIÊ 2**
 * **1. [Equipe 1]**
 * **2. [Equipe 2]**
 * **3. [Equipe 3]**
@@ -180,9 +188,10 @@ Use a **Análise Informativa** para a Parte 1 e os **Dados Técnicos Brutos** pa
                 st.header("Dossiê Final Consolidado")
                 st.markdown(st.session_state['dossie_final_completo'])
                 if st.button("Limpar e Iniciar Nova Análise"):
-                    del st.session_state['dossie_p1_resultado']
-                    del st.session_state['contexto_liga']
-                    del st.session_state['dossie_final_completo']
+                    # Limpa todos os estados da sessão para recomeçar
+                    for key in list(st.session_state.keys()):
+                        if key not in ['password_correct']:
+                            del st.session_state[key]
                     st.rerun()
 
     with tab2:
