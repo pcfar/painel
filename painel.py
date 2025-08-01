@@ -139,7 +139,7 @@ if check_password():
                     with st.expander(f"Dados da Temporada {i}"):
                         temporada_ano = st.text_input(f"Temporada {i} (Ex: 2024-2025)*", key=f"ano_{i}")
                         prints_classificacao = st.file_uploader(f"Print(s) da Classificação para a Temporada {i}*", 
-                                                                help="Sugestão: No FBref ou Sofascore, capture a tabela de classificação completa, incluindo a legenda de qualificação europeia.", 
+                                                                help="Sugestão: No FBref, Sofascore ou Transfermarkt, capture a tabela de classificação completa, incluindo a legenda de qualificação europeia.", 
                                                                 accept_multiple_files=True, 
                                                                 key=f"prints_{i}")
                         # Armazena os dados apenas se ambos os campos estiverem preenchidos
