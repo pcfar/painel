@@ -55,7 +55,7 @@ def gerar_dossie_com_ia(prompt):
             st.error(f"Erro ao processar a resposta da IA: {e}")
             st.error(f"Resposta completa da API: {result if 'result' in locals() else 'Sem resultado'}")
             return None
-            # --- APLICAÇÃO PRINCIPAL ---
+# --- APLICAÇÃO PRINCIPAL ---
 if check_password():
     st.sidebar.success("Autenticado com sucesso.")
     st.title("SISTEMA DE INTELIGÊNCIA TÁTICA")
@@ -99,7 +99,7 @@ if check_password():
 **CONTEXTO:** Liga para Análise: {liga}, País: {pais}
 **MISSÃO:** Realize uma pesquisa aprofundada na web para criar a "PARTE 1" de um Dossiê Estratégico sobre a {liga}. O seu relatório deve ser atrativo, rico em informações e curiosidades.
 **DIRETRIZES DE PESQUISA:**
-1. História e Fundação; 2. Formato da Competição; 3. Dominância Histórica (última década); 4. Grandes Rivalidades; 5. Ídolos e Lendas; 6. Estilo de Jogo Característico; 7. Fatos e Curiosidades.
+1. História e Fundação; 2. Formato da Competição; 3. Dominância Histórica (última década); 4. Grandes Rivalidades; 5. Ídolos e Lendas; 6. Estilo de JJogo Característico; 7. Fatos e Curiosidades.
 **MODELO DE SAÍDA:**
 ---
 #### **PARTE 1: VISÃO GERAL E HISTÓRICA DA LIGA - {liga.upper()}**
@@ -125,35 +125,46 @@ if check_password():
             st.markdown("---")
             st.subheader("Parte 2: Análise Técnica para Identificar Clubes Dominantes")
             with st.form("form_dossie_1_p2"):
-                st.write("Agora, forneça os 'prints' que demonstram consistência e dominância ao longo do tempo para uma análise robusta.")
+                st.write("Agora, forneça os 'prints' das classificações da última década para uma análise de dominância robusta.")
                 
-                # --- CAMPO OTIMIZADO ---
-                prints_classificacoes = st.file_uploader("1) Print(s) das Classificações Finais (Últimas 10 Temporadas)*", help="Sugestão: No FBref ou Sofascore, capture as tabelas de classificação completas das últimas 10 temporadas (um print por temporada), incluindo a legenda de qualificação europeia.", accept_multiple_files=True)
+                # --- FORMULÁRIO GRANULAR PARA 10 TEMPORADAS ---
+                st.markdown("**Recolha de Dados da Década:**")
                 
-                if st.form_submit_button("Analisar Dados e Gerar Dossiê Final"):
-                    if not prints_classificacoes:
-                        st.error("Por favor, preencha o campo obrigatório (*).")
+                dados_temporadas = {}
+                # Loop para criar 10 campos de temporada
+                for i in range(1, 11):
+                    with st.expander(f"Dados da Temporada {i}"):
+                        temporada_ano = st.text_input(f"Temporada {i} (Ex: 2024-2025)*", key=f"ano_{i}")
+                        prints_classificacao = st.file_uploader(f"Print(s) da Classificação para a Temporada {i}*", 
+                                                                help="Sugestão: No FBref ou Sofascore, capture a tabela de classificação completa, incluindo a legenda de qualificação europeia.", 
+                                                                accept_multiple_files=True, 
+                                                                key=f"prints_{i}")
+                        if temporada_ano and prints_classificacao:
+                            dados_temporadas[temporada_ano] = prints_classificacao
+
+                if st.form_submit_button("Analisar Dados da Década e Gerar Dossiê Final"):
+                    if not dados_temporadas:
+                        st.error("Por favor, preencha os dados de pelo menos uma temporada.")
                     else:
                         with st.spinner("AGENTE DE DADOS a processar 'prints' e AGENTE DE INTELIGÊNCIA a finalizar o dossiê..."):
                             # Lógica de OCR
                             texto_ocr = ""
-                            grupos = { "CLASSIFICAÇÕES RECENTES": prints_classificacoes }
-                            for nome, prints in grupos.items():
-                                texto_ocr += f"\n--- [DADOS DO UTILIZADOR: {nome}] ---\n"
+                            for temporada, prints in dados_temporadas.items():
+                                texto_ocr += f"\n--- [DADOS DO UTILIZADOR PARA A TEMPORADA: {temporada}] ---\n"
                                 for p in prints:
                                     texto_ocr += pytesseract.image_to_string(Image.open(p), lang='por+eng') + "\n"
                             
                             # Construção do Prompt Final
                             contexto = st.session_state['contexto_liga']
                             prompt_final = f"""
-**PERSONA:** Você é um Analista de Dados Quantitativo especializado em modelagem de performance desportiva.
+**PERSONA:** Você é um Analista de Dados Quantitativo...
 **DADOS DISPONÍVEIS:**
 1. **Análise Informativa (Gerada por si anteriormente):**
 {st.session_state['dossie_p1_resultado']}
-2. **Dados Técnicos Brutos (Extraídos de prints do utilizador):**
+2. **Dados Técnicos Brutos (Extraídos de prints do utilizador para várias temporadas):**
 {texto_ocr}
 **MISSÃO FINAL:**
-Use a **Análise Informativa** para a Parte 1 e os **Dados Técnicos Brutos** para a Parte 2 para gerar o dossiê consolidado e final. Na Parte 2, analise as tabelas de classificação para inferir títulos, posições no Top 4 e qualificações europeias. Calcule um 'Placar de Dominância' (5 pts para título, 3 pts para Top 2, 1 pt para Top 4, +2 pts bónus para qualificação para a Champions League, +1 pt bónus para Liga Europa), apresente a tabela e justifique a sua 'Playlist de Monitoramento' final.
+Use a **Análise Informativa** para a Parte 1 e os **Dados Técnicos Brutos** para a Parte 2 para gerar o dossiê consolidado. Na Parte 2, analise as tabelas de classificação de cada temporada para inferir títulos, posições no Top 4 e qualificações europeias. Calcule um 'Placar de Dominância' (5 pts para título, 3 pts para Top 2, 1 pt para Top 4, +2 pts bónus para Champions, +1 pt bónus para Liga Europa), apresente a tabela e justifique a sua 'Playlist de Monitoramento' final.
 **MODELO DE SAÍDA:**
 ---
 ### **DOSSIÊ ESTRATÉGICO DE LIGA: {contexto['liga'].upper()}**
@@ -183,7 +194,6 @@ Use a **Análise Informativa** para a Parte 1 e os **Dados Técnicos Brutos** pa
                 st.header("Dossiê Final Consolidado")
                 st.markdown(st.session_state['dossie_final_completo'])
                 if st.button("Limpar e Iniciar Nova Análise"):
-                    # Limpa todos os estados da sessão para recomeçar
                     for key in list(st.session_state.keys()):
                         if key not in ['password_correct']:
                             del st.session_state[key]
@@ -195,4 +205,3 @@ Use a **Análise Informativa** para a Parte 1 e os **Dados Técnicos Brutos** pa
         st.info("Formulário para o Dossiê 3 em desenvolvimento.")
     with tab4:
         st.info("Formulário para o Dossiê 4 em desenvolvimento.")
-
