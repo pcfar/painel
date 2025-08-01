@@ -137,7 +137,7 @@ if check_password():
                             # Lógica de OCR
                             texto_ocr = ""
                             grupos = {
-                                "CLASSIFICAÇÕES RECENTES": prints_classificacoes
+                                "CLASSIFICAÇÕES RECENTES": prints_classificacoes,
                             }
                             for nome, prints in grupos.items():
                                 texto_ocr += f"\n--- [DADOS DO UTILIZADOR: {nome}] ---\n"
