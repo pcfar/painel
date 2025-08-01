@@ -81,19 +81,20 @@ if check_password():
         st.subheader("Criar Dossiê 1: Análise Geral da Liga (Fluxo Interativo)")
 
         # --- FASE 1: GERAÇÃO DO PANORAMA DA LIGA ---
-        with st.form("form_dossie_1_p1"):
-            st.markdown("**Parte 1: Panorama da Liga (Pesquisa Autónoma da IA)**")
-            st.write("Forneça o contexto para a IA gerar a análise informativa inicial.")
-            
-            liga = st.text_input("Liga (nome completo)*", placeholder="Ex: Eredivisie")
-            pais = st.text_input("País*", placeholder="Ex: Holanda")
-            
-            if st.form_submit_button("Gerar Panorama da Liga"):
-                if not all([liga, pais]):
-                    st.error("Por favor, preencha todos os campos obrigatórios (*).")
-                else:
-                    with st.spinner("AGENTE DE INTELIGÊNCIA a pesquisar e redigir o panorama da liga..."):
-                        prompt_p1 = f"""
+        if 'dossie_p1_resultado' not in st.session_state:
+            with st.form("form_dossie_1_p1"):
+                st.markdown("**Parte 1: Panorama da Liga (Pesquisa Autónoma da IA)**")
+                st.write("Forneça o contexto para a IA gerar a análise informativa inicial.")
+                
+                liga = st.text_input("Liga (nome completo)*", placeholder="Ex: Eredivisie")
+                pais = st.text_input("País*", placeholder="Ex: Holanda")
+                
+                if st.form_submit_button("Gerar Panorama da Liga"):
+                    if not all([liga, pais]):
+                        st.error("Por favor, preencha todos os campos obrigatórios (*).")
+                    else:
+                        with st.spinner("AGENTE DE INTELIGÊNCIA a pesquisar e redigir o panorama da liga..."):
+                            prompt_p1 = f"""
 **PERSONA:** Você é um Jornalista Investigativo e Historiador de Futebol...
 **CONTEXTO:** Liga para Análise: {liga}, País: {pais}
 **MISSÃO:** Realize uma pesquisa aprofundada na web para criar a "PARTE 1" de um Dossiê Estratégico sobre a {liga}. O seu relatório deve ser atrativo, rico em informações e curiosidades.
@@ -110,10 +111,10 @@ if check_password():
 * **Curiosidades e Recordes:** [Seus factos aqui]
 ---
 """
-                        resultado_p1 = gerar_dossie_com_ia(prompt_p1)
-                        if resultado_p1:
-                            st.session_state['dossie_p1_resultado'] = resultado_p1
-                            st.session_state['contexto_liga'] = {'liga': liga, 'pais': pais}
+                            resultado_p1 = gerar_dossie_com_ia(prompt_p1)
+                            if resultado_p1:
+                                st.session_state['dossie_p1_resultado'] = resultado_p1
+                                st.session_state['contexto_liga'] = {'liga': liga, 'pais': pais}
         
         # --- EXIBIÇÃO DA PARTE 1 E FORMULÁRIO DA PARTE 2 ---
         if 'dossie_p1_resultado' in st.session_state:
@@ -124,9 +125,9 @@ if check_password():
             st.markdown("---")
             st.subheader("Parte 2: Análise Técnica para Identificar Clubes Dominantes")
             with st.form("form_dossie_1_p2"):
-                st.write("Agora, forneça os 'prints' que demonstram consistência e dominância ao longo do tempo para uma análise robusta.")
+                st.write("Agora, forneça os 'prints' das classificações da última década para uma análise de dominância robusta.")
                 
-                # --- NOVOS CAMPOS OTIMIZADOS ---
+                # --- CAMPO OTIMIZADO ---
                 prints_classificacoes = st.file_uploader("1) Print(s) das Classificações Finais (Últimas 10 Temporadas)*", help="Sugestão: No FBref ou Sofascore, capture as tabelas de classificação completas das últimas 10 temporadas (um print por temporada), incluindo a legenda de qualificação europeia.", accept_multiple_files=True)
                 
                 if st.form_submit_button("Analisar Dados e Gerar Dossiê Final"):
@@ -136,9 +137,7 @@ if check_password():
                         with st.spinner("AGENTE DE DADOS a processar 'prints' e AGENTE DE INTELIGÊNCIA a finalizar o dossiê..."):
                             # Lógica de OCR
                             texto_ocr = ""
-                            grupos = {
-                                "CLASSIFICAÇÕES RECENTES": prints_classificacoes,
-                            }
+                            grupos = { "CLASSIFICAÇÕES RECENTES": prints_classificacoes }
                             for nome, prints in grupos.items():
                                 texto_ocr += f"\n--- [DADOS DO UTILIZADOR: {nome}] ---\n"
                                 for p in prints:
