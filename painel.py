@@ -55,7 +55,7 @@ def gerar_dossie_com_ia(prompt):
             st.error(f"Erro ao processar a resposta da IA: {e}")
             st.error(f"Resposta completa da API: {result if 'result' in locals() else 'Sem resultado'}")
             return None
-# --- APLICAÇÃO PRINCIPAL ---
+            # --- APLICAÇÃO PRINCIPAL ---
 if check_password():
     st.sidebar.success("Autenticado com sucesso.")
     st.title("SISTEMA DE INTELIGÊNCIA TÁTICA")
@@ -125,7 +125,7 @@ if check_password():
             st.markdown("---")
             st.subheader("Parte 2: Análise Técnica para Identificar Clubes Dominantes")
             with st.form("form_dossie_1_p2"):
-                st.write("Agora, forneça os 'prints' das classificações da última década para uma análise de dominância robusta.")
+                st.write("Agora, forneça os 'prints' que demonstram consistência e dominância ao longo do tempo para uma análise robusta.")
                 
                 # --- CAMPO OTIMIZADO ---
                 prints_classificacoes = st.file_uploader("1) Print(s) das Classificações Finais (Últimas 10 Temporadas)*", help="Sugestão: No FBref ou Sofascore, capture as tabelas de classificação completas das últimas 10 temporadas (um print por temporada), incluindo a legenda de qualificação europeia.", accept_multiple_files=True)
@@ -195,3 +195,4 @@ Use a **Análise Informativa** para a Parte 1 e os **Dados Técnicos Brutos** pa
         st.info("Formulário para o Dossiê 3 em desenvolvimento.")
     with tab4:
         st.info("Formulário para o Dossiê 4 em desenvolvimento.")
+
