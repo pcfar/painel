@@ -95,20 +95,23 @@ if check_password():
                     else:
                         with st.spinner("AGENTE DE INTELIGÊNCIA a pesquisar e redigir o panorama da liga..."):
                             prompt_p1 = f"""
-**PERSONA:** Você é um Jornalista Investigativo e Historiador de Futebol...
+**PERSONA:** Você é um Jornalista Investigativo e Historiador de Futebol, com um talento para encontrar detalhes que cativem o leitor.
 **CONTEXTO:** Liga para Análise: {liga}, País: {pais}
-**MISSÃO:** Realize uma pesquisa aprofundada na web para criar a "PARTE 1" de um Dossiê Estratégico sobre a {liga}. O seu relatório deve ser atrativo, rico em informações e curiosidades.
-**DIRETRIZES DE PESQUISA:**
-1. História e Fundação; 2. Formato da Competição; 3. Dominância Histórica (última década); 4. Grandes Rivalidades; 5. Ídolos e Lendas; 6. Estilo de JJogo Característico; 7. Fatos e Curiosidades.
+**MISSÃO:** Realize uma pesquisa aprofundada na web para criar a "PARTE 1" de um Dossiê Estratégico sobre a {liga}. O seu relatório deve ser rico em informações, curiosidades e detalhes específicos.
+**DIRETRIZES DE PESQUISA (Busque por estes tópicos e SEJA ESPECÍFICO):**
+1. Dominância Histórica: Quem são os maiores campeões e como se distribui o poder na última década.
+2. Grandes Rivalidades: Quais são os clássicos mais importantes e o que eles representam.
+3. Ídolos e Lendas: Mencione 2-3 jogadores históricos que marcaram a liga, **indicando os clubes onde se destacaram**.
+4. Estilo de Jogo Característico: A liga é conhecida por ser ofensiva, defensiva, tática? Dê exemplos.
+5. Fatos e Curiosidades: Encontre 2-3 factos únicos ou recordes impressionantes, **citando os clubes ou jogadores envolvidos**.
 **MODELO DE SAÍDA:**
 ---
 #### **PARTE 1: VISÃO GERAL E HISTÓRICA DA LIGA - {liga.upper()}**
-* **Perfil da Liga:** [Seu resumo aqui]
-* **Formato:** [Sua descrição aqui]
-* **Dominância na Década:** [Sua análise aqui]
-* **Principais Rivalidades:** [Sua descrição aqui]
-* **Lendas da Liga:** [Sua menção aqui]
-* **Curiosidades e Recordes:** [Seus factos aqui]
+* **Perfil da Liga:** [Resumo sobre o estilo de jogo.]
+* **Dominância na Década:** [Análise da distribuição de poder.]
+* **Principais Rivalidades:** [Descrição dos clássicos.]
+* **Lendas da Liga:** [Menção aos jogadores e seus clubes.]
+* **Curiosidades e Recordes:** [Apresentação dos factos interessantes com detalhes.]
 ---
 """
                             resultado_p1 = gerar_dossie_com_ia(prompt_p1)
@@ -125,7 +128,7 @@ if check_password():
             st.markdown("---")
             st.subheader("Parte 2: Análise Técnica para Identificar Clubes Dominantes")
             with st.form("form_dossie_1_p2"):
-                st.write("Agora, forneça os 'prints' das classificações da última década para uma análise de dominância robusta.")
+                st.write("Para uma análise precisa da dominância na última década, por favor, forneça a tabela de classificação final para cada uma das últimas 10 temporadas.")
                 
                 # --- FORMULÁRIO GRANULAR PARA 10 TEMPORADAS ---
                 st.markdown("**Recolha de Dados da Década:**")
@@ -139,6 +142,7 @@ if check_password():
                                                                 help="Sugestão: No FBref ou Sofascore, capture a tabela de classificação completa, incluindo a legenda de qualificação europeia.", 
                                                                 accept_multiple_files=True, 
                                                                 key=f"prints_{i}")
+                        # Armazena os dados apenas se ambos os campos estiverem preenchidos
                         if temporada_ano and prints_classificacao:
                             dados_temporadas[temporada_ano] = prints_classificacao
 
