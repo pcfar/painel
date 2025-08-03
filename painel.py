@@ -55,7 +55,7 @@ def gerar_dossie_com_ia(prompt):
             st.error(f"Erro ao processar a resposta da IA: {e}")
             st.error(f"Resposta completa da API: {result if 'result' in locals() else 'Sem resultado'}")
             return None
-            # --- APLICAÇÃO PRINCIPAL ---
+# --- APLICAÇÃO PRINCIPAL ---
 if check_password():
     st.sidebar.success("Autenticado com sucesso.")
     st.title("SISTEMA DE INTELIGÊNCIA TÁTICA")
