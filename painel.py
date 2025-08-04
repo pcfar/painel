@@ -15,12 +15,16 @@ st.set_page_config(page_title="Painel Tático Final", page_icon="🧠", layout="
 
 # --- SISTEMA DE SENHA ÚNICA ---
 def check_password():
-    if st.session_state.get("password_correct", False): return True
+    if st.session_state.get("password_correct", False):
+        return True
+
     def password_entered():
         if st.session_state.get("password") == st.secrets.get("APP_PASSWORD"):
             st.session_state["password_correct"] = True
             del st.session_state["password"]
-        else: st.session_state["password_correct"] = False
+        else:
+            st.session_state["password_correct"] = False
+
     st.text_input("Password", type="password", on_change=password_entered, key="password")
     if "password_correct" in st.session_state and not st.session_state["password_correct"]:
         st.error("😕 Senha incorreta.")
@@ -32,7 +36,7 @@ def gerar_dossie_com_ia(prompt):
     if not api_key:
         st.error("Chave da API do Gemini não encontrada nos segredos (Secrets).")
         return None
-    
+
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}"
     headers = {'Content-Type': 'application/json'}
     data = {"contents": [{"parts": [{"text": prompt}]}]}
@@ -40,10 +44,16 @@ def gerar_dossie_com_ia(prompt):
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            response = requests.post(url, headers=headers, data=json.dumps(data), timeout=120)
+            response = requests.post(url, headers=headers, data=json.dumps(data), timeout=180) # Aumentado o timeout
             response.raise_for_status()
             result = response.json()
-            return result['candidates'][0]['content']['parts'][0]['text']
+            # Validação mais robusta da resposta
+            if 'candidates' in result and result['candidates'] and 'content' in result['candidates'][0] and 'parts' in result['candidates'][0]['content'] and result['candidates'][0]['content']['parts']:
+                return result['candidates'][0]['content']['parts'][0]['text']
+            else:
+                st.error(f"Resposta da IA recebida, mas em formato inesperado.")
+                st.json(result)
+                return None
         except requests.exceptions.RequestException as e:
             st.error(f"Erro na chamada à API (tentativa {attempt + 1}/{max_retries}): {e}")
             if attempt < max_retries - 1:
@@ -51,10 +61,11 @@ def gerar_dossie_com_ia(prompt):
             else:
                 st.error(f"Resposta da API: {response.text if 'response' in locals() else 'Sem resposta'}")
                 return None
-        except (KeyError, IndexError) as e:
+        except (KeyError, IndexError, json.JSONDecodeError) as e:
             st.error(f"Erro ao processar a resposta da IA: {e}")
             st.error(f"Resposta completa da API: {result if 'result' in locals() else 'Sem resultado'}")
             return None
+
 # --- APLICAÇÃO PRINCIPAL ---
 if check_password():
     st.sidebar.success("Autenticado com sucesso.")
@@ -67,8 +78,8 @@ if check_password():
             g = Github(st.secrets["GITHUB_TOKEN"])
             repo = g.get_repo("pcfar/painel")
             return repo
-        except Exception:
-            st.error("Erro ao conectar com o GitHub.")
+        except Exception as e:
+            st.error(f"Erro ao conectar com o GitHub: {e}")
             st.stop()
     repo = get_github_connection()
 
@@ -118,9 +129,10 @@ if check_password():
                             if resultado_p1:
                                 st.session_state['dossie_p1_resultado'] = resultado_p1
                                 st.session_state['contexto_liga'] = {'liga': liga, 'pais': pais}
+                                st.rerun() # Força o recarregamento para mostrar a próxima fase
         
-        # --- EXIBIÇÃO DA PARTE 1 E FORMULÁRIO DA PARTE 2 ---
-        if 'dossie_p1_resultado' in st.session_state:
+        # --- EXIBIÇÃO DA PARTE 1 E FORMULÁRIO DA PARTE 2 (LÓGICA OTIMIZADA) ---
+        if 'dossie_p1_resultado' in st.session_state and 'dossie_final_completo' not in st.session_state:
             st.markdown("---")
             st.success("Parte 1 (Panorama da Liga) gerada com sucesso!")
             st.markdown(st.session_state['dossie_p1_resultado'])
@@ -128,80 +140,124 @@ if check_password():
             st.markdown("---")
             st.subheader("Parte 2: Análise Técnica para Identificar Clubes Dominantes")
             with st.form("form_dossie_1_p2"):
-                st.write("Para uma análise precisa da dominância na última década, por favor, forneça a tabela de classificação final para cada uma das últimas 10 temporadas.")
+                st.write("Para uma análise precisa da dominância na última década, por favor, faça o upload das imagens das tabelas de classificação final para cada uma das últimas temporadas que deseja analisar.")
                 
-                # --- FORMULÁRIO GRANULAR PARA 10 TEMPORADAS ---
+                # --- CAMPO ÚNICO PARA UPLOAD DE MÚLTIPLOS ARQUIVOS ---
                 st.markdown("**Recolha de Dados da Década:**")
                 
-                dados_temporadas = {}
-                # Loop para criar 10 campos de temporada
-                for i in range(1, 11):
-                    with st.expander(f"Dados da Temporada {i}"):
-                        temporada_ano = st.text_input(f"Temporada {i} (Ex: 2024-2025)*", key=f"ano_{i}")
-                        prints_classificacao = st.file_uploader(f"Print(s) da Classificação para a Temporada {i}*", 
-                                                                help="Sugestão: No FBref, Sofascore ou Transfermarkt, capture a tabela de classificação completa, incluindo a legenda de qualificação europeia.", 
-                                                                accept_multiple_files=True, 
-                                                                key=f"prints_{i}")
-                        # Armazena os dados apenas se ambos os campos estiverem preenchidos
-                        if temporada_ano and prints_classificacao:
-                            dados_temporadas[temporada_ano] = prints_classificacao
+                prints_classificacao = st.file_uploader(
+                    "Prints das Classificações das Últimas Temporadas*",
+                    help="Sugestão: Capture as tabelas de classificação completas (FBref, Sofascore, etc.). A IA tentará identificar o ano de cada tabela a partir do conteúdo da imagem.",
+                    accept_multiple_files=True,
+                    key="prints_gerais"
+                )
 
-                if st.form_submit_button("Analisar Dados da Década e Gerar Dossiê Final"):
-                    if not dados_temporadas:
-                        st.error("Por favor, preencha os dados de pelo menos uma temporada.")
+                if st.form_submit_button("Analisar Dados e Gerar Dossiê Final"):
+                    if not prints_classificacao:
+                        st.error("Por favor, faça o upload de pelo menos uma imagem de classificação.")
                     else:
-                        with st.spinner("AGENTE DE DADOS a processar 'prints' e AGENTE DE INTELIGÊNCIA a finalizar o dossiê..."):
-                            # Lógica de OCR
-                            texto_ocr = ""
-                            for temporada, prints in dados_temporadas.items():
-                                texto_ocr += f"\n--- [DADOS DO UTILIZADOR PARA A TEMPORADA: {temporada}] ---\n"
-                                for p in prints:
-                                    texto_ocr += pytesseract.image_to_string(Image.open(p), lang='por+eng') + "\n"
+                        with st.spinner("AGENTE DE DADOS a processar 'prints' e AGENTE DE INTELIGÊZA a finalizar o dossiê..."):
+                            # Lógica de OCR otimizada
+                            texto_ocr_formatado = ""
+                            st.write(f"A processar {len(prints_classificacao)} imagens...")
+                            progress_bar = st.progress(0)
+                            for i, p in enumerate(prints_classificacao):
+                                texto_ocr_formatado += f"\n--- INÍCIO DADOS IMAGEM {i+1} ---\n"
+                                try:
+                                    img = Image.open(p)
+                                    texto_ocr_formatado += pytesseract.image_to_string(img, lang='por+eng') + "\n"
+                                except Exception as e:
+                                    texto_ocr_formatado += f"[ERRO AO LER IMAGEM {i+1}: {e}]\n"
+                                texto_ocr_formatado += f"--- FIM DADOS IMAGEM {i+1} ---\n"
+                                progress_bar.progress((i + 1) / len(prints_classificacao))
                             
-                            # Construção do Prompt Final
+                            # Construção do Prompt Final Otimizado
                             contexto = st.session_state['contexto_liga']
                             prompt_final = f"""
-**PERSONA:** Você é um Analista de Dados Quantitativo...
-**DADOS DISPONÍVEIS:**
-1. **Análise Informativa (Gerada por si anteriormente):**
+**PERSONA:** Você é um Analista de Dados Quantitativo e um Especialista em Futebol, com uma capacidade excecional para extrair informações de dados não estruturados e apresentar conclusões claras e objetivas.
+
+**CONTEXTO:** Você recebeu duas fontes de informação para criar um dossiê sobre a liga '{contexto['liga']}':
+1.  **Análise Qualitativa (Parte 1):** Um resumo histórico e cultural da liga, que você mesmo gerou.
+2.  **Dados Brutos de OCR (Parte 2):** Um conjunto de textos extraídos de várias imagens de tabelas de classificação. Cada bloco de texto, separado por "--- INÍCIO/FIM DADOS IMAGEM ---", representa uma temporada diferente. Estes dados podem conter ruído e erros de extração.
+
+**MISSÃO FINAL:** Sua missão é consolidar estas informações num único dossiê coerente. Você deve usar os dados brutos de OCR para realizar uma análise quantitativa e, em seguida, apresentar um veredito.
+
+**PROCESSO PASSO A PASSO (SIGA RIGOROSAMENTE):**
+
+**PASSO 1: Extração e Estruturação dos Dados de OCR**
+* Para cada bloco de texto de imagem, a sua primeira tarefa é identificar a **temporada** (ex: 2022/2023, 2021-22). Procure por anos no texto.
+* Em seguida, extraia a classificação final. Foque-se em: **Posição, Nome da Equipa**.
+* Se o texto de uma imagem for ilegível ou não contiver uma tabela de classificação, ignore-o e mencione que os dados daquela imagem não puderam ser processados.
+
+**PASSO 2: Cálculo do 'Placar de Dominância'**
+* Depois de estruturar os dados de todas as temporadas legíveis, crie uma pontuação para cada equipa com base na seguinte regra:
+    * **1º Lugar (Campeão):** 5 pontos
+    * **2º Lugar:** 3 pontos
+    * **3º ou 4º Lugar:** 1 ponto
+* Some os pontos de cada equipa ao longo de todas as temporadas analisadas.
+
+**PASSO 3: Geração do Dossiê Final**
+* Use o modelo de saída abaixo para estruturar a sua resposta.
+* **Parte 1:** Copie na íntegra a análise qualitativa que você já possui.
+* **Parte 2:**
+    * Apresente a tabela do **'Placar de Dominância'** que você calculou, ordenada da maior para a menor pontuação.
+    * Escreva uma breve **'Análise do Analista'**, explicando as conclusões tiradas da tabela. Justifique por que certas equipas dominaram, se houve surpresas ou se o poder é bem distribuído.
+* **Veredito Final:** Com base em TUDO (análise qualitativa e quantitativa), liste as 3 a 5 equipas mais relevantes para monitorização. Justifique brevemente cada escolha.
+
+**DADOS DISPONÍVEIS PARA A SUA ANÁLISE:**
+
+**1. Análise Qualitativa (Parte 1):**
 {st.session_state['dossie_p1_resultado']}
-2. **Dados Técnicos Brutos (Extraídos de prints do utilizador para várias temporadas):**
-{texto_ocr}
-**MISSÃO FINAL:**
-Use a **Análise Informativa** para a Parte 1 e os **Dados Técnicos Brutos** para a Parte 2 para gerar o dossiê consolidado. Na Parte 2, analise as tabelas de classificação de cada temporada para inferir títulos, posições no Top 4 e qualificações europeias. Calcule um 'Placar de Dominância' (5 pts para título, 3 pts para Top 2, 1 pt para Top 4, +2 pts bónus para Champions, +1 pt bónus para Liga Europa), apresente a tabela e justifique a sua 'Playlist de Monitoramento' final.
-**MODELO DE SAÍDA:**
+
+**2. Dados Brutos de OCR (Parte 2):**
+{texto_ocr_formatado}
+
+**MODELO DE SAÍDA OBRIGATÓRIO:**
 ---
 ### **DOSSIÊ ESTRATÉGICO DE LIGA: {contexto['liga'].upper()}**
-**DATA:** {datetime.now().strftime('%d/%m/%Y')}
+**DATA DE GERAÇÃO:** {datetime.now().strftime('%d/%m/%Y')}
 ---
 #### **PARTE 1: VISÃO GERAL E HISTÓRICA**
-[Copie e cole a análise informativa que você já gerou aqui.]
+[Copie e cole a análise informativa da Parte 1 aqui, mantendo a formatação original.]
+---
 #### **PARTE 2: ANÁLISE TÉCNICA E IDENTIFICAÇÃO DE ALVOS**
-* **Placar de Dominância (Última Década):**
-| Posição | Equipa | Pontuação |
+
+**Placar de Dominância (Baseado nos dados fornecidos):**
+| Posição | Equipa | Pontuação Total |
 | :--- | :--- | :--- |
 | 1 | [Sua análise aqui] | [Pts] |
-...
-* **Análise do Analista:** [Sua justificativa aqui.]
-#### **VEREDITO FINAL: PLAYLIST DE MONITORAMENTO PARA O DOSSIÊ 2**
-* **1. [Equipe 1]**
-* **2. [Equipe 2]**
-* **3. [Equipe 3]**
+| 2 | [Sua análise aqui] | [Pts] |
+| ... | ... | ... |
+
+**Análise do Analista:**
+[A sua análise e justificativa aqui. Comente os resultados da tabela de dominância. Ex: "O clube X demonstra uma clara hegemonia, conquistando o título em Y das Z temporadas analisadas. A equipa Y surge como a principal concorrente, mantendo-se consistentemente no Top 2..."]
+
+---
+#### **VEREDITO FINAL: PLAYLIST DE MONITORAMENTO**
+* **1. [Equipa 1]:** [Breve justificativa baseada na sua análise completa.]
+* **2. [Equipa 2]:** [Breve justificativa baseada na sua análise completa.]
+* **3. [Equipa 3]:** [Breve justificativa baseada na sua análise completa.]
 ---
 """
                             dossie_final = gerar_dossie_com_ia(prompt_final)
                             if dossie_final:
                                 st.session_state['dossie_final_completo'] = dossie_final
-            
-            if 'dossie_final_completo' in st.session_state:
-                st.markdown("---")
-                st.header("Dossiê Final Consolidado")
-                st.markdown(st.session_state['dossie_final_completo'])
-                if st.button("Limpar e Iniciar Nova Análise"):
-                    for key in list(st.session_state.keys()):
-                        if key not in ['password_correct']:
-                            del st.session_state[key]
-                    st.rerun()
+                                st.rerun()
+
+        # --- EXIBIÇÃO DO DOSSIÊ FINAL ---
+        if 'dossie_final_completo' in st.session_state:
+            st.markdown("---")
+            st.header("Dossiê Final Consolidado")
+            st.success("Dossiê gerado com sucesso!")
+            st.markdown(st.session_state['dossie_final_completo'])
+            if st.button("Limpar e Iniciar Nova Análise"):
+                # Guarda o estado da senha
+                password_state = st.session_state.get("password_correct", False)
+                # Limpa tudo
+                st.session_state.clear()
+                # Restaura o estado da senha
+                st.session_state["password_correct"] = password_state
+                st.rerun()
 
     with tab2:
         st.info("Formulário para o Dossiê 2 em desenvolvimento.")
