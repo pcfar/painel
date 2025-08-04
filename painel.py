@@ -11,7 +11,6 @@ import time
 import base64
 import pandas as pd
 import altair as alt
-import re
 
 # --- Configuração da Página ---
 st.set_page_config(page_title="Painel Tático Final", page_icon="📊", layout="wide")
@@ -71,92 +70,104 @@ if check_password():
         st.info("O Dossiê de Liga está funcional.")
 
     with tab2:
-        st.subheader("Criar Dossiê 2: Análise Profunda de Clube v6.0")
+        st.subheader("Criar Dossiê 2: Análise Profunda de Clube (Modelo Print-First)")
 
-        if 'club_dossier_step_v6' not in st.session_state:
-            st.session_state.club_dossier_step_v6 = 1
+        # Inicializa o estado do fluxo de trabalho
+        if 'club_dossier_step_pf' not in st.session_state:
+            st.session_state.club_dossier_step_pf = 1
 
-        # ETAPA 1: DEFINIR ALVO E PLANTEIS
-        if st.session_state.club_dossier_step_v6 == 1:
-            with st.form("form_clube_etapa1_v6"):
+        # ETAPA 1: DEFINIR ALVO E PRINTS DOS PLANTEIS
+        if st.session_state.club_dossier_step_pf == 1:
+            with st.form("form_clube_etapa1_pf"):
                 st.markdown("**ETAPA 1: DEFINIR O ALVO E OS PLANTEIS**")
                 equipa_nome = st.text_input("Nome da Equipa Alvo*", placeholder="Ex: Manchester City")
-                link_plantel_anterior = st.text_input("Link do Plantel (Temporada Anterior)*", placeholder="Ex: https://www.transfermarkt.pt/.../2023")
-                link_plantel_atual = st.text_input("Link do Plantel (Temporada Atual)*", placeholder="Ex: https://www.transfermarkt.pt/.../2024")
+                
+                st.file_uploader("Carregar Print(s) do Plantel (Temporada Anterior)*", 
+                                 accept_multiple_files=True, 
+                                 key="prints_plantel_anterior",
+                                 help="Tire um ou mais prints da sua fonte de dados para o plantel da época passada (ex: 24/25).")
+                
+                st.file_uploader("Carregar Print(s) do Plantel (Nova Temporada)*", 
+                                 accept_multiple_files=True, 
+                                 key="prints_plantel_atual",
+                                 help="Tire um ou mais prints da sua fonte de dados mais fiável para o plantel da nova época (ex: 25/26).")
                 
                 if st.form_submit_button("Analisar Transferências"):
-                    if not all([equipa_nome, link_plantel_anterior, link_plantel_atual]):
-                        st.error("Por favor, preencha todos os campos obrigatórios.")
+                    if not all([equipa_nome, st.session_state.prints_plantel_anterior, st.session_state.prints_plantel_atual]):
+                        st.error("Por favor, preencha o nome da equipa e carregue os prints de ambos os planteis.")
                     else:
-                        st.session_state.equipa_alvo_v6 = equipa_nome
-                        st.session_state.link_anterior_v6 = link_plantel_anterior
-                        st.session_state.link_atual_v6 = link_plantel_atual
-                        st.session_state.club_dossier_step_v6 = 2
+                        st.session_state.equipa_alvo_pf = equipa_nome
+                        st.session_state.club_dossier_step_pf = 2
                         st.rerun()
 
         # ETAPA 2: ANÁLISE DE TRANSFERÊNCIAS E APROFUNDAMENTO INDIVIDUAL
-        if st.session_state.club_dossier_step_v6 == 2:
+        if st.session_state.club_dossier_step_pf == 2:
             with st.spinner(f"AGENTE DE INTELIGÊNCIA a comparar os planteis..."):
+                
+                imagens_bytes_anterior = [p.getvalue() for p in st.session_state.prints_plantel_anterior]
+                imagens_bytes_atual = [p.getvalue() for p in st.session_state.prints_plantel_atual]
+                todas_imagens = imagens_bytes_anterior + imagens_bytes_atual
+
                 prompt_transferencias = f"""
-**TAREFA:** Aceda aos dois links de planteis do Transfermarkt e compare-os.
-- Link Anterior: {st.session_state.link_anterior_v6}
-- Link Atual: {st.session_state.link_atual_v6}
+**TAREFA:** Analise os dois conjuntos de imagens de planteis fornecidos e compare-os.
+- O primeiro conjunto de imagens representa o plantel da temporada anterior.
+- O segundo conjunto de imagens representa o plantel da nova temporada.
 
 **ALGORITMO:**
-1.  Identifique TODAS as chegadas e TODAS as saídas.
-2.  Escreva a secção "1. EVOLUÇÃO DO PLANTEL" em Markdown, incluindo a sua análise de impacto.
-3.  **IMPORTANTE:** Após o Markdown, adicione um separador `---JSON_CHEGADAS---` e depois um bloco de código JSON com uma lista dos nomes dos jogadores que chegaram. Ex: {{"chegadas": ["Jogador A", "Jogador B"]}}
+1.  Leia os nomes dos jogadores de ambos os conjuntos de imagens.
+2.  Compare as duas listas de nomes para identificar TODAS as chegadas e TODAS as saídas.
+3.  Escreva a secção "1. EVOLUÇÃO DO PLANTEL" em Markdown, incluindo a sua análise de impacto.
+4.  **IMPORTANTE:** Após o Markdown, adicione um separador `---JSON_CHEGADAS---` e depois um bloco de código JSON com uma lista dos nomes dos jogadores que chegaram. Ex: {{"chegadas": ["Jogador A", "Jogador B"]}}
 """
-                analise_transferencias_raw = gerar_resposta_ia(prompt_transferencias)
+                analise_transferencias_raw = gerar_resposta_ia(prompt_transferencias, todas_imagens)
                 
                 if analise_transferencias_raw and "---JSON_CHEGADAS---" in analise_transferencias_raw:
                     parts = analise_transferencias_raw.split("---JSON_CHEGADAS---")
-                    st.session_state.analise_transferencias_md = parts[0]
+                    st.session_state.analise_transferencias_md_pf = parts[0]
                     
                     json_str = parts[1].strip()
                     try:
                         chegadas_data = json.loads(json_str)
-                        st.session_state.lista_chegadas = chegadas_data.get("chegadas", [])
+                        st.session_state.lista_chegadas_pf = chegadas_data.get("chegadas", [])
                     except json.JSONDecodeError:
-                        st.session_state.lista_chegadas = []
+                        st.session_state.lista_chegadas_pf = []
                 else:
-                    st.session_state.analise_transferencias_md = "Falha ao analisar as transferências. Verifique os links."
-                    st.session_state.lista_chegadas = []
+                    st.session_state.analise_transferencias_md_pf = "Falha ao analisar as transferências. Verifique os prints."
+                    st.session_state.lista_chegadas_pf = []
 
-                st.session_state.club_dossier_step_v6 = 3
+                st.session_state.club_dossier_step_pf = 3
                 st.rerun()
 
-        if st.session_state.club_dossier_step_v6 == 3:
+        if st.session_state.club_dossier_step_pf == 3:
             st.markdown("### Parte 1: Evolução do Plantel")
-            st.markdown(st.session_state.analise_transferencias_md)
+            st.markdown(st.session_state.analise_transferencias_md_pf)
             st.divider()
 
-            with st.form("form_clube_etapa2_v6"):
+            with st.form("form_clube_etapa2_pf"):
                 st.markdown("**ETAPA 2: APROFUNDAMENTO INDIVIDUAL (OPCIONAL)**")
                 st.info("Para quais das novas contratações você gostaria de fornecer dados para um 'Mini Dossiê'?")
                 
                 jogadores_selecionados = st.multiselect("Selecione os reforços a analisar:", 
-                                                       options=st.session_state.get('lista_chegadas', []))
+                                                       options=st.session_state.get('lista_chegadas_pf', []))
                 
-                st.session_state.prints_jogadores = {}
                 for jogador in jogadores_selecionados:
                     st.file_uploader(f"Carregar print de estatísticas para **{jogador}** (época anterior)", 
-                                     key=f"print_{jogador}", 
+                                     key=f"print_{jogador}_pf", 
                                      type=['png', 'jpg', 'jpeg'])
 
                 if st.form_submit_button("Próximo Passo: Dados Coletivos"):
-                    # Guarda os prints carregados
+                    st.session_state.prints_jogadores_pf = {}
                     for jogador in jogadores_selecionados:
-                        if st.session_state[f"print_{jogador}"]:
-                            st.session_state.prints_jogadores[jogador] = st.session_state[f"print_{jogador}"].getvalue()
+                        if st.session_state[f"print_{jogador}_pf"]:
+                            st.session_state.prints_jogadores_pf[jogador] = st.session_state[f"print_{jogador}_pf"].getvalue()
                     
-                    st.session_state.club_dossier_step_v6 = 4
+                    st.session_state.club_dossier_step_pf = 4
                     st.rerun()
 
         # ETAPA 3: COLETA DE DADOS COLETIVOS
-        if st.session_state.club_dossier_step_v6 == 4:
+        if st.session_state.club_dossier_step_pf == 4:
             st.markdown("### ETAPA 3: DADOS DE DESEMPENHO COLETIVO")
-            with st.form("form_clube_etapa3_v6"):
+            with st.form("form_clube_etapa3_pf"):
                 st.markdown("""
                 **Instruções:** Carregue os 3 prints sobre o desempenho da equipa na época passada.
                 - **Print A:** Visão Geral e Performance Ofensiva (FBref)
@@ -165,57 +176,53 @@ if check_password():
                 """)
                 st.file_uploader("Carregar Prints da Equipa (A, B e C)*", 
                                  accept_multiple_files=True, 
-                                 key="prints_equipa_v6")
+                                 key="prints_equipa_pf")
                 
                 if st.form_submit_button("Gerar Dossiê Final Completo"):
-                    if not st.session_state.prints_equipa_v6 or len(st.session_state.prints_equipa_v6) < 3:
+                    if not st.session_state.prints_equipa_pf or len(st.session_state.prints_equipa_pf) < 3:
                         st.error("Por favor, carregue os 3 prints da equipa.")
                     else:
-                        st.session_state.club_dossier_step_v6 = 5
+                        st.session_state.club_dossier_step_pf = 5
                         st.rerun()
 
         # ETAPA 4: GERAÇÃO FINAL
-        if st.session_state.club_dossier_step_v6 == 5:
+        if st.session_state.club_dossier_step_pf == 5:
             with st.spinner(f"AGENTE DE INTELIGÊNCIA a consolidar todos os dados e a redigir o dossiê final..."):
                 
-                # Prepara todas as imagens para a API
                 todas_imagens_bytes = []
                 prompt_imagens_info = []
 
-                # Adiciona prints dos jogadores individuais
-                for jogador, img_bytes in st.session_state.get('prints_jogadores', {}).items():
+                for jogador, img_bytes in st.session_state.get('prints_jogadores_pf', {}).items():
                     todas_imagens_bytes.append(img_bytes)
                     prompt_imagens_info.append(f"- A imagem para o 'Mini Dossiê' de **{jogador}** está incluída.")
 
-                # Adiciona prints da equipa
-                for i, print_file in enumerate(st.session_state.prints_equipa_v6):
+                for i, print_file in enumerate(st.session_state.prints_equipa_pf):
                     todas_imagens_bytes.append(print_file.getvalue())
-                    # Associa a imagem pela ordem de upload
                     letra_print = chr(ord('A') + i)
                     prompt_imagens_info.append(f"- A imagem do Print da Equipa **{letra_print}** está incluída.")
 
                 prompt_imagens_info_str = "\n".join(prompt_imagens_info)
 
                 prompt_final = f"""
-**TAREFA CRÍTICA:** Aja como um Analista de Futebol de elite. Com base em TODA a informação fornecida, redija um dossiê profundo e coeso sobre o '{st.session_state.equipa_alvo_v6}'.
+**TAREFA CRÍTICA:** Aja como um Analista de Futebol de elite. Com base em TODA a informação fornecida (análise de transferências pré-processada e dados visuais), redija um dossiê profundo e coeso sobre o '{st.session_state.equipa_alvo_pf}'.
 
 **INFORMAÇÃO DISPONÍVEL:**
 1.  **Análise de Transferências Inicial:**
-    {st.session_state.analise_transferencias_md}
+    {st.session_state.analise_transferencias_md_pf}
 2.  **Dados Visuais (Prints):**
     {prompt_imagens_info_str}
 
 **ALGORITMO DE EXECUÇÃO:**
 1.  **Mini Dossiês:** Para cada jogador com um print fornecido, analise as suas estatísticas da época passada e escreva o "Mini Dossiê de Contratação".
 2.  **Análise Coletiva:** Analise os prints da equipa (A, B, C) para escrever a secção "DNA DO DESEMPENHO".
-3.  **Consolidação:** Junte tudo no **MODELO OBRIGATÓRIO** abaixo, garantindo que a sua análise conecta todos os pontos de forma inteligente (ex: como os "Mini Dossiês" dos reforços impactam a "Projeção Tática").
+3.  **Consolidação:** Junte tudo no **MODELO OBRIGATÓRIO** abaixo, garantindo que a sua análise conecta todos os pontos de forma inteligente.
 
 ---
 **MODELO OBRIGATÓRIO:**
 
-### **DOSSIÊ ESTRATÉGICO DE CLUBE: {st.session_state.equipa_alvo_v6.upper()}**
+### **DOSSIÊ ESTRATÉGICO DE CLUBE: {st.session_state.equipa_alvo_pf.upper()}**
 
-{st.session_state.analise_transferencias_md}
+{st.session_state.analise_transferencias_md_pf}
 
 * **Mini Dossiês de Contratação:**
     [Para cada jogador com print, escreva aqui a análise individual]
@@ -235,15 +242,15 @@ if check_password():
 * **Cenários de Monitoramento:** [3 cenários práticos]
 """
                 dossie_final = gerar_resposta_ia(prompt_final, todas_imagens_bytes)
-                st.session_state.dossie_clube_final_v6 = dossie_final or "Falha na geração final."
-                st.session_state.club_dossier_step_v6 = 6
+                st.session_state.dossie_clube_final_pf = dossie_final or "Falha na geração final."
+                st.session_state.club_dossier_step_pf = 6
                 st.rerun()
 
-        if st.session_state.club_dossier_step_v6 == 6:
-            st.header(f"Dossiê Final: {st.session_state.equipa_alvo_v6}")
-            st.markdown(st.session_state.dossie_clube_final_v6)
+        if st.session_state.club_dossier_step_pf == 6:
+            st.header(f"Dossiê Final: {st.session_state.equipa_alvo_pf}")
+            st.markdown(st.session_state.dossie_clube_final_pf)
             if st.button("Limpar e Analisar Outro Clube"):
-                keys_to_delete = [k for k in st.session_state if k.endswith('_v6')]
+                keys_to_delete = [k for k in st.session_state if k.endswith('_pf')]
                 for key in keys_to_delete:
                     del st.session_state[key]
                 st.rerun()
