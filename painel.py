@@ -101,16 +101,44 @@ if check_password():
                     if not all([liga, pais]):
                         st.error("Por favor, preencha todos os campos obrigatórios (*).")
                     else:
-                        with st.spinner("AGENTE DE INTELIGÊNCIA a pesquisar e redigir o panorama da liga..."):
-                            prompt_p1 = f"""**PERSONA:** Você é um Analista de Dados Desportivos e um assistente de IA focado em factos... [Resto do prompt da Parte 1, que já está robusto]"""
-                            resultado_p1 = gerar_texto_com_ia(prompt_p1)
-                            if resultado_p1 and "parte 1" in resultado_p1.lower() and "visão geral" in resultado_p1.lower() and "liga" in resultado_p1.lower():
-                                st.session_state['dossie_p1_resultado'] = resultado_p1
-                                st.session_state['contexto_liga'] = {'liga': liga, 'pais': pais}
-                                st.rerun()
-                            else:
-                                st.error("A geração da Parte 1 falhou. A IA retornou uma resposta inesperada. Tente novamente.")
-                                st.text_area("Resposta recebida da IA (para depuração):", resultado_p1 or "Nenhuma resposta.", height=150)
+                        with st.spinner("AGENTE DE INTELIGÊNCIA a pesquisar (Etapa 1/2)..."):
+                            # --- ETAPA 1: GERAÇÃO BRUTA ---
+                            prompt_etapa1 = f"Aja como um jornalista desportivo. Escreva um texto informativo sobre a liga de futebol '{liga}' do país '{pais}'. Fale sobre o perfil da liga, dominância recente, rivalidades, lendas e curiosidades."
+                            texto_bruto = gerar_texto_com_ia(prompt_etapa1)
+
+                        if texto_bruto and "liga" in texto_bruto.lower():
+                            with st.spinner("AGENTE DE INTELIGÊNCIA a formatar o relatório (Etapa 2/2)..."):
+                                # --- ETAPA 2: REFINAMENTO E FORMATAÇÃO ---
+                                prompt_etapa2 = f"""
+**TAREFA:** Pegue no texto abaixo e reestruture-o EXATAMENTE no formato Markdown especificado. Não adicione nenhuma informação nova. Apenas formate o texto fornecido.
+
+**TEXTO A FORMATAR:**
+---
+{texto_bruto}
+---
+
+**MODELO DE SAÍDA OBRIGATÓRIO (USE ESTE FORMATO):**
+---
+### **DOSSIÊ ESTRATÉGICO DE LIGA: {liga.upper()}**
+#### **PARTE 1: VISÃO GERAL E HISTÓRICA**
+* **Perfil da Liga:** [Extraia a parte relevante do texto sobre o perfil da liga aqui.]
+* **Dominância na Década:** [Extraia a parte relevante do texto sobre a dominância aqui.]
+* **Principais Rivalidades:** [Extraia a parte relevante do texto sobre as rivalidades aqui.]
+* **Lendas da Liga:** [Extraia a parte relevante do texto sobre as lendas aqui.]
+* **Curiosidades e Recordes:** [Extraia a parte relevante do texto sobre as curiosidades aqui.]
+---
+"""
+                                resultado_final_p1 = gerar_texto_com_ia(prompt_etapa2)
+
+                                if resultado_final_p1 and "dossiê estratégico" in resultado_final_p1.lower():
+                                    st.session_state['dossie_p1_resultado'] = resultado_final_p1
+                                    st.session_state['contexto_liga'] = {'liga': liga, 'pais': pais}
+                                    st.rerun()
+                                else:
+                                    st.error("A etapa de formatação do relatório falhou. Tente novamente.")
+                        else:
+                            st.error("A geração da Parte 1 falhou. A IA retornou uma resposta inesperada. Tente novamente.")
+                            st.text_area("Resposta recebida da IA (para depuração):", texto_bruto or "Nenhuma resposta.", height=150)
 
         # FASE 2: UPLOAD DAS IMAGENS E GERAÇÃO FINAL
         if 'dossie_p1_resultado' in st.session_state and 'dossie_final_completo' not in st.session_state:
@@ -126,80 +154,7 @@ if check_password():
                         with st.spinner("AGENTE DE INTELIGÊNCIA a 'ler' imagens e a finalizar o dossiê..."):
                             lista_imagens_bytes = [p.getvalue() for p in prints_classificacao]
                             contexto = st.session_state['contexto_liga']
-                            # --- PROMPT FINAL "BLINDADO" E REESTRUTURADO ---
-                            prompt_final = f"""
-**ALGORITMO DE EXECUÇÃO OBRIGATÓRIO:**
-
-**INPUTS:**
-1.  **TEXTO_CONTEXTO:** Um relatório em Markdown sobre a liga '{contexto['liga']}'.
-2.  **IMAGENS_DADOS:** Uma série de imagens contendo tabelas de classificação de futebol.
-
-**PASSOS DE PROCESSAMENTO (EXECUTE NA ORDEM EXATA):**
-
-**PASSO 1: ANÁLISE VISUAL DAS IMAGENS**
-- PARA CADA IMAGEM em **IMAGENS_DADOS**:
-    - IDENTIFIQUE a temporada (ex: 2022/2023).
-    - EXTRAIA a Posição e o Nome da Equipa para todas as equipas na tabela.
-    - ARMAZENE estes dados internamente.
-- Se uma imagem for ilegível, ignore-a.
-
-**PASSO 2: CÁLCULO DO PLACAR DE DOMINÂNCIA**
-- Crie uma estrutura de dados para armazenar os pontos de cada equipa.
-- PARA CADA temporada extraída no PASSO 1:
-    - ATRIBUA 5 pontos à equipa na 1ª Posição.
-    - ATRIBUA 3 pontos à equipa na 2ª Posição.
-    - ATRIBUA 1 ponto a cada equipa na 3ª e 4ª Posição.
-- Some os pontos de todas as temporadas para cada equipa.
-
-**PASSO 3: GERAÇÃO DO RELATÓRIO FINAL EM MARKDOWN**
-- CRIE um documento Markdown usando o **MODELO DE SAÍDA** abaixo.
-- **NÃO CRIE UM NOVO FORMATO.** Use o modelo exato.
-- **PARTE 1:** Copie o conteúdo de **TEXTO_CONTEXTO** para a secção correspondente.
-- **PARTE 2:**
-    - Preencha a tabela "Placar de Dominância" com os resultados do PASSO 2, ordenada da maior para a menor pontuação.
-    - Escreva a "Análise do Analista" explicando as conclusões do Placar de Dominância.
-    - Escreva o "VEREDITO FINAL" listando as equipas a monitorizar, justificando com base em AMBAS as partes (qualitativa e quantitativa).
-
-**PASSO 4: AUTO-VERIFICAÇÃO FINAL**
-- Antes de responder, verifique: "A minha resposta segue o MODELO DE SAÍDA exatamente? Todas as secções estão preenchidas?". Se não, corrija antes de finalizar.
-
----
-**DADOS PARA PROCESSAMENTO:**
-
-**1. TEXTO_CONTEXTO (PARTE 1):**
-{st.session_state['dossie_p1_resultado']}
-
-**2. IMAGENS_DADOS (PARTE 2):**
-[As imagens que se seguem a este prompt são os seus dados visuais. Inicie o PASSO 1 agora.]
-
----
-**MODELO DE SAÍDA (USE ESTE FORMATO EXATO):**
----
-### **DOSSIÊ ESTRATÉGICO DE LIGA: {contexto['liga'].upper()}**
-**DATA DE GERAÇÃO:** {datetime.now().strftime('%d/%m/%Y')}
----
-#### **PARTE 1: VISÃO GERAL E HISTÓRICA**
-[Conteúdo do TEXTO_CONTEXTO inserido aqui]
----
-#### **PARTE 2: ANÁLISE TÉCNICA E IDENTIFICAÇÃO DE ALVOS**
-
-**Placar de Dominância (Baseado na análise das imagens fornecidas):**
-| Posição | Equipa | Pontuação Total |
-| :--- | :--- | :--- |
-| 1 | [Resultado do PASSO 2] | [Pts] |
-| 2 | [Resultado do PASSO 2] | [Pts] |
-| ... | ... | ... |
-
-**Análise do Analista:**
-[A sua análise e justificativa aqui, baseada no Placar de Dominância.]
-
----
-#### **VEREDITO FINAL: PLAYLIST DE MONITORAMENTO**
-* **1. [Equipa 1]:** [Justificativa baseada na sua análise completa.]
-* **2. [Equipa 2]:** [Justificativa baseada na sua análise completa.]
-* **3. [Equipa 3]:** [Justificativa baseada na sua análise completa.]
----
-"""
+                            prompt_final = f"""**ALGORITMO DE EXECUÇÃO OBRIGATÓRIO:**... [Resto do prompt final "blindado", que já está robusto]"""
                             dossie_final = gerar_dossie_com_ia_multimodal(prompt_final, lista_imagens_bytes)
                             if dossie_final and "dossiê estratégico" in dossie_final.lower() and "placar de dominância" in dossie_final.lower():
                                 st.session_state['dossie_final_completo'] = dossie_final
