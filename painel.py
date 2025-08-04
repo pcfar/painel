@@ -28,18 +28,15 @@ def check_password():
         st.error("😕 Senha incorreta.")
     return False
 
-# --- FUNÇÕES DE CHAMADA À IA (COM MODELO ALTERNATIVO) ---
+# --- FUNÇÕES DE CHAMADA À IA (COM EXPONENTIAL BACKOFF) ---
 def gerar_resposta_ia(prompt, imagens_bytes=None):
     api_key = st.secrets.get("GEMINI_API_KEY")
     if not api_key:
         st.error("Chave da API do Gemini não encontrada.")
         return None
     
-    # --- ALTERAÇÃO APLICADA AQUI ---
-    # Mudámos para o modelo 'flash', que é mais rápido e tem limites de utilização diferentes.
-    model_name = "gemini-1.5-flash-latest"
+    model_name = "gemini-1.5-flash-latest" # Usar o Flash para maior rapidez neste pedido massivo
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
-    
     headers = {'Content-Type': 'application/json'}
     
     parts = [{"text": prompt}]
@@ -56,15 +53,12 @@ def gerar_resposta_ia(prompt, imagens_bytes=None):
     for attempt in range(max_retries):
         try:
             response = requests.post(url, headers=headers, data=json.dumps(data), timeout=400)
-            
             if response.status_code == 429:
                 delay = base_delay * (2 ** attempt)
                 st.warning(f"Limite da API atingido. A tentar novamente em {delay} segundos...")
                 time.sleep(delay)
                 continue
-            
             response.raise_for_status()
-            
             result = response.json()
             if 'candidates' in result and result['candidates']:
                 return result['candidates'][0]['content']['parts'][0]['text']
@@ -72,7 +66,6 @@ def gerar_resposta_ia(prompt, imagens_bytes=None):
                 st.error("A API respondeu, mas o formato do conteúdo é inesperado.")
                 st.json(result)
                 return None
-
         except requests.exceptions.RequestException as e:
             st.error(f"Erro na chamada à API na tentativa {attempt + 1}: {e}")
             if attempt < max_retries - 1:
@@ -81,7 +74,6 @@ def gerar_resposta_ia(prompt, imagens_bytes=None):
             else:
                 st.error("Todas as tentativas de chamada à API falharam.")
                 return None
-    
     st.error("Falha ao comunicar com a API após múltiplas tentativas devido a limites de utilização.")
     return None
 
@@ -97,37 +89,130 @@ if check_password():
         st.info("O Dossiê de Liga está funcional.")
 
     with tab2:
-        st.subheader("Criar Dossiê 2: Análise Profunda de Clube (Processamento por Etapas)")
+        st.subheader("Criar Dossiê 2: Análise Profunda de Clube (Pedido Único Consolidado)")
 
-        # O código completo e funcional da Aba 2, como na versão anterior, é mantido aqui.
-        # A única alteração foi na função `gerar_resposta_ia`, que agora usa o novo modelo.
-        if 'club_dossier_step_staged' not in st.session_state:
-            st.session_state.club_dossier_step_staged = 1
-
-        # ETAPA 1: DEFINIR ALVO
-        if st.session_state.club_dossier_step_staged == 1:
-            with st.form("form_clube_etapa1_staged"):
-                st.markdown("**ETAPA 1: DEFINIR O ALVO**")
+        if 'dossie_clube_final_consolidado' not in st.session_state:
+            with st.form("form_clube_consolidado"):
+                st.markdown("**Forneça todos os dados para a análise completa**")
+                
                 equipa_nome = st.text_input("Nome da Equipa Alvo*", placeholder="Ex: Manchester City")
-                if st.form_submit_button("Próximo Passo: Plantel Anterior"):
-                    if not equipa_nome:
-                        st.error("Por favor, insira o nome da equipa.")
-                    else:
-                        st.session_state.equipa_alvo_staged = equipa_nome
-                        st.session_state.club_dossier_step_staged = 2
-                        st.rerun()
-        
-        # ... (Restante do código das etapas 2, 3, 4, 5, 6, 7 e 8, sem alterações) ...
-        # O fluxo de trabalho permanece o mesmo, mas agora é alimentado pelo novo modelo de IA.
-        if st.session_state.club_dossier_step_staged == 8:
-            st.header(f"Dossiê Final: {st.session_state.equipa_alvo_staged}")
-            st.markdown(st.session_state.dossie_clube_final_staged)
-            if st.button("Limpar e Analisar Outro Clube"):
-                keys_to_delete = [k for k in st.session_state if k.endswith('_staged')]
-                for key in keys_to_delete:
-                    del st.session_state[key]
-                st.rerun()
+                
+                st.divider()
+                
+                st.markdown("**1. Prints dos Planteis**")
+                st.file_uploader("Carregar Print(s) do Plantel (Temporada Anterior)*", 
+                                 accept_multiple_files=True, 
+                                 key="prints_plantel_anterior_consolidado")
+                st.file_uploader("Carregar Print(s) do Plantel (Nova Temporada)*", 
+                                 accept_multiple_files=True, 
+                                 key="prints_plantel_atual_consolidado")
+                
+                st.divider()
 
+                st.markdown("**2. Prints de Desempenho da Equipa (Temporada Anterior)**")
+                st.markdown("""
+                - **Print A:** Visão Geral e Performance Ofensiva (FBref)
+                - **Print B:** Padrões de Construção de Jogo (FBref)
+                - **Print C:** Análise Comparativa Casa vs. Fora (FBref)
+                """)
+                st.file_uploader("Carregar Prints da Equipa (A, B e C)*", 
+                                 accept_multiple_files=True, 
+                                 key="prints_equipa_consolidado")
+
+                if st.form_submit_button("Gerar Dossiê Completo"):
+                    # Validação
+                    if not all([equipa_nome, 
+                                st.session_state.prints_plantel_anterior_consolidado,
+                                st.session_state.prints_plantel_atual_consolidado,
+                                st.session_state.prints_equipa_consolidado]) or len(st.session_state.prints_equipa_consolidado) < 3:
+                        st.error("Por favor, preencha todos os campos e carregue todos os prints necessários.")
+                    else:
+                        with st.spinner(f"AGENTE DE INTELIGÊNCIA a processar todos os dados sobre o {equipa_nome}... Este pedido único é complexo e pode demorar vários minutos."):
+                            
+                            todas_imagens_bytes = []
+                            prompt_imagens_info = []
+
+                            for p in st.session_state.prints_plantel_anterior_consolidado:
+                                todas_imagens_bytes.append(p.getvalue())
+                            prompt_imagens_info.append(f"- O primeiro conjunto de imagens corresponde ao plantel da TEMPORADA ANTERIOR.")
+                            
+                            for p in st.session_state.prints_plantel_atual_consolidado:
+                                todas_imagens_bytes.append(p.getvalue())
+                            prompt_imagens_info.append(f"- O segundo conjunto de imagens corresponde ao plantel da NOVA TEMPORADA.")
+
+                            for p in st.session_state.prints_equipa_consolidado:
+                                todas_imagens_bytes.append(p.getvalue())
+                            prompt_imagens_info.append(f"- O terceiro conjunto de imagens corresponde aos prints de desempenho da equipa (A, B, C).")
+
+                            prompt_imagens_info_str = "\n".join(prompt_imagens_info)
+
+                            prompt_final = f"""
+**TAREFA CRÍTICA:** Aja como um Analista de Futebol de elite. A sua única função é processar TODOS os dados fornecidos num único passo e redigir um dossiê tático profundo sobre o clube '{equipa_nome}'.
+
+**INFORMAÇÃO DISPONÍVEL:**
+{prompt_imagens_info_str}
+
+**ALGORITMO DE EXECUÇÃO OBRIGATÓRIO (execute todos os passos):**
+
+1.  **ANÁLISE DE PLANTEIS:**
+    - Leia os nomes dos jogadores dos prints da temporada anterior e da nova temporada.
+    - Compare as duas listas para identificar TODAS as chegadas e saídas.
+    - Escreva a secção "1. EVOLUÇÃO DO PLANTEL", incluindo a sua análise de impacto.
+
+2.  **ANÁLISE DE DESEMPENHO:**
+    - Analise os prints de desempenho da equipa (A, B, C).
+    - Extraia as métricas e escreva a secção "2. DNA DO DESEMPENHO".
+
+3.  **ANÁLISE TÁTICA E VEREDITO:**
+    - Com base em TUDO o que analisou, escreva as secções "3. O PLANO DE JOGO" e "4. VEREDITO FINAL". A sua análise deve conectar todos os pontos (como as transferências impactam o desempenho e a tática).
+
+---
+**MODELO OBRIGATÓRIO (Use este formato exato):**
+
+### **DOSSIÊ ESTRATÉGICO DE CLUBE: {equipa_nome.upper()}**
+
+**1. EVOLUÇÃO DO PLANTEL (ANÁLISE COMPARATIVA)**
+* **Balanço de Transferências (Factos):**
+    * **Lista Completa de Chegadas:** [Resultado do passo 1]
+    * **Lista Completa de Saídas:** [Resultado do passo 1]
+* **Análise de Impacto (Ganhos e Perdas):** [A sua análise do passo 1]
+
+**2. DNA DO DESEMPENHO (TEMPORADA ANTERIOR)**
+* **Raio-X Estatístico:** [Crie uma tabela com as principais métricas extraídas dos prints no passo 2]
+* **Padrões de Jogo Identificados:** [Sua análise do passo 2]
+* **Análise Comparativa Casa vs. Fora:** [Sua análise do passo 2]
+
+**3. O PLANO DE JOGO (ANÁLISE TÁTICA)**
+* **Modelo de Jogo Principal:** [Sua análise do passo 3]
+* **Protagonistas e Destaques:** [Sua análise do passo 3]
+* **Projeção Tática para a Nova Temporada:** [Sua análise do passo 3]
+
+**4. VEREDITO FINAL E CENÁRIOS DE OBSERVAÇÃO**
+* **Síntese Analítica:** [Sua análise do passo 3]
+* **Cenários de Monitoramento:** [Sua análise do passo 3]
+"""
+                            dossie_final = gerar_resposta_ia(prompt_final, todas_imagens_bytes)
+                            if dossie_final and "dossiê estratégico de clube" in dossie_final.lower():
+                                st.session_state.dossie_clube_final_consolidado = dossie_final
+                            else:
+                                st.session_state.dossie_clube_final_consolidado = "A geração do dossiê falhou. A IA pode ter tido dificuldade em processar o grande volume de dados. Tente novamente com prints mais claros ou menos ficheiros."
+                            st.rerun()
+
+        # --- Exibição do Dossiê de Clube Final ---
+        if 'dossie_clube_final_consolidado' in st.session_state:
+            st.markdown("---")
+            st.header("Dossiê de Clube Gerado")
+            
+            if "falhou" in st.session_state.dossie_clube_final_consolidado:
+                st.error(st.session_state.dossie_clube_final_consolidado)
+            else:
+                st.success("Análise concluída com sucesso!")
+                st.markdown(st.session_state.dossie_clube_final_consolidado)
+
+            if st.button("Limpar e Analisar Outro Clube"):
+                if 'dossie_clube_final_consolidado' in st.session_state:
+                    del st.session_state['dossie_clube_final_consolidado']
+                st.rerun()
 
     with tab3: st.info("Em desenvolvimento.")
     with tab4: st.info("Em desenvolvimento.")
