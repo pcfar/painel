@@ -43,7 +43,6 @@ def gerar_texto_com_ia(prompt):
         response = requests.post(url, headers=headers, data=json.dumps(data), timeout=180)
         response.raise_for_status()
         result = response.json()
-        # Validação robusta da resposta
         if 'candidates' in result and result['candidates'] and 'content' in result['candidates'][0] and 'parts' in result['candidates'][0]['content'] and result['candidates'][0]['content']['parts']:
             return result['candidates'][0]['content']['parts'][0]['text']
         else:
@@ -126,15 +125,31 @@ if check_password():
                     else:
                         with st.spinner("AGENTE DE INTELIGÊNCIA a pesquisar e redigir o panorama da liga..."):
                             prompt_p1 = f"""
-**PERSONA:** Você é um Jornalista Investigativo e Historiador de Futebol... [O mesmo prompt da Parte 1, que já está a funcionar bem]
+**PERSONA:** Você é um Jornalista Investigativo e Historiador de Futebol, com um talento para encontrar detalhes que cativem o leitor.
 **CONTEXTO:** Liga para Análise: {liga}, País: {pais}
-**MISSÃO:** Realize uma pesquisa aprofundada na web para criar a "PARTE 1" de um Dossiê Estratégico sobre a {liga}.
-... [Resto do prompt da Parte 1] ...
+**MISSÃO:** Realize uma pesquisa aprofundada na web para criar a "PARTE 1" de um Dossiê Estratégico sobre a {liga}. O seu relatório deve ser rico em informações, curiosidades e detalhes específicos.
+**DIRETRIZES DE PESQUISA (Busque por estes tópicos e SEJA ESPECÍFICO):**
+1. Dominância Histórica: Quem são os maiores campeões e como se distribui o poder na última década.
+2. Grandes Rivalidades: Quais são os clássicos mais importantes e o que eles representam.
+3. Ídolos e Lendas: Mencione 2-3 jogadores históricos que marcaram a liga, **indicando os clubes onde se destacaram**.
+4. Estilo de Jogo Característico: A liga é conhecida por ser ofensiva, defensiva, tática? Dê exemplos.
+5. Fatos e Curiosidades: Encontre 2-3 factos únicos ou recordes impressionantes, **citando os clubes ou jogadores envolvidos**.
+**MODELO DE SAÍDA:**
+---
+#### **PARTE 1: VISÃO GERAL E HISTÓRICA DA LIGA - {liga.upper()}**
+* **Perfil da Liga:** [Resumo sobre o estilo de jogo.]
+* **Dominância na Década:** [Análise da distribuição de poder.]
+* **Principais Rivalidades:** [Descrição dos clássicos.]
+* **Lendas da Liga:** [Menção aos jogadores e seus clubes.]
+* **Curiosidades e Recordes:** [Apresentação dos factos interessantes com detalhes.]
+---
 """
-                            # Usar a função dedicada a texto
                             resultado_p1 = gerar_texto_com_ia(prompt_p1)
-                            # Validação para garantir que a IA não deu uma resposta vazia/genérica
-                            if resultado_p1 and "###" in resultado_p1:
+                            
+                            # --- CORREÇÃO APLICADA AQUI ---
+                            # Validação mais flexível, baseada no conteúdo e não na formatação exata.
+                            # Verifica se a resposta contém os elementos chave esperados para a Parte 1.
+                            if resultado_p1 and "parte 1" in resultado_p1.lower() and "visão geral" in resultado_p1.lower():
                                 st.session_state['dossie_p1_resultado'] = resultado_p1
                                 st.session_state['contexto_liga'] = {'liga': liga, 'pais': pais}
                                 st.rerun()
@@ -165,20 +180,59 @@ if check_password():
                             lista_imagens_bytes = [p.getvalue() for p in prints_classificacao]
                             contexto = st.session_state['contexto_liga']
                             prompt_final = f"""
-**PERSONA:** Você é um Analista de Dados Quantitativo...
-**CONTEXTO:** Você recebeu duas fontes de informação sobre a liga '{contexto['liga']}':
-1.  **Análise Qualitativa (Parte 1):** Um resumo textual.
-2.  **Dados Visuais (Imagens):** Uma série de imagens de tabelas de classificação.
-**MISSÃO FINAL:** Analise CADA imagem, extraia os dados, e consolide tudo num único dossiê.
-... [Resto do prompt final multimodal, que já está a funcionar bem] ...
+**PERSONA:** Você é um Analista de Dados Quantitativo e um Especialista em Futebol, com uma capacidade excecional para interpretar dados visuais (imagens de tabelas) e apresentar conclusões claras.
+**CONTEXTO:** Você recebeu duas fontes de informação para criar um dossiê sobre a liga '{contexto['liga']}':
+1.  **Análise Qualitativa (Parte 1):** Um resumo textual sobre a liga que você mesmo gerou.
+2.  **Dados Visuais (Imagens):** Uma série de imagens, cada uma contendo uma tabela de classificação de uma temporada diferente.
+**MISSÃO FINAL:** Sua missão é analisar CADA imagem fornecida, extrair os dados quantitativos, e consolidar tudo num único dossiê coerente.
+**PROCESSO PASSO A PASSO (SIGA RIGOROSAMENTE):**
+**PASSO 1: Análise Visual e Extração de Dados**
+* Para CADA imagem que eu lhe enviei:
+    * **Identifique a temporada** (ex: 2022/2023, 2021-22) olhando para o conteúdo da imagem.
+    * **Extraia a classificação final.** Foque-se em: **Posição, Nome da Equipa**. Ignore colunas de pontos, golos, etc., a menos que precise delas para desempatar.
+    * Se uma imagem for ilegível ou não contiver uma tabela de classificação, ignore-a e faça uma nota mental.
+**PASSO 2: Cálculo do 'Placar de Dominância'**
+* Depois de analisar TODAS as imagens e extrair os dados, crie uma pontuação para cada equipa com base na seguinte regra:
+    * **1º Lugar (Campeão):** 5 pontos
+    * **2º Lugar:** 3 pontos
+    * **3º ou 4º Lugar:** 1 ponto
+* Some os pontos de cada equipa ao longo de todas as temporadas que conseguiu analisar.
+**PASSO 3: Geração do Dossiê Final**
+* Use o modelo de saída abaixo para estruturar a sua resposta.
+* **Parte 1:** Copie na íntegra a análise qualitativa que você já possui.
+* **Parte 2:**
+    * Apresente a tabela do **'Placar de Dominância'** que você calculou, ordenada da maior para a menor pontuação.
+    * Escreva uma **'Análise do Analista'**, justificando as conclusões tiradas da tabela.
+* **Veredito Final:** Com base em TUDO (análise qualitativa e a sua nova análise quantitativa das imagens), liste as 3 a 5 equipas mais relevantes para monitorização.
 **DADOS DISPONÍVEIS PARA A SUA ANÁLISE:**
 **1. Análise Qualitativa (Parte 1 - Texto):**
 {st.session_state['dossie_p1_resultado']}
 **2. Dados Visuais (Parte 2 - Imagens):**
 [As imagens que lhe enviei a seguir a este texto são os seus dados visuais. Analise-as agora.]
-... [Resto do modelo de saída] ...
+**MODELO DE SAÍDA OBRIGATÓRIO:**
+---
+### **DOSSIÊ ESTRATÉGICO DE LIGA: {contexto['liga'].upper()}**
+**DATA DE GERAÇÃO:** {datetime.now().strftime('%d/%m/%Y')}
+---
+#### **PARTE 1: VISÃO GERAL E HISTÓRICA**
+[Copie e cole a análise informativa da Parte 1 aqui.]
+---
+#### **PARTE 2: ANÁLISE TÉCNICA E IDENTIFICAÇÃO DE ALVOS**
+**Placar de Dominância (Baseado na análise das imagens fornecidas):**
+| Posição | Equipa | Pontuação Total |
+| :--- | :--- | :--- |
+| 1 | [Sua análise aqui] | [Pts] |
+| 2 | [Sua análise aqui] | [Pts] |
+| ... | ... | ... |
+**Análise do Analista:**
+[A sua análise e justificativa aqui. Comente os resultados da tabela de dominância.]
+---
+#### **VEREDITO FINAL: PLAYLIST DE MONITORAMENTO**
+* **1. [Equipa 1]:** [Breve justificativa baseada na sua análise completa.]
+* **2. [Equipa 2]:** [Breve justificativa baseada na sua análise completa.]
+* **3. [Equipa 3]:** [Breve justificativa baseada na sua análise completa.]
+---
 """
-                            # Usar a função dedicada a multimodal
                             dossie_final = gerar_dossie_com_ia_multimodal(prompt_final, lista_imagens_bytes)
                             if dossie_final:
                                 st.session_state['dossie_final_completo'] = dossie_final
