@@ -91,7 +91,7 @@ if check_password():
     with tab1:
         st.subheader("Criar Dossiê 1: Análise Geral da Liga")
 
-        # FASE 1: GERAÇÃO DO PANORAMA DA LIGA
+        # FASE 1: GERAÇÃO DO PANORAMA DA LIGA (LÓGICA OTIMIZADA)
         if 'dossie_p1_resultado' not in st.session_state:
             with st.form("form_dossie_1_p1"):
                 st.markdown("**Parte 1: Panorama da Liga (Pesquisa Autónoma da IA)**")
@@ -101,25 +101,39 @@ if check_password():
                     if not all([liga, pais]):
                         st.error("Por favor, preencha todos os campos obrigatórios (*).")
                     else:
-                        with st.spinner("AGENTE DE INTELIGÊNCIA a pesquisar (Etapa 1/2)..."):
-                            prompt_etapa1 = f"Aja como um jornalista desportivo. Escreva um texto informativo sobre a liga de futebol '{liga}' do país '{pais}'. Fale sobre o perfil da liga, dominância recente, rivalidades, lendas e curiosidades."
-                            texto_bruto = gerar_texto_com_ia(prompt_etapa1)
+                        with st.spinner("AGENTE DE INTELIGÊNCIA a pesquisar e a redigir o relatório..."):
+                            # --- LÓGICA DE PASSO ÚNICO E ROBUSTO ---
+                            prompt_p1 = f"""
+**PERSONA:** Você é um Analista de Dados Desportivos e um assistente de IA focado em factos. A sua única função é analisar dados de futebol.
 
-                        if texto_bruto and "liga" in texto_bruto.lower():
-                            with st.spinner("AGENTE DE INTELIGÊNCIA a formatar o relatório (Etapa 2/2)..."):
-                                prompt_etapa2 = f"""
-**TAREFA:** Pegue no texto abaixo e reestruture-o EXATAMENTE no formato Markdown especificado... [Resto do prompt de formatação]...
+**TAREFA CRÍTICA E ÚNICA:** Gerar um relatório informativo sobre a liga de futebol: '{liga}' do país '{pais}'.
+
+**REGRAS ESTRITAS (NÃO IGNORE):**
+1.  **FOCO EXCLUSIVO:** Fale APENAS sobre a liga de futebol mencionada.
+2.  **PROIBIDO DESVIAR:** NÃO invente histórias, personagens ou qualquer outro tópico que não seja a análise factual da liga de futebol. Qualquer resposta fora deste tópico é uma falha.
+3.  **ESTRUTURA OBRIGATÓRIA:** Siga o modelo de saída abaixo sem qualquer alteração.
+
+**MODELO DE SAÍDA OBRIGATÓRIO:**
+---
+### **DOSSIÊ ESTRATÉGICO DE LIGA: {liga.upper()}**
+#### **PARTE 1: VISÃO GERAL E HISTÓRICA**
+* **Perfil da Liga:** [Resumo sobre o estilo de jogo.]
+* **Dominância na Década:** [Análise da distribuição de poder.]
+* **Principais Rivalidades:** [Descrição dos clássicos.]
+* **Lendas da Liga:** [Menção aos jogadores e seus clubes.]
+* **Curiosidades e Recordes:** [Apresentação dos factos interessantes com detalhes.]
+---
 """
-                                resultado_final_p1 = gerar_texto_com_ia(prompt_etapa2)
-                                if resultado_final_p1 and "dossiê estratégico" in resultado_final_p1.lower():
-                                    st.session_state['dossie_p1_resultado'] = resultado_final_p1
-                                    st.session_state['contexto_liga'] = {'liga': liga, 'pais': pais}
-                                    st.rerun()
-                                else:
-                                    st.error("A etapa de formatação do relatório falhou. Tente novamente.")
-                        else:
-                            st.error("A geração da Parte 1 falhou. A IA retornou uma resposta inesperada. Tente novamente.")
-                            st.text_area("Resposta recebida da IA (para depuração):", texto_bruto or "Nenhuma resposta.", height=150)
+                            resultado_p1 = gerar_texto_com_ia(prompt_p1)
+                            
+                            # Validação robusta
+                            if resultado_p1 and "dossiê estratégico" in resultado_p1.lower() and "parte 1" in resultado_p1.lower():
+                                st.session_state['dossie_p1_resultado'] = resultado_p1
+                                st.session_state['contexto_liga'] = {'liga': liga, 'pais': pais}
+                                st.rerun()
+                            else:
+                                st.error("A geração da Parte 1 falhou. A IA retornou uma resposta inesperada. Tente novamente.")
+                                st.text_area("Resposta recebida da IA (para depuração):", resultado_p1 or "Nenhuma resposta.", height=150)
 
         # FASE 2: UPLOAD DAS IMAGENS E GERAÇÃO FINAL
         if 'dossie_p1_resultado' in st.session_state and 'dossie_final_completo' not in st.session_state:
@@ -135,7 +149,6 @@ if check_password():
                         with st.spinner("AGENTE DE INTELIGÊNCIA a 'ler' imagens e a finalizar o dossiê..."):
                             lista_imagens_bytes = [p.getvalue() for p in prints_classificacao]
                             contexto = st.session_state['contexto_liga']
-                            # --- PROMPT FINAL ATUALIZADO PARA INCLUIR O JSON ---
                             prompt_final = f"""
 **ALGORITMO DE EXECUÇÃO OBRIGATÓRIO:**
 [... Passos 1 a 4 do prompt "blindado" ...]
@@ -159,7 +172,6 @@ if check_password():
 """
                             dossie_final_raw = gerar_dossie_com_ia_multimodal(prompt_final, lista_imagens_bytes)
                             if dossie_final_raw and "placar de dominância" in dossie_final_raw.lower():
-                                # --- LÓGICA ATUALIZADA PARA PROCESSAR MARKDOWN E JSON ---
                                 if "---JSON_DATA_START---" in dossie_final_raw:
                                     parts = dossie_final_raw.split("---JSON_DATA_START---")
                                     st.session_state['dossie_final_completo'] = parts[0]
@@ -186,7 +198,7 @@ if check_password():
             dossie_markdown = st.session_state['dossie_final_completo']
             dominancia_df = st.session_state.get('dominancia_df')
 
-            col1, col2 = st.columns([2, 1.2]) # Ajusta a proporção das colunas
+            col1, col2 = st.columns([2, 1.2])
 
             with col1:
                 st.markdown(dossie_markdown)
@@ -194,7 +206,6 @@ if check_password():
             with col2:
                 if dominancia_df is not None and not dominancia_df.empty:
                     st.subheader("Visualização da Dominância")
-                    
                     chart = alt.Chart(dominancia_df).mark_bar(
                         cornerRadiusTopLeft=3,
                         cornerRadiusTopRight=3
@@ -205,7 +216,6 @@ if check_password():
                     ).properties(
                         title='Placar de Dominância na Liga'
                     ).interactive()
-
                     st.altair_chart(chart, use_container_width=True)
                 else:
                     st.info("Dados para a visualização não foram gerados.")
