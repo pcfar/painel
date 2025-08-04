@@ -10,7 +10,7 @@ import json
 import time
 import base64
 import pandas as pd
-import altair as alt # Importa a biblioteca para gráficos
+import altair as alt
 
 # --- Configuração da Página ---
 st.set_page_config(page_title="Painel Tático Final", page_icon="📊", layout="wide")
@@ -102,15 +102,35 @@ if check_password():
                         st.error("Por favor, preencha todos os campos obrigatórios (*).")
                     else:
                         with st.spinner("AGENTE DE INTELIGÊNCIA a pesquisar e redigir o panorama da liga..."):
-                            prompt_p1 = f"""**PERSONA:** Você é um Jornalista Investigativo... [Resto do prompt da Parte 1]"""
+                            # --- PROMPT REFORÇADO PARA EVITAR RESPOSTAS ALEATÓRIAS ---
+                            prompt_p1 = f"""
+**PERSONA:** Você é um Analista de Dados Desportivos e um assistente de IA focado em factos. A sua única função é analisar dados de futebol.
+
+**TAREFA CRÍTICA E ÚNICA:** Gerar um relatório informativo sobre a liga de futebol: '{liga}' do país '{pais}'.
+
+**REGRAS ESTRITAS (NÃO IGNORE):**
+1.  **FOCO EXCLUSIVO:** Fale APENAS sobre a liga de futebol mencionada.
+2.  **PROIBIDO DESVIAR:** NÃO invente histórias, personagens, cenários de corrupção ou qualquer outro tópico que não seja a análise factual da liga de futebol. Qualquer resposta fora deste tópico é uma falha.
+3.  **ESTRUTURA OBRIGATÓRIA:** Siga o modelo de saída abaixo sem qualquer alteração.
+
+**MODELO DE SAÍDA OBRIGATÓRIO:**
+---
+#### **PARTE 1: VISÃO GERAL E HISTÓRICA DA LIGA - {liga.upper()}**
+* **Perfil da Liga:** [Resumo sobre o estilo de jogo.]
+* **Dominância na Década:** [Análise da distribuição de poder.]
+* **Principais Rivalidades:** [Descrição dos clássicos.]
+* **Lendas da Liga:** [Menção aos jogadores e seus clubes.]
+* **Curiosidades e Recordes:** [Apresentação dos factos interessantes com detalhes.]
+---
+"""
                             resultado_p1 = gerar_texto_com_ia(prompt_p1)
-                            if resultado_p1 and "parte 1" in resultado_p1.lower() and "visão geral" in resultado_p1.lower():
+                            if resultado_p1 and "parte 1" in resultado_p1.lower() and "visão geral" in resultado_p1.lower() and "liga" in resultado_p1.lower():
                                 st.session_state['dossie_p1_resultado'] = resultado_p1
                                 st.session_state['contexto_liga'] = {'liga': liga, 'pais': pais}
                                 st.rerun()
                             else:
-                                st.error("A geração da Parte 1 falhou. Tente novamente.")
-                                st.text_area("Resposta recebida da IA:", resultado_p1 or "Nenhuma resposta.", height=150)
+                                st.error("A geração da Parte 1 falhou. A IA retornou uma resposta inesperada ou fora do tópico. Isto pode ser um problema temporário. Por favor, tente novamente.")
+                                st.text_area("Resposta recebida da IA (para depuração):", resultado_p1 or "Nenhuma resposta.", height=150)
 
         # FASE 2: UPLOAD DAS IMAGENS E GERAÇÃO FINAL
         if 'dossie_p1_resultado' in st.session_state and 'dossie_final_completo' not in st.session_state:
@@ -126,35 +146,23 @@ if check_password():
                         with st.spinner("AGENTE DE INTELIGÊNCIA a 'ler' imagens e a finalizar o dossiê..."):
                             lista_imagens_bytes = [p.getvalue() for p in prints_classificacao]
                             contexto = st.session_state['contexto_liga']
-                            # --- PROMPT ATUALIZADO PARA SOLICITAR JSON ---
                             prompt_final = f"""
-**PERSONA:** Você é um Analista de Dados Quantitativo... [Resto do prompt multimodal]...
+**PERSONA:** Você é um Analista de Dados Quantitativo e um Especialista em Futebol... [Resto do prompt multimodal, que já está a funcionar bem]...
 
 **MODELO DE SAÍDA OBRIGATÓRIO:**
-[Copie e cole aqui o modelo de saída completo do dossiê em Markdown, como antes]
+[Modelo de saída do dossiê em Markdown]
 ---
-**INSTRUÇÃO FINAL E CRÍTICA:** Após o final do dossiê em markdown, adicione um separador `---JSON_DATA_START---` seguido por um bloco de código JSON. Este JSON deve ser uma lista de objetos, onde cada objeto representa uma equipa e contém as chaves "Equipa" e "Pontuação Total" do seu 'Placar de Dominância'.
-**Exemplo do JSON:**
-```json
-[
-  {{"Equipa": "Manchester City", "Pontuação Total": 25}},
-  {{"Equipa": "Liverpool", "Pontuação Total": 18}}
-]
-```
+**INSTRUÇÃO FINAL E CRÍTICA:** Após o final do dossiê em markdown, adicione um separador `---JSON_DATA_START---` seguido por um bloco de código JSON... [Resto da instrução para JSON]...
 """
                             dossie_final_raw = gerar_dossie_com_ia_multimodal(prompt_final, lista_imagens_bytes)
                             if dossie_final_raw:
-                                # --- LÓGICA PARA PROCESSAR MARKDOWN E JSON ---
                                 if "---JSON_DATA_START---" in dossie_final_raw:
                                     parts = dossie_final_raw.split("---JSON_DATA_START---")
                                     st.session_state['dossie_final_completo'] = parts[0]
-                                    
-                                    # Limpa e extrai o JSON
                                     json_str = parts[1].strip().replace("```json", "").replace("```", "")
                                     try:
                                         data = json.loads(json_str)
                                         df = pd.DataFrame(data)
-                                        # Renomeia colunas para o gráfico
                                         df.rename(columns={"Pontuação Total": "Pontuacao"}, inplace=True)
                                         st.session_state['dominancia_df'] = df
                                     except json.JSONDecodeError as e:
@@ -167,24 +175,17 @@ if check_password():
                             else:
                                 st.error("A geração do dossiê final falhou.")
 
-        # --- EXIBIÇÃO DO DOSSIÊ FINAL E GRÁFICO ---
+        # EXIBIÇÃO DO DOSSIÊ FINAL E GRÁFICO
         if 'dossie_final_completo' in st.session_state:
             st.markdown("---"); st.header("Dossiê Final Consolidado"); st.success("Dossiê gerado com sucesso!")
-            
-            # Extrai e exibe o markdown e o gráfico em colunas
             dossie_markdown = st.session_state['dossie_final_completo']
             dominancia_df = st.session_state.get('dominancia_df')
-
-            col1, col2 = st.columns([2, 1]) # Dossiê ocupa 2/3, Gráfico 1/3
-
+            col1, col2 = st.columns([2, 1])
             with col1:
                 st.markdown(dossie_markdown)
-
             with col2:
                 if dominancia_df is not None and not dominancia_df.empty:
                     st.subheader("Visualização da Dominância")
-                    
-                    # Cria o gráfico de barras com Altair
                     chart = alt.Chart(dominancia_df).mark_bar().encode(
                         x=alt.X('Pontuacao:Q', title='Pontuação Total'),
                         y=alt.Y('Equipa:N', sort='-x', title='Equipa'),
@@ -192,11 +193,9 @@ if check_password():
                     ).properties(
                         title='Placar de Dominância na Liga'
                     ).interactive()
-
                     st.altair_chart(chart, use_container_width=True)
                 else:
                     st.info("Não foi possível gerar a visualização de dados.")
-
             if st.button("Limpar e Iniciar Nova Análise"):
                 password_state = st.session_state.get("password_correct", False)
                 st.session_state.clear()
