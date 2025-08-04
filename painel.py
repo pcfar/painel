@@ -35,7 +35,8 @@ def gerar_resposta_ia(prompt, imagens_bytes=None):
         st.error("Chave da API do Gemini não encontrada.")
         return None
     
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}"
+    # O modelo Gemini 1.5 Pro é mais indicado para tarefas complexas como esta
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key={api_key}"
     headers = {'Content-Type': 'application/json'}
     
     parts = [{"text": prompt}]
@@ -44,16 +45,20 @@ def gerar_resposta_ia(prompt, imagens_bytes=None):
             encoded_image = base64.b64encode(imagem_bytes).decode('utf-8')
             parts.append({"inline_data": {"mime_type": "image/jpeg", "data": encoded_image}})
             
-    data = {"contents": [{"parts": parts}]}
+    # Habilita a ferramenta de busca na web para a IA poder aceder aos links
+    tools = [{"google_search": {"type": "retrieval"}}]
+    
+    data = {"contents": [{"parts": parts}], "tools": tools}
     
     try:
-        response = requests.post(url, headers=headers, data=json.dumps(data), timeout=300)
+        response = requests.post(url, headers=headers, data=json.dumps(data), timeout=400) # Timeout aumentado
         response.raise_for_status()
         result = response.json()
         if 'candidates' in result and result['candidates']:
             return result['candidates'][0]['content']['parts'][0]['text']
     except Exception as e:
         st.error(f"Erro na chamada à API: {e}")
+        st.error(f"Resposta recebida do servidor: {response.text if 'response' in locals() else 'N/A'}")
     return None
 
 # --- APLICAÇÃO PRINCIPAL ---
@@ -71,121 +76,103 @@ if check_password():
 
     # --- ABA 1: DOSSIÊ DE LIGA ---
     with tab1:
-        # ... (Todo o código da Aba 1, que já está estável, permanece aqui)
         st.info("O Dossiê de Liga está funcional. Use esta aba para analisar uma liga inteira.")
+        # O código completo da Aba 1, que já está estável, seria mantido aqui.
+        # Por uma questão de clareza, foi omitido desta visualização.
 
-
-    # --- ABA 2: DOSSIÊ DE CLUBE ---
+    # --- ABA 2: DOSSIÊ DE CLUBE (MODELO ORIENTADO PELO ANALISTA) ---
     with tab2:
-        st.subheader("Criar Dossiê 2: Análise Profunda de Clube")
+        st.subheader("Criar Dossiê 2: Análise Profunda de Clube v3.0")
 
-        # --- Etapa 1: Seleção do Alvo e Geração do Briefing ---
-        if 'dossie_clube_final' not in st.session_state:
-            with st.form("form_clube_p1"):
-                st.markdown("**Etapa 1: Selecione o alvo e gere o briefing de dados para validação.**")
+        if 'dossie_clube_final_v3' not in st.session_state:
+            with st.form("form_clube_v3"):
+                st.markdown("**FASE 1: INPUTS DO ANALISTA**")
+                st.info("Forneça as fontes de dados primárias para a IA processar. A precisão da análise depende da qualidade dos seus inputs.")
+
+                equipa_nome = st.text_input("Nome da Equipa Alvo*", placeholder="Ex: Manchester City")
                 
-                # Placeholder para a lista de equipas. Idealmente, viria do Dossiê 1.
-                # Se o dataframe do Dossiê 1 existir, usa-o. Senão, usa uma lista padrão.
-                if 'dominancia_df' in st.session_state and st.session_state.dominancia_df is not None:
-                    lista_equipas = st.session_state.dominancia_df['Equipa'].tolist()
-                else:
-                    lista_equipas = ["Manchester City", "Liverpool", "Arsenal", "Chelsea", "Manchester United"]
+                st.markdown("<h6>Links dos Planteis (Transfermarkt ou similar)</h6>", unsafe_allow_html=True)
+                link_plantel_anterior = st.text_input("Link do Plantel (Temporada Anterior)*", placeholder="Ex: https://www.transfermarkt.pt/manchester-city/kader/verein/281/saison_id/2023")
+                link_plantel_atual = st.text_input("Link do Plantel (Temporada Atual)*", placeholder="Ex: https://www.transfermarkt.pt/manchester-city/kader/verein/281/saison_id/2024")
 
-                equipa_alvo = st.selectbox("Selecione a Equipa Alvo*", options=lista_equipas)
-                
-                fontes_prioritarias = st.text_area("Fontes Prioritárias (Opcional)", 
-                                                   help="Insira URLs (uma por linha) de fontes que a IA deve priorizar na pesquisa (ex: página do plantel no Transfermarkt).")
+                st.markdown("<h6>Prints de Desempenho (FBref, Sofascore, etc.)</h6>", unsafe_allow_html=True)
+                prints_desempenho = st.file_uploader("Carregue os prints com as estatísticas detalhadas da temporada anterior*", 
+                                                     accept_multiple_files=True, 
+                                                     key="prints_clube")
 
-                if st.form_submit_button("Gerar Briefing de Dados"):
-                    if not equipa_alvo:
-                        st.error("Por favor, selecione uma equipa.")
+                if st.form_submit_button("Gerar Análise do Clube"):
+                    if not all([equipa_nome, link_plantel_anterior, link_plantel_atual, prints_desempenho]):
+                        st.error("Por favor, preencha todos os campos obrigatórios (*).")
                     else:
-                        with st.spinner(f"AGENTE DE INTELIGÊNCIA a pesquisar dados sobre o {equipa_alvo}..."):
-                            prompt_briefing = f"""
-**TAREFA CRÍTICA:** Aja como um pesquisador de dados desportivos. Realize uma pesquisa aprofundada na web sobre o clube '{equipa_alvo}'.
+                        with st.spinner(f"AGENTE DE INTELIGÊNCIA a processar os dados sobre o {equipa_nome}... Este processo é complexo e pode demorar alguns minutos."):
+                            lista_imagens_bytes = [p.getvalue() for p in prints_desempenho]
+                            
+                            prompt_final = f"""
+**TAREFA CRÍTICA:** Aja como um Analista de Futebol de elite. A sua única função é processar os dados fornecidos e redigir um dossiê tático profundo sobre o clube '{equipa_nome}'. NÃO use nenhum conhecimento prévio que tenha. Baseie-se APENAS nas fontes fornecidas.
 
-**FONTES A PRIORIZAR (se fornecidas):**
-{fontes_prioritarias}
+**ALGORITMO DE EXECUÇÃO OBRIGATÓRIO:**
 
-**DADOS A ENCONTRAR (OBRIGATÓRIO CITAR A FONTE PARA CADA DADO):**
-1.  **Treinador Atual:** Nome e há quanto tempo está no cargo.
-2.  **Principais Transferências (Entradas):** Liste 2-3 reforços chave para a temporada atual/próxima.
-3.  **Principais Transferências (Saídas):** Liste 2-3 saídas importantes.
-4.  **Estatísticas Chave (Temporada Anterior):** Encontre o xG (Gols Esperados) a favor e contra por jogo, e a posse de bola média.
-5.  **Onze Titular Provável:** Com base nas notícias mais recentes, qual a formação e os 11 jogadores mais prováveis?
+**1. COMPARAÇÃO DE PLANTEIS (Fontes: Links)**
+   - ACEDA ao link da temporada anterior: {link_plantel_anterior}
+   - ACEDA ao link da temporada atual: {link_plantel_atual}
+   - COMPARE as duas listas de jogadores e identifique TODAS as saídas e TODAS as chegadas. Ignore jogadores que regressam de empréstimo, a menos que sejam relevantes.
+   - ESTRUTURE esta informação para a secção "Balanço de Transferências".
 
-**FORMATO DE SAÍDA OBRIGATÓRIO (BRIEFING DE VALIDAÇÃO):**
-Use Markdown para apresentar os dados de forma clara, citando a fonte com um link para cada informação factual. Exemplo:
-- **Treinador:** Nome do Treinador (Fonte: https://www.dafont.com/pt/)
+**2. EXTRAÇÃO DE DADOS DE DESEMPENHO (Fontes: Imagens)**
+   - ANALISE CADA imagem fornecida.
+   - EXTRAIA as principais métricas estatísticas da temporada anterior (xG, posse de bola, finalizações, desempenho em casa vs. fora, etc.).
+   - ESTRUTURE estes dados para a secção "Raio-X Estatístico" e use-os para escrever a análise dos "Padrões de Jogo".
+
+**3. REDAÇÃO DO DOSSIÊ**
+   - Com todos os dados extraídos e estruturados, REDIJA o dossiê final seguindo o **MODELO OBRIGATÓRIO** abaixo.
+   - A sua análise deve CONECTAR os pontos. Por exemplo, como as transferências (ponto 1) podem impactar os padrões de desempenho (ponto 2) e o modelo de jogo projetado.
+
+---
+**MODELO OBRIGATÓRIO (Use este formato exato):**
+
+### **DOSSIÊ ESTRATÉGICO DE CLUBE: {equipa_nome.upper()}**
+
+**1. EVOLUÇÃO DO PLANTEL (ANÁLISE COMPARATIVA)**
+* **Balanço de Transferências (Factos):**
+    * **Lista Completa de Chegadas:** [Liste aqui as chegadas identificadas no passo 1]
+    * **Lista Completa de Saídas:** [Liste aqui as saídas identificadas no passo 1]
+* **Análise de Impacto (Ganhos e Perdas):**
+    * [Escreva a sua análise qualitativa sobre o que a equipa ganha com os reforços]
+    * [Escreva a sua análise qualitativa sobre o que a equipa perde com as saídas]
+
+**2. DNA DO DESEMPENHO (TEMPORADA ANTERIOR)**
+* **Raio-X Estatístico:** [Crie uma tabela com as principais métricas extraídas dos prints]
+* **Padrões de Jogo Identificados:** [Analise os dados da tabela. A equipa é dominante? Tem dificuldade em criar? etc.]
+* **Análise Comparativa Casa vs. Fora:** [Analise os padrões de desempenho em casa e fora, com base nos dados dos prints]
+
+**3. O PLANO DE JOGO (ANÁLISE TÁTICA)**
+* **Modelo de Jogo Principal:** [Descreva a formação e o estilo de jogo mais utilizados na temporada anterior]
+* **Protagonistas e Destaques:** [Identifique os jogadores mais influentes estatisticamente]
+* **Projeção Tática para a Nova Temporada:** [Conecte as transferências com o modelo de jogo e projete possíveis mudanças táticas]
+
+**4. VEREDITO FINAL E CENÁRIOS DE OBSERVAÇÃO**
+* **Síntese Analítica:** [O resumo inteligente que conecta todos os pontos do dossiê]
+* **Cenários de Monitoramento:** [Crie 3 cenários práticos e detalhados para observar nos primeiros jogos da nova temporada]
 """
-                            briefing = gerar_resposta_ia(prompt_briefing)
-                            if briefing:
-                                st.session_state['briefing_dados'] = briefing
-                                st.session_state['equipa_alvo_selecionada'] = equipa_alvo
+                            dossie_final = gerar_resposta_ia(prompt_final, lista_imagens_bytes)
+                            if dossie_final and "dossiê estratégico de clube" in dossie_final.lower():
+                                st.session_state['dossie_clube_final_v3'] = dossie_final
                                 st.rerun()
                             else:
-                                st.error("A pesquisa de dados falhou. A IA não retornou um briefing. Tente novamente.")
-
-        # --- Etapa 2: Validação e Geração do Dossiê Final ---
-        if 'briefing_dados' in st.session_state and 'dossie_clube_final' not in st.session_state:
-            st.markdown("---")
-            st.subheader("Etapa 2: Validação do Briefing e Geração do Dossiê Final")
-            
-            st.info("Por favor, valide os dados encontrados pela IA. Se estiverem corretos, aprove para gerar o dossiê completo.")
-            st.markdown(st.session_state['briefing_dados'])
-
-            if st.button("Aprovar Dados e Gerar Dossiê Completo"):
-                with st.spinner(f"AGENTE DE INTELIGÊNCIA a redigir o dossiê completo sobre o {st.session_state['equipa_alvo_selecionada']}..."):
-                    prompt_dossie_final = f"""
-**TAREFA CRÍTICA:** Aja como um Analista de Futebol de elite. Com base nos factos validados abaixo, escreva um dossiê profundo sobre o '{st.session_state['equipa_alvo_selecionada']}', seguindo a estrutura detalhada.
-
-**FACTOS VALIDADOS (Use apenas esta informação para a base factual):**
----
-{st.session_state['briefing_dados']}
----
-
-**ESTRUTURA DO DOSSIÊ (MODELO OBRIGATÓRIO):**
-
-### **DOSSIÊ ESTRATÉGICO DE CLUBE: {st.session_state['equipa_alvo_selecionada'].upper()}**
-
-**1. O DNA DO CLUBE (A IDENTIDADE)**
-* **Fotografia do Elenco Atual:**
-    * **Onze Titular Provável (Tabela):** [Crie uma tabela com a formação e os 11 titulares]
-    * **Análise de Transferências:** [Descreva o impacto dos reforços e saídas listados nos factos]
-* **Raio-X da Temporada Anterior:**
-    * **Padrões Estatísticos:** [Analise os dados de xG e posse de bola dos factos. O que eles nos dizem sobre o estilo da equipa?]
-
-**2. A MÁQUINA TÁTICA (COMO A EQUIPA JOGA)**
-* **O Comandante e a Sua Filosofia:** [Analise o perfil do treinador listado nos factos]
-* **Decodificando o Sistema:**
-    * **O Jogador-Sistema:** [Com base no onze titular, identifique e analise o jogador tático mais fundamental]
-    * **Flexibilidade e Variações:** [Discuta como a equipa pode variar taticamente com base no plantel]
-
-**3. O VEREDITO ACIONÁVEL (O QUE OBSERVAR)**
-* **Síntese Analítica (O Resumo Inteligente):** [Conecte todos os pontos: como as transferências impactam o sistema do treinador, refletido nos padrões estatísticos]
-* **Cenários de Monitoramento In-Live (Os Gatilhos):** [Crie 3 cenários práticos para observar durante os jogos]
-"""
-                    dossie_final = gerar_resposta_ia(prompt_dossie_final)
-                    if dossie_final:
-                        st.session_state['dossie_clube_final'] = dossie_final
-                        st.rerun()
-                    else:
-                        st.error("A geração do dossiê final falhou. Tente novamente.")
+                                st.error("A geração do dossiê falhou. A IA pode ter tido dificuldade em aceder aos links ou processar as imagens. Verifique os links e tente novamente.")
+                                st.text_area("Resposta recebida (para depuração):", dossie_final or "Nenhuma resposta", height=200)
 
         # --- Exibição do Dossiê de Clube Final ---
-        if 'dossie_clube_final' in st.session_state:
+        if 'dossie_clube_final_v3' in st.session_state:
             st.markdown("---")
-            st.header(f"Dossiê Final: {st.session_state['equipa_alvo_selecionada']}")
-            st.success("Dossiê de clube gerado com sucesso!")
-            st.markdown(st.session_state['dossie_clube_final'])
+            st.header("Dossiê de Clube Gerado")
+            st.success("Análise concluída com sucesso!")
+            st.markdown(st.session_state['dossie_clube_final_v3'])
 
             if st.button("Limpar e Analisar Outro Clube"):
-                # Limpa apenas as chaves relacionadas ao Dossiê de Clube
-                for key in ['briefing_dados', 'dossie_clube_final', 'equipa_alvo_selecionada']:
-                    if key in st.session_state:
-                        del st.session_state[key]
+                if 'dossie_clube_final_v3' in st.session_state:
+                    del st.session_state['dossie_clube_final_v3']
                 st.rerun()
-
 
     with tab3: st.info("Em desenvolvimento.")
     with tab4: st.info("Em desenvolvimento.")
