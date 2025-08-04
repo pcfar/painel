@@ -138,8 +138,19 @@ if check_password():
                             try:
                                 # ETAPA 2.2: PROCESSAMENTO E GERAÇÃO DO DOSSIÊ
                                 with st.spinner("Etapa 2.2: Calculando dominância e escrevendo a análise..."):
-                                    json_data_str_cleaned = json_data_str.strip().replace("```json", "").replace("```", "")
-                                    dados_temporadas = json.loads(json_data_str_cleaned)
+                                    # --- CORREÇÃO APLICADA AQUI ---
+                                    # Encontra o início do JSON (o primeiro '{' ou '[') e extrai a partir daí.
+                                    start_index = json_data_str.find('[')
+                                    if start_index == -1:
+                                        start_index = json_data_str.find('{')
+                                    
+                                    if start_index != -1:
+                                        json_only_str = json_data_str[start_index:]
+                                        # Remove o marcador de fim de código, se existir
+                                        json_only_str = json_only_str.strip().replace("```", "")
+                                        dados_temporadas = json.loads(json_only_str)
+                                    else:
+                                        raise json.JSONDecodeError("Nenhum bloco JSON encontrado na resposta da IA.", json_data_str, 0)
                                     
                                     # Cálculo do Placar de Dominância em Python
                                     placar = {}
@@ -156,7 +167,6 @@ if check_password():
                                     
                                     placar_ordenado = sorted(placar.items(), key=lambda x: x[1], reverse=True)
                                     
-                                    # Criação da tabela em Markdown
                                     tabela_md = "| Posição | Equipa | Pontuação Total |\n| :--- | :--- | :--- |\n"
                                     for i, (equipa, pontos) in enumerate(placar_ordenado):
                                         tabela_md += f"| {i+1} | {equipa} | {pontos} |\n"
@@ -216,8 +226,10 @@ if check_password():
                     ).properties(title='Placar de Dominância na Liga').interactive()
                     st.altair_chart(chart, use_container_width=True)
             if st.button("Limpar e Iniciar Nova Análise"):
-                # ... (código de limpar sessão)
-                pass
+                password_state = st.session_state.get("password_correct", False)
+                st.session_state.clear()
+                st.session_state["password_correct"] = password_state
+                st.rerun()
 
     with tab2: st.info("Em desenvolvimento.")
     with tab3: st.info("Em desenvolvimento.")
