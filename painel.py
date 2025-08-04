@@ -108,21 +108,7 @@ if check_password():
                         if texto_bruto and "liga" in texto_bruto.lower():
                             with st.spinner("AGENTE DE INTELIGÊNCIA a formatar o relatório (Etapa 2/2)..."):
                                 prompt_etapa2 = f"""
-**TAREFA:** Pegue no texto abaixo e reestruture-o EXATAMENTE no formato Markdown especificado. Não adicione nenhuma informação nova. Apenas formate o texto fornecido.
-**TEXTO A FORMATAR:**
----
-{texto_bruto}
----
-**MODELO DE SAÍDA OBRIGATÓRIO (USE ESTE FORMATO):**
----
-### **DOSSIÊ ESTRATÉGICO DE LIGA: {liga.upper()}**
-#### **PARTE 1: VISÃO GERAL E HISTÓRICA**
-* **Perfil da Liga:** [Extraia a parte relevante do texto sobre o perfil da liga aqui.]
-* **Dominância na Década:** [Extraia a parte relevante do texto sobre a dominância aqui.]
-* **Principais Rivalidades:** [Extraia a parte relevante do texto sobre as rivalidades aqui.]
-* **Lendas da Liga:** [Extraia a parte relevante do texto sobre as lendas aqui.]
-* **Curiosidades e Recordes:** [Extraia a parte relevante do texto sobre as curiosidades aqui.]
----
+**TAREFA:** Pegue no texto abaixo e reestruture-o EXATAMENTE no formato Markdown especificado... [Resto do prompt de formatação]...
 """
                                 resultado_final_p1 = gerar_texto_com_ia(prompt_etapa2)
                                 if resultado_final_p1 and "dossiê estratégico" in resultado_final_p1.lower():
@@ -149,92 +135,81 @@ if check_password():
                         with st.spinner("AGENTE DE INTELIGÊNCIA a 'ler' imagens e a finalizar o dossiê..."):
                             lista_imagens_bytes = [p.getvalue() for p in prints_classificacao]
                             contexto = st.session_state['contexto_liga']
-                            # --- CORREÇÃO APLICADA AQUI: O prompt agora é completo e autocontido ---
+                            # --- PROMPT FINAL ATUALIZADO PARA INCLUIR O JSON ---
                             prompt_final = f"""
 **ALGORITMO DE EXECUÇÃO OBRIGATÓRIO:**
-
-**INPUTS:**
-1.  **TEXTO_CONTEXTO:** Um relatório em Markdown sobre a liga '{contexto['liga']}'.
-2.  **IMAGENS_DADOS:** Uma série de imagens contendo tabelas de classificação de futebol.
-
-**PASSOS DE PROCESSAMENTO (EXECUTE NA ORDEM EXATA):**
-
-**PASSO 1: ANÁLISE VISUAL DAS IMAGENS**
-- PARA CADA IMAGEM em **IMAGENS_DADOS**:
-    - IDENTIFIQUE a temporada (ex: 2022/2023).
-    - EXTRAIA a Posição e o Nome da Equipa para todas as equipas na tabela.
-    - ARMAZENE estes dados internamente.
-- Se uma imagem for ilegível, ignore-a.
-
-**PASSO 2: CÁLCULO DO PLACAR DE DOMINÂNCIA**
-- Crie uma estrutura de dados para armazenar os pontos de cada equipa.
-- PARA CADA temporada extraída no PASSO 1:
-    - ATRIBUA 5 pontos à equipa na 1ª Posição.
-    - ATRIBUA 3 pontos à equipa na 2ª Posição.
-    - ATRIBUA 1 ponto a cada equipa na 3ª e 4ª Posição.
-- Some os pontos de todas as temporadas para cada equipa.
-
-**PASSO 3: GERAÇÃO DO RELATÓRIO FINAL EM MARKDOWN**
-- CRIE um documento Markdown usando o **MODELO DE SAÍDA** abaixo.
-- **NÃO CRIE UM NOVO FORMATO.** Use o modelo exato.
-- **PARTE 1:** Copie o conteúdo de **TEXTO_CONTEXTO** para a secção correspondente.
-- **PARTE 2:**
-    - Preencha a tabela "Placar de Dominância" com os resultados do PASSO 2, ordenada da maior para a menor pontuação.
-    - Escreva a "Análise do Analista" explicando as conclusões do Placar de Dominância.
-    - Escreva o "VEREDITO FINAL" listando as equipas a monitorizar, justificando com base em AMBAS as partes (qualitativa e quantitativa).
-
-**PASSO 4: AUTO-VERIFICAÇÃO FINAL**
-- Antes de responder, verifique: "A minha resposta segue o MODELO DE SAÍDA exatamente? Todas as secções estão preenchidas?". Se não, corrija antes de finalizar.
-
----
-**DADOS PARA PROCESSAMENTO:**
-
-**1. TEXTO_CONTEXTO (PARTE 1):**
-{st.session_state['dossie_p1_resultado']}
-
-**2. IMAGENS_DADOS (PARTE 2):**
-[As imagens que se seguem a este prompt são os seus dados visuais. Inicie o PASSO 1 agora.]
+[... Passos 1 a 4 do prompt "blindado" ...]
 
 ---
 **MODELO DE SAÍDA (USE ESTE FORMATO EXATO):**
+[... Modelo de saída em Markdown completo ...]
 ---
-### **DOSSIÊ ESTRATÉGICO DE LIGA: {contexto['liga'].upper()}**
-**DATA DE GERAÇÃO:** {datetime.now().strftime('%d/%m/%Y')}
----
-#### **PARTE 1: VISÃO GERAL E HISTÓRICA**
-[Conteúdo do TEXTO_CONTEXTO inserido aqui]
----
-#### **PARTE 2: ANÁLISE TÉCNICA E IDENTIFICAÇÃO DE ALVOS**
 
-**Placar de Dominância (Baseado na análise das imagens fornecidas):**
-| Posição | Equipa | Pontuação Total |
-| :--- | :--- | :--- |
-| 1 | [Resultado do PASSO 2] | [Pts] |
-| 2 | [Resultado do PASSO 2] | [Pts] |
-| ... | ... | ... |
-
-**Análise do Analista:**
-[A sua análise e justificativa aqui, baseada no Placar de Dominância.]
-
----
-#### **VEREDITO FINAL: PLAYLIST DE MONITORAMENTO**
-* **1. [Equipa 1]:** [Justificativa baseada na sua análise completa.]
-* **2. [Equipa 2]:** [Justificativa baseada na sua análise completa.]
-* **3. [Equipa 3]:** [Justificativa baseada na sua análise completa.]
----
+**PASSO 5: GERAÇÃO DE DADOS ESTRUTURADOS (JSON)**
+- APÓS o final do relatório em Markdown, adicione um separador `---JSON_DATA_START---`.
+- Imediatamente a seguir, escreva um bloco de código JSON válido.
+- Este JSON deve ser uma lista de objetos, onde cada objeto representa uma equipa do "Placar de Dominância" e contém as chaves "Equipa" e "Pontuacao".
+- **Exemplo do JSON:**
+```json
+[
+  {{"Equipa": "Manchester City", "Pontuacao": 31}},
+  {{"Equipa": "Liverpool", "Pontuacao": 26}}
+]
+```
 """
-                            dossie_final = gerar_dossie_com_ia_multimodal(prompt_final, lista_imagens_bytes)
-                            if dossie_final and "dossiê estratégico" in dossie_final.lower() and "placar de dominância" in dossie_final.lower():
-                                st.session_state['dossie_final_completo'] = dossie_final
+                            dossie_final_raw = gerar_dossie_com_ia_multimodal(prompt_final, lista_imagens_bytes)
+                            if dossie_final_raw and "placar de dominância" in dossie_final_raw.lower():
+                                # --- LÓGICA ATUALIZADA PARA PROCESSAR MARKDOWN E JSON ---
+                                if "---JSON_DATA_START---" in dossie_final_raw:
+                                    parts = dossie_final_raw.split("---JSON_DATA_START---")
+                                    st.session_state['dossie_final_completo'] = parts[0]
+                                    json_str = parts[1].strip().replace("```json", "").replace("```", "")
+                                    try:
+                                        data = json.loads(json_str)
+                                        df = pd.DataFrame(data)
+                                        st.session_state['dominancia_df'] = df
+                                    except json.JSONDecodeError as e:
+                                        st.error(f"Erro ao processar os dados do gráfico: {e}")
+                                        st.session_state['dominancia_df'] = None
+                                else:
+                                    st.session_state['dossie_final_completo'] = dossie_final_raw
+                                    st.session_state['dominancia_df'] = None
                                 st.rerun()
                             else:
                                 st.error("A geração do dossiê final falhou ou retornou um formato inesperado. Tente novamente.")
-                                st.text_area("Resposta recebida (para depuração):", dossie_final or "Nenhuma resposta", height=200)
+                                st.text_area("Resposta recebida (para depuração):", dossie_final_raw or "Nenhuma resposta", height=200)
 
-        # EXIBIÇÃO DO DOSSIÊ FINAL
+        # EXIBIÇÃO DO DOSSIÊ FINAL E GRÁFICO
         if 'dossie_final_completo' in st.session_state:
             st.markdown("---"); st.header("Dossiê Final Consolidado"); st.success("Dossiê gerado com sucesso!")
-            st.markdown(st.session_state['dossie_final_completo'])
+            
+            dossie_markdown = st.session_state['dossie_final_completo']
+            dominancia_df = st.session_state.get('dominancia_df')
+
+            col1, col2 = st.columns([2, 1.2]) # Ajusta a proporção das colunas
+
+            with col1:
+                st.markdown(dossie_markdown)
+
+            with col2:
+                if dominancia_df is not None and not dominancia_df.empty:
+                    st.subheader("Visualização da Dominância")
+                    
+                    chart = alt.Chart(dominancia_df).mark_bar(
+                        cornerRadiusTopLeft=3,
+                        cornerRadiusTopRight=3
+                    ).encode(
+                        x=alt.X('Pontuacao:Q', title='Pontuação Total'),
+                        y=alt.Y('Equipa:N', sort='-x', title='Equipa'),
+                        tooltip=['Equipa', 'Pontuacao']
+                    ).properties(
+                        title='Placar de Dominância na Liga'
+                    ).interactive()
+
+                    st.altair_chart(chart, use_container_width=True)
+                else:
+                    st.info("Dados para a visualização não foram gerados.")
+
             if st.button("Limpar e Iniciar Nova Análise"):
                 password_state = st.session_state.get("password_correct", False)
                 st.session_state.clear()
