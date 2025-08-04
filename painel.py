@@ -35,7 +35,7 @@ def gerar_resposta_ia(prompt, imagens_bytes=None):
         st.error("Chave da API do Gemini não encontrada.")
         return None
     
-    model_name = "gemini-1.5-flash-latest" # Usar o Flash para maior rapidez neste pedido massivo
+    model_name = "gemini-1.5-flash-latest"
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
     headers = {'Content-Type': 'application/json'}
     
@@ -109,12 +109,27 @@ if check_password():
                 
                 st.divider()
 
+                # --- GUIA DE NAVEGAÇÃO INTEGRADO ---
                 st.markdown("**2. Prints de Desempenho da Equipa (Temporada Anterior)**")
-                st.markdown("""
-                - **Print A:** Visão Geral e Performance Ofensiva (FBref)
-                - **Print B:** Padrões de Construção de Jogo (FBref)
-                - **Print C:** Análise Comparativa Casa vs. Fora (FBref)
-                """)
+                with st.expander("▼ Guia para Print A: Visão Geral e Performance Ofensiva"):
+                    st.markdown("""
+                    - **Onde Encontrar:** `FBref.com` → Página da Equipa → Temporada Anterior → Tabela **"Squad & Player Stats"**.
+                    - **Ação:** Role a página para baixo até encontrar a tabela principal.
+                    - **Conteúdo do Print:** Recorte a tabela para incluir as colunas desde **"Player"** (Jogador) até **"Expected"** (xG, npxG, xAG).
+                    """)
+                with st.expander("▼ Guia para Print B: Padrões de Construção de Jogo"):
+                    st.markdown("""
+                    - **Onde Encontrar:** Na mesma página do Print A, acima da tabela principal, clique no link **"Passing"** (Passes).
+                    - **Ação:** Aceda à tabela "Squad & Player Passing".
+                    - **Conteúdo do Print:** Recorte a tabela para focar nas colunas de **"Prog"** (Passes Progressivos).
+                    """)
+                with st.expander("▼ Guia para Print C: Análise Comparativa Casa vs. Fora"):
+                    st.markdown("""
+                    - **Onde Encontrar:** A partir da página da equipa, encontre um link para a competição (ex: "Premier League"). Na página da competição, procure pelo menu **"Home & Away"** (Casa & Fora).
+                    - **Ação:** Aceda à tabela que divide o desempenho em "Home" e "Away".
+                    - **Conteúdo do Print:** Recorte a tabela que compara o desempenho da equipa em casa e fora.
+                    """)
+                
                 st.file_uploader("Carregar Prints da Equipa (A, B e C)*", 
                                  accept_multiple_files=True, 
                                  key="prints_equipa_consolidado")
