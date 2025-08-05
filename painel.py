@@ -41,7 +41,7 @@ def gerar_resposta_ia(prompt, imagens_bytes=None):
     headers = {'Content-Type': 'application/json'}
     
     parts = [{"text": prompt}]
-    if imagens_bytes: # Mantido para outras funcionalidades
+    if imagens_bytes: 
         for imagem_bytes in imagens_bytes:
             encoded_image = base64.b64encode(imagem_bytes).decode('utf-8')
             parts.append({"inline_data": {"mime_type": "image/jpeg", "data": encoded_image}})
@@ -129,18 +129,25 @@ if check_password():
                             "Desempenho da Equipa": st.session_state.prints_equipa_hybrid
                         }
                         
-                        with st.spinner("FASE 1/2: A extrair texto dos prints com OCR..."):
-                            for categoria, prints in all_prints.items():
-                                texto_extraido += f"\n--- INÍCIO DADOS: {categoria} ---\n"
-                                for p in prints:
-                                    try:
-                                        img = Image.open(p)
-                                        texto_extraido += pytesseract.image_to_string(img, lang='por+eng') + "\n"
-                                    except Exception as e:
-                                        st.warning(f"Não foi possível ler o ficheiro {p.name}: {e}")
-                                texto_extraido += f"--- FIM DADOS: {categoria} ---\n"
+                        progress_bar = st.progress(0)
+                        status_text = st.empty()
+                        total_files = sum(len(files) for files in all_prints.values())
+                        files_processed = 0
+
+                        status_text.text("FASE 1/2: A extrair texto dos prints com OCR...")
+                        for categoria, prints in all_prints.items():
+                            texto_extraido += f"\n--- INÍCIO DADOS: {categoria} ---\n"
+                            for p in prints:
+                                try:
+                                    img = Image.open(p)
+                                    texto_extraido += pytesseract.image_to_string(img, lang='por+eng') + "\n"
+                                except Exception as e:
+                                    st.warning(f"Não foi possível ler o ficheiro {p.name}: {e}")
+                                files_processed += 1
+                                progress_bar.progress(files_processed / total_files)
                         
                         st.success("Extração de texto concluída.")
+                        status_text.text("FASE 1/2: Extração de texto concluída.")
 
                         # --- FASE 2: ANÁLISE COM IA ---
                         with st.spinner(f"FASE 2/2: A enviar texto para a IA para análise do {equipa_nome}..."):
