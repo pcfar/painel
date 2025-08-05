@@ -11,7 +11,7 @@ import time
 import base64
 import pandas as pd
 import altair as alt
-import pytesseract # Importa a biblioteca de OCR
+import pytesseract
 
 # --- Configuração da Página ---
 st.set_page_config(page_title="Painel Tático Final", page_icon="📊", layout="wide")
@@ -204,24 +204,83 @@ if check_password():
 
         # ETAPAS FINAIS
         if st.session_state.club_dossier_step_hybrid >= 5:
-            st.markdown(st.session_state.analise_transferencias_md_hybrid)
+            st.markdown(st.session_state.get("analise_transferencias_md_hybrid", ""))
             st.divider()
 
             if st.session_state.club_dossier_step_hybrid == 5:
-                # ... (código da etapa de aprofundamento individual) ...
-                pass
+                with st.form("form_clube_etapa5_hybrid"):
+                    st.markdown("**Fase 5: Aprofundamento Individual (Opcional)**")
+                    jogadores_selecionados = st.multiselect("Selecione os reforços a analisar:", options=st.session_state.get('lista_chegadas_hybrid', []))
+                    for jogador in jogadores_selecionados:
+                        st.file_uploader(f"Carregar print de estatísticas para **{jogador}**", key=f"print_{jogador}_hybrid")
+                    if st.form_submit_button("Próximo Passo: Dados Coletivos"):
+                        st.session_state.prints_jogadores_hybrid = {}
+                        for jogador in jogadores_selecionados:
+                            if st.session_state[f"print_{jogador}_hybrid"]:
+                                st.session_state.prints_jogadores_hybrid[jogador] = st.session_state[f"print_{jogador}_hybrid"].getvalue()
+                        st.session_state.club_dossier_step_hybrid = 6
+                        st.rerun()
 
             if st.session_state.club_dossier_step_hybrid == 6:
-                # ... (código da etapa de dados coletivos) ...
-                pass
-            
+                st.success("**Verificação:** Dados de aprofundamento individual guardados.")
+                st.markdown("### Fase 6: Dados de Desempenho Coletivo")
+                with st.form("form_clube_etapa6_hybrid"):
+                    st.file_uploader("Carregar Prints da Equipa (A, B e C)*", accept_multiple_files=True, key="prints_equipa_hybrid")
+                    if st.form_submit_button("4. Gerar Dossiê Final Completo"):
+                        if not st.session_state.prints_equipa_hybrid or len(st.session_state.prints_equipa_hybrid) < 3:
+                            st.error("Por favor, carregue os 3 prints da equipa.")
+                        else:
+                            st.session_state.club_dossier_step_hybrid = 7
+                            st.rerun()
+
             if st.session_state.club_dossier_step_hybrid == 7:
-                # ... (código da geração final) ...
-                pass
+                with st.spinner("AGENTE DE INTELIGÊNCIA a redigir o dossiê final..."):
+                    
+                    with st.spinner("A extrair texto dos prints de desempenho com OCR..."):
+                        texto_desempenho_bruto = ""
+                        for p in st.session_state.prints_equipa_hybrid:
+                            texto_desempenho_bruto += pytesseract.image_to_string(Image.open(p), lang='por+eng') + "\n"
+
+                    texto_jogadores_bruto = ""
+                    prompt_imagens_info = []
+                    for jogador, img_bytes in st.session_state.get('prints_jogadores_hybrid', {}).items():
+                        texto_jogadores_bruto += f"\n--- DADOS DE {jogador.upper()} ---\n"
+                        texto_jogadores_bruto += pytesseract.image_to_string(Image.open(io.BytesIO(img_bytes)), lang='por+eng')
+                        prompt_imagens_info.append(f"- Dados individuais para **{jogador}** foram fornecidos.")
+                    
+                    prompt_final = f"""
+**TAREFA:** Redija um dossiê profundo sobre o '{st.session_state.equipa_alvo_hybrid}'.
+**INFORMAÇÃO DISPONÍVEL:**
+1. **Análise de Transferências já realizada:** {st.session_state.analise_transferencias_md_hybrid}
+2. **Texto Bruto de Desempenho Coletivo:** {texto_desempenho_bruto}
+3. **Texto Bruto de Desempenho Individual de Reforços:** {texto_jogadores_bruto}
+
+**ALGORITMO:**
+1. **Mini Dossiês:** Se houver texto de reforços, analise-o para escrever os "Mini Dossiês de Contratação".
+2. **Análise Coletiva:** Analise o texto de desempenho coletivo para escrever a secção "DNA DO DESEMPENHO".
+3. **Consolidação:** Junte tudo no **MODELO OBRIGATÓRIO** abaixo, conectando os pontos de forma inteligente.
+---
+**MODELO OBRIGATÓRIO:**
+### **DOSSIÊ ESTRATÉGICO DE CLUBE: {st.session_state.equipa_alvo_hybrid.upper()}**
+{st.session_state.analise_transferencias_md_hybrid}
+* **Mini Dossiês de Contratação:** [Análise do texto dos reforços]
+**2. DNA DO DESEMPENHO (TEMPORADA ANTERIOR)** [Análise do texto de desempenho coletivo]
+**3. O PLANO DE JOGO (ANÁLISE TÁTICA)** [Projeção tática]
+**4. VEREDITO FINAL E CENÁRIOS DE OBSERVAÇÃO** [Síntese e cenários]
+"""
+                    dossie_final = gerar_resposta_ia(prompt_final)
+                    st.session_state.dossie_clube_final_hybrid = dossie_final or "Falha na geração final."
+                    st.session_state.club_dossier_step_hybrid = 8
+                    st.rerun()
 
             if st.session_state.club_dossier_step_hybrid == 8:
-                # ... (código da exibição final) ...
-                pass
+                st.header(f"Dossiê Final: {st.session_state.equipa_alvo_hybrid}")
+                st.markdown(st.session_state.dossie_clube_final_hybrid)
+                if st.button("Limpar e Analisar Outro Clube"):
+                    keys_to_delete = [k for k in st.session_state if k.endswith('_hybrid')]
+                    for key in keys_to_delete:
+                        del st.session_state[key]
+                    st.rerun()
 
     with tab3: st.info("Em desenvolvimento.")
     with tab4: st.info("Em desenvolvimento.")
