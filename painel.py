@@ -11,6 +11,7 @@ import time
 import base64
 import pandas as pd
 import altair as alt
+import pytesseract # Importa a biblioteca de OCR
 
 # --- Configuração da Página ---
 st.set_page_config(page_title="Painel Tático Final", page_icon="📊", layout="wide")
@@ -35,12 +36,12 @@ def gerar_resposta_ia(prompt, imagens_bytes=None):
         st.error("Chave da API do Gemini não encontrada.")
         return None
     
-    model_name = "gemini-1.5-flash-latest" # Usar o Flash para maior rapidez
+    model_name = "gemini-1.5-flash-latest"
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
     headers = {'Content-Type': 'application/json'}
     
     parts = [{"text": prompt}]
-    if imagens_bytes:
+    if imagens_bytes: # Mantido para outras funcionalidades
         for imagem_bytes in imagens_bytes:
             encoded_image = base64.b64encode(imagem_bytes).decode('utf-8')
             parts.append({"inline_data": {"mime_type": "image/jpeg", "data": encoded_image}})
@@ -89,135 +90,129 @@ if check_password():
         st.info("O Dossiê de Liga está funcional.")
 
     with tab2:
-        st.subheader("Criar Dossiê 2: Análise Profunda de Clube (Linha de Montagem)")
+        st.subheader("Criar Dossiê 2: Análise Profunda de Clube (Arquitetura Híbrida)")
 
-        if 'club_dossier_step_pipe' not in st.session_state:
-            st.session_state.club_dossier_step_pipe = 1
-
-        # ETAPA 1: DEFINIR ALVO
-        if st.session_state.club_dossier_step_pipe == 1:
-            with st.form("form_clube_etapa1_pipe"):
-                st.markdown("**FASE 1: DEFINIR O ALVO**")
+        if 'dossie_clube_final_hybrid' not in st.session_state:
+            with st.form("form_clube_hybrid"):
+                st.markdown("**Forneça todos os dados para a análise completa**")
+                
                 equipa_nome = st.text_input("Nome da Equipa Alvo*", placeholder="Ex: Manchester City")
-                if st.form_submit_button("Próximo Passo: Plantel Anterior"):
-                    if not equipa_nome:
-                        st.error("Por favor, insira o nome da equipa.")
-                    else:
-                        st.session_state.equipa_alvo_pipe = equipa_nome
-                        st.session_state.club_dossier_step_pipe = 2
-                        st.rerun()
-        
-        # ETAPA 2: PROCESSAR PLANTEL ANTERIOR (SEQUENCIALMENTE)
-        if st.session_state.club_dossier_step_pipe == 2:
-            st.markdown(f"### Fase 2: Processamento do Plantel Anterior ({st.session_state.equipa_alvo_pipe})")
-            with st.form("form_clube_etapa2_pipe"):
+                st.divider()
+                
+                st.markdown("**1. Prints dos Planteis**")
                 st.file_uploader("Carregar Print(s) do Plantel (Temporada Anterior)*", 
                                  accept_multiple_files=True, 
-                                 key="prints_plantel_anterior_pipe")
-                if st.form_submit_button("1. Extrair Plantel Anterior"):
-                    if not st.session_state.prints_plantel_anterior_pipe:
-                        st.error("Por favor, carregue os prints do plantel anterior.")
-                    else:
-                        st.session_state.lista_anterior_pipe = []
-                        status_text = st.empty()
-                        progress_bar = st.progress(0)
-                        total_prints = len(st.session_state.prints_plantel_anterior_pipe)
-
-                        for i, print_file in enumerate(st.session_state.prints_plantel_anterior_pipe):
-                            status_text.text(f"A ler o print {i+1} de {total_prints} do plantel anterior...")
-                            imagens_bytes = [print_file.getvalue()]
-                            prompt = "Leia esta imagem de um plantel e retorne uma lista JSON com os nomes de todos os jogadores visíveis. Exemplo: {\"jogadores\": [\"Nome A\", \"Nome B\"]}"
-                            resposta = gerar_resposta_ia(prompt, imagens_bytes)
-                            
-                            if resposta:
-                                try:
-                                    json_str = resposta[resposta.find('{'):resposta.rfind('}')+1]
-                                    dados = json.loads(json_str)
-                                    st.session_state.lista_anterior_pipe.extend(dados.get("jogadores", []))
-                                except (json.JSONDecodeError, IndexError):
-                                    st.error(f"Falha ao extrair a lista de jogadores do print {i+1}. A tentar continuar...")
-                            else:
-                                st.error(f"A IA não conseguiu processar o print {i+1}. A tentar continuar...")
-                            progress_bar.progress((i + 1) / total_prints)
-                        
-                        st.session_state.club_dossier_step_pipe = 3
-                        st.rerun()
-
-        # ETAPA 3: PROCESSAR PLANTEL ATUAL (SEQUENCIALMENTE)
-        if st.session_state.club_dossier_step_pipe == 3:
-            st.success(f"**Verificação:** Plantel anterior processado. Encontrados {len(st.session_state.lista_anterior_pipe)} jogadores.")
-            st.markdown(f"### Fase 3: Processamento do Plantel da Nova Temporada ({st.session_state.equipa_alvo_pipe})")
-            with st.form("form_clube_etapa3_pipe"):
+                                 key="prints_plantel_anterior_hybrid")
                 st.file_uploader("Carregar Print(s) do Plantel (Nova Temporada)*", 
                                  accept_multiple_files=True, 
-                                 key="prints_plantel_atual_pipe")
-                if st.form_submit_button("2. Extrair Plantel da Nova Temporada"):
-                    if not st.session_state.prints_plantel_atual_pipe:
-                        st.error("Por favor, carregue os prints do plantel da nova temporada.")
-                    else:
-                        st.session_state.lista_atual_pipe = []
-                        status_text = st.empty()
-                        progress_bar = st.progress(0)
-                        total_prints = len(st.session_state.prints_plantel_atual_pipe)
+                                 key="prints_plantel_atual_hybrid")
+                st.divider()
 
-                        for i, print_file in enumerate(st.session_state.prints_plantel_atual_pipe):
-                            status_text.text(f"A ler o print {i+1} de {total_prints} do novo plantel...")
-                            imagens_bytes = [print_file.getvalue()]
-                            prompt = "Leia esta imagem de um plantel e retorne uma lista JSON com os nomes de todos os jogadores visíveis. Exemplo: {\"jogadores\": [\"Nome A\", \"Nome B\"]}"
-                            resposta = gerar_resposta_ia(prompt, imagens_bytes)
-                            
-                            if resposta:
-                                try:
-                                    json_str = resposta[resposta.find('{'):resposta.rfind('}')+1]
-                                    dados = json.loads(json_str)
-                                    st.session_state.lista_atual_pipe.extend(dados.get("jogadores", []))
-                                except (json.JSONDecodeError, IndexError):
-                                    st.error(f"Falha ao extrair a lista de jogadores do print {i+1}. A tentar continuar...")
-                            else:
-                                st.error(f"A IA não conseguiu processar o print {i+1}. A tentar continuar...")
-                            progress_bar.progress((i + 1) / total_prints)
+                st.markdown("**2. Prints de Desempenho da Equipa (Temporada Anterior)**")
+                st.file_uploader("Carregar Prints da Equipa (A, B e C)*", 
+                                 accept_multiple_files=True, 
+                                 key="prints_equipa_hybrid")
+
+                if st.form_submit_button("Gerar Dossiê Completo"):
+                    # Validação
+                    if not all([equipa_nome, 
+                                st.session_state.prints_plantel_anterior_hybrid,
+                                st.session_state.prints_plantel_atual_hybrid,
+                                st.session_state.prints_equipa_hybrid]) or len(st.session_state.prints_equipa_hybrid) < 3:
+                        st.error("Por favor, preencha todos os campos e carregue todos os prints necessários.")
+                    else:
+                        # --- FASE 1: EXTRAÇÃO COM OCR ---
+                        texto_extraido = ""
+                        all_prints = {
+                            "Plantel Anterior": st.session_state.prints_plantel_anterior_hybrid,
+                            "Plantel Novo": st.session_state.prints_plantel_atual_hybrid,
+                            "Desempenho da Equipa": st.session_state.prints_equipa_hybrid
+                        }
                         
-                        st.session_state.club_dossier_step_pipe = 4
-                        st.rerun()
+                        with st.spinner("FASE 1/2: A extrair texto dos prints com OCR..."):
+                            for categoria, prints in all_prints.items():
+                                texto_extraido += f"\n--- INÍCIO DADOS: {categoria} ---\n"
+                                for p in prints:
+                                    try:
+                                        img = Image.open(p)
+                                        texto_extraido += pytesseract.image_to_string(img, lang='por+eng') + "\n"
+                                    except Exception as e:
+                                        st.warning(f"Não foi possível ler o ficheiro {p.name}: {e}")
+                                texto_extraido += f"--- FIM DADOS: {categoria} ---\n"
+                        
+                        st.success("Extração de texto concluída.")
 
-        # ETAPA 4: ANÁLISE COMPARATIVA
-        if st.session_state.club_dossier_step_pipe == 4:
-            st.success(f"**Verificação:** Novo plantel processado. Encontrados {len(st.session_state.lista_atual_pipe)} jogadores.")
-            st.markdown("### Fase 4: Análise de Transferências")
-            if st.button("3. Comparar Planteis e Gerar Análise de Impacto"):
-                with st.spinner("Comparando planteis e gerando a análise de impacto..."):
-                    # Remove duplicados
-                    lista_anterior_unica = sorted(list(set(st.session_state.lista_anterior_pipe)))
-                    lista_atual_unica = sorted(list(set(st.session_state.lista_atual_pipe)))
+                        # --- FASE 2: ANÁLISE COM IA ---
+                        with st.spinner(f"FASE 2/2: A enviar texto para a IA para análise do {equipa_nome}..."):
+                            prompt_final = f"""
+**TAREFA CRÍTICA:** Aja como um Analista de Futebol de elite. A sua única função é processar o texto bruto extraído de vários prints e redigir um dossiê tático profundo sobre o clube '{equipa_nome}'.
 
-                    prompt_comparativo = f"""
-**TAREFA:** Com base nestas duas listas de jogadores, identifique as chegadas e saídas e escreva a "Parte 1: Evolução do Plantel".
-**Plantel Anterior:** {json.dumps(lista_anterior_unica)}
-**Plantel Atual:** {json.dumps(lista_atual_unica)}
-**ALGORITMO:** Compare as duas listas para identificar as diferenças. Escreva a secção "1. EVOLUÇÃO DO PLANTEL" em Markdown, incluindo a sua análise de impacto. **IMPORTANTE:** Após o Markdown, adicione um separador `---JSON_CHEGADAS---` e depois um bloco de código JSON com a lista de nomes das chegadas. Ex: {{"chegadas": ["Jogador A", "Jogador B"]}}
+**DADOS BRUTOS (TEXTO EXTRAÍDO DE IMAGENS):**
+{texto_extraido}
+
+**ALGORITMO DE EXECUÇÃO OBRIGATÓRIO:**
+
+1.  **ANÁLISE DE PLANTEIS:**
+    - Analise o texto das secções "Plantel Anterior" e "Plantel Novo".
+    - Limpe os dados e compare as duas listas de jogadores para identificar TODAS as chegadas e saídas.
+    - Escreva a secção "1. EVOLUÇÃO DO PLANTEL", incluindo a sua análise de impacto.
+
+2.  **ANÁLISE DE DESEMPENHO:**
+    - Analise o texto da secção "Desempenho da Equipa".
+    - Extraia as métricas e escreva a secção "2. DNA DO DESEMPENHO".
+
+3.  **ANÁLISE TÁTICA E VEREDITO:**
+    - Com base em TUDO o que analisou, escreva as secções "3. O PLANO DE JOGO" e "4. VEREDITO FINAL". A sua análise deve conectar todos os pontos.
+
+---
+**MODELO OBRIGATÓRIO (Use este formato exato):**
+
+### **DOSSIÊ ESTRATÉGICO DE CLUBE: {equipa_nome.upper()}**
+
+**1. EVOLUÇÃO DO PLANTEL (ANÁLISE COMPARATIVA)**
+* **Balanço de Transferências (Factos):**
+    * **Lista Completa de Chegadas:** [Resultado do passo 1]
+    * **Lista Completa de Saídas:** [Resultado do passo 1]
+* **Análise de Impacto (Ganhos e Perdas):** [A sua análise do passo 1]
+
+**2. DNA DO DESEMPENHO (TEMPORADA ANTERIOR)**
+* **Raio-X Estatístico:** [Crie uma tabela com as principais métricas extraídas no passo 2]
+* **Padrões de Jogo Identificados:** [Sua análise do passo 2]
+* **Análise Comparativa Casa vs. Fora:** [Sua análise do passo 2]
+
+**3. O PLANO DE JOGO (ANÁLISE TÁTICA)**
+* **Modelo de Jogo Principal:** [Sua análise do passo 3]
+* **Protagonistas e Destaques:** [Sua análise do passo 3]
+* **Projeção Tática para a Nova Temporada:** [Sua análise do passo 3]
+
+**4. VEREDITO FINAL E CENÁRIOS DE OBSERVAÇÃO**
+* **Síntese Analítica:** [Sua análise do passo 3]
+* **Cenários de Monitoramento:** [Sua análise do passo 3]
 """
-                    resposta = gerar_resposta_ia(prompt_comparativo)
-                    if resposta and "---JSON_CHEGADAS---" in resposta:
-                        parts = resposta.split("---JSON_CHEGADAS---")
-                        st.session_state.analise_transferencias_md_pipe = parts[0]
-                        try:
-                            dados = json.loads(parts[1].strip())
-                            st.session_state.lista_chegadas_pipe = dados.get("chegadas", [])
-                        except json.JSONDecodeError:
-                            st.session_state.lista_chegadas_pipe = []
-                    else:
-                        st.session_state.analise_transferencias_md_pipe = "Falha ao gerar a análise comparativa."
-                        st.session_state.lista_chegadas_pipe = []
-                    st.session_state.club_dossier_step_pipe = 5
-                    st.rerun()
+                            # Enviamos apenas o prompt de texto, sem imagens
+                            dossie_final = gerar_resposta_ia(prompt_final) 
+                            
+                            if dossie_final and "dossiê estratégico de clube" in dossie_final.lower():
+                                st.session_state.dossie_clube_final_hybrid = dossie_final
+                            else:
+                                st.session_state.dossie_clube_final_hybrid = "A geração do dossiê falhou. A IA pode ter tido dificuldade em interpretar o texto extraído. Tente novamente com prints mais claros."
+                            st.rerun()
 
-        # ETAPAS FINAIS (Aprofundamento, Dados Coletivos, Geração Final)
-        if st.session_state.club_dossier_step_pipe >= 5:
-            # O restante do fluxo (etapas 5, 6, 7, 8) permanece o mesmo, pois já é sequencial e robusto.
-            # O código completo seria inserido aqui.
-            st.markdown(st.session_state.get("analise_transferencias_md_pipe", "Análise de transferências pendente."))
-            st.info("As próximas etapas para aprofundamento individual e análise coletiva seguir-se-ão.")
+        # --- Exibição do Dossiê de Clube Final ---
+        if 'dossie_clube_final_hybrid' in st.session_state:
+            st.markdown("---")
+            st.header("Dossiê de Clube Gerado")
+            
+            if "falhou" in st.session_state.dossie_clube_final_hybrid:
+                st.error(st.session_state.dossie_clube_final_hybrid)
+            else:
+                st.success("Análise concluída com sucesso!")
+                st.markdown(st.session_state.dossie_clube_final_hybrid)
 
+            if st.button("Limpar e Analisar Outro Clube"):
+                if 'dossie_clube_final_hybrid' in st.session_state:
+                    del st.session_state['dossie_clube_final_hybrid']
+                st.rerun()
 
     with tab3: st.info("Em desenvolvimento.")
     with tab4: st.info("Em desenvolvimento.")
