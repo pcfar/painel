@@ -242,11 +242,9 @@ if check_password():
                             texto_desempenho_bruto += pytesseract.image_to_string(Image.open(p), lang='por+eng') + "\n"
 
                     texto_jogadores_bruto = ""
-                    prompt_imagens_info = []
                     for jogador, img_bytes in st.session_state.get('prints_jogadores_hybrid', {}).items():
                         texto_jogadores_bruto += f"\n--- DADOS DE {jogador.upper()} ---\n"
                         texto_jogadores_bruto += pytesseract.image_to_string(Image.open(io.BytesIO(img_bytes)), lang='por+eng')
-                        prompt_imagens_info.append(f"- Dados individuais para **{jogador}** foram fornecidos.")
                     
                     prompt_final = f"""
 **TAREFA:** Redija um dossiê profundo sobre o '{st.session_state.equipa_alvo_hybrid}'.
