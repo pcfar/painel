@@ -84,12 +84,15 @@ def gerar_resposta_ia(prompt, imagens_bytes=None):
 def get_github_repo():
     """Conecta-se ao repositório do GitHub usando as secrets."""
     try:
+        if not all(k in st.secrets for k in ["GITHUB_TOKEN", "GITHUB_USERNAME", "GITHUB_REPO_NAME"]):
+            st.error("Uma ou mais secrets do GitHub (GITHUB_TOKEN, GITHUB_USERNAME, GITHUB_REPO_NAME) não foram encontradas.")
+            return None
+
         g = Github(st.secrets["GITHUB_TOKEN"])
         repo_name = f"{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO_NAME']}"
         return g.get_repo(repo_name)
     except Exception as e:
         st.error(f"Erro ao conectar com o repositório do GitHub: {e}")
-        st.error("Por favor, verifique se as suas secrets 'GITHUB_TOKEN', 'GITHUB_USERNAME' e 'GITHUB_REPO_NAME' estão configuradas corretamente.")
         return None
 
 def display_repo_contents(repo, path=""):
@@ -112,6 +115,7 @@ def display_repo_contents(repo, path=""):
         st.info("Este diretório está vazio.")
     except Exception as e:
         st.error(f"Erro ao listar o conteúdo do repositório: {e}")
+
 # --- APLICAÇÃO PRINCIPAL ---
 if check_password():
     st.sidebar.success("Autenticado com sucesso.")
@@ -217,4 +221,3 @@ if check_password():
                     st.info("Selecione um ficheiro no navegador para o visualizar aqui.")
         else:
             st.warning("A conexão com o GitHub não foi estabelecida. Verifique as suas secrets.")
-
