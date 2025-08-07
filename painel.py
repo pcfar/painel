@@ -67,12 +67,13 @@ def apply_custom_styling():
             }
             /* Listas */
             .dossier-viewer ul {
-                list-style-type: disc;
+                list-style-type: '◆ ';
                 padding-left: 1.5rem;
                 margin-bottom: 1rem;
             }
             .dossier-viewer li {
                 margin-bottom: 0.5rem;
+                padding-left: 0.5rem;
             }
             /* Tabelas */
             .dossier-viewer table {
@@ -150,31 +151,28 @@ def display_repo_contents(repo, path=""):
         st.info("Este diretório está vazio.")
     except Exception as e:
         st.error(f"Erro ao listar o conteúdo do repositório: {e}")
-
 # --- APLICAÇÃO PRINCIPAL ---
 if check_password():
+    # Aplica o CSS personalizado em toda a aplicação após o login
+    apply_custom_styling()
+
     st.sidebar.success("Autenticado com sucesso.")
     st.title("SISTEMA DE INTELIGÊNCIA TÁTICA")
     
     st.header("Central de Comando")
-    # Adicionada uma nova aba para o "Arquivo"
     tab1, tab2, tab3, tab4, tab5 = st.tabs(["Dossiê 1 (Liga)", "Dossiê 2 (Clube)", "Dossiê 3 (Pós-Jogo)", "Dossiê 4 (Pré-Jogo)", "Arquivo"])
 
     with tab1:
         st.info("Funcionalidade de geração do Dossiê de Liga.")
-        # O código para gerar o Dossiê 1 seria colocado aqui.
     
     with tab2:
         st.info("Funcionalidade de geração do Dossiê de Clube.")
-        # O código para gerar o Dossiê 2 seria colocado aqui.
 
     with tab3:
         st.info("Funcionalidade de geração do Dossiê Pós-Jogo.")
-        # O código para gerar o Dossiê 3 seria colocado aqui.
 
     with tab4:
         st.info("Funcionalidade de geração do Dossiê Pré-Jogo.")
-        # O código para gerar o Dossiê 4 seria colocado aqui.
 
     # --- ABA 5: ARQUIVO DE INTELIGÊNCIA ---
     with tab5:
@@ -251,7 +249,12 @@ if check_password():
                 st.subheader("Visualizador de Dossiês")
                 if "viewing_file_content" in st.session_state:
                     st.markdown(f"#### {st.session_state.viewing_file_name}")
-                    st.markdown(st.session_state.viewing_file_content, unsafe_allow_html=True)
+                    
+                    # --- CORREÇÃO APLICADA AQUI ---
+                    # O conteúdo do markdown é envolvido por um div com a classe 'dossier-viewer'
+                    # para que o nosso CSS personalizado seja aplicado.
+                    html_content = f"<div class='dossier-viewer'>{st.session_state.viewing_file_content}</div>"
+                    st.markdown(html_content, unsafe_allow_html=True)
                 else:
                     st.info("Selecione um ficheiro no navegador para o visualizar aqui.")
         else:
