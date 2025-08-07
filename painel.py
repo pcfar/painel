@@ -1,107 +1,78 @@
 import streamlit as st
 import os
-import requests
-import base64
+from github import Github
+from datetime import datetime
+from dotenv import load_dotenv
 
-# Configuração da página
-st.set_page_config(page_title="Central de Arquivo Tático", page_icon="📚", layout="wide")
-
-# Carregamento de secrets
+# Carrega segredos do .streamlit/secrets.toml
 APP_PASSWORD = st.secrets["APP_PASSWORD"]
 GITHUB_USERNAME = st.secrets["GITHUB_USERNAME"]
 GITHUB_REPO_NAME = st.secrets["GITHUB_REPO_NAME"]
 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
 GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 
-# Autenticação simples
+# Configuração inicial
+st.set_page_config(page_title="Central de Arquivo Tático", page_icon="📚", layout="wide")
+st.markdown("<style>body { background-color: #0e1117; color: #f0f0f0; }</style>", unsafe_allow_html=True)
+
+# Função para baixar markdown de um repositório do GitHub
+def download_markdown_file(repo, path):
+    file_content = repo.get_contents(path)
+    return file_content.decoded_content.decode("utf-8")
+
+# Verificação de login
 if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
+    st.session_state["authenticated"] = False
 
-if not st.session_state.authenticated:
-    st.title("🔒 Painel de Acesso")
-    password = st.text_input("Digite a senha para acessar o painel:", type="password")
-
-    if password == APP_PASSWORD:
-        st.session_state.authenticated = True
-        st.success("✅ Acesso autorizado! Carregando painel...")
-        st.experimental_rerun()
-    elif password != "":
-        st.error("❌ Senha incorreta.")
+if not st.session_state["authenticated"]:
+    st.title("🔐 Painel de Arquivo de Inteligência")
+    senha = st.text_input("Digite a senha para acessar o painel:", type="password")
+    if senha == APP_PASSWORD:
+        st.session_state["authenticated"] = True
+        st.success("Acesso autorizado. Painel liberado!")
+        st.experimental_set_query_params(auth="true")
+        st.stop()
+    elif senha:
+        st.error("Senha incorreta.")
     st.stop()
 
-# --- Funções auxiliares ---
+# Painel principal
+st.sidebar.title("📂 Menu do Painel")
+aba = st.sidebar.radio("Escolha a função:", ["🔍 Visualizar Dossiês", "📤 Subir Novo Dossiê", "🧠 (Em breve) Geração com IA"])
 
-def upload_markdown_file(file_content, path, commit_message="Upload de novo dossiê"):
-    api_url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO_NAME}/contents/{path}"
-    encoded_content = base64.b64encode(file_content.encode()).decode("utf-8")
-
-    data = {
-        "message": commit_message,
-        "content": encoded_content
-    }
-
-    response = requests.put(api_url, json=data, auth=(GITHUB_USERNAME, GITHUB_TOKEN))
-    return response
-
-def list_markdown_files(repo_path="dossies"):
-    url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO_NAME}/contents/{repo_path}"
-    response = requests.get(url, auth=(GITHUB_USERNAME, GITHUB_TOKEN))
-    if response.status_code == 200:
-        return response.json()
-    return []
-
-def download_markdown_file(file_path):
-    url = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO_NAME}/main/{file_path}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.text
-    return "Erro ao carregar o arquivo."
-
-# --- Layout principal ---
-st.markdown("<h1 style='color:#FFD700'>📚 Central de Arquivo Tático</h1>", unsafe_allow_html=True)
-
-aba = st.sidebar.radio("📁 Selecione o Módulo", ["📤 Upload de Dossiês", "📚 Biblioteca de Dossiês", "🧠 Geração (IA)"])
-
-# --- ABA 1: Upload ---
-if aba == "📤 Upload de Dossiês":
-    st.header("📤 Upload de Novo Dossiê")
-    tipo = st.selectbox("Tipo de Dossiê", ["Liga", "Clube", "Jogo", "Outro"])
-    nome_arquivo = st.text_input("Nome do arquivo (sem .md):")
-    conteudo_md = st.text_area("Conteúdo do Dossiê (.md)", height=400)
-    enviar = st.button("🚀 Enviar para GitHub")
-
-    if enviar:
-        if nome_arquivo.strip() == "" or conteudo_md.strip() == "":
-            st.warning("Preencha todos os campos.")
-        else:
-            caminho = f"dossies/{tipo.lower()}/{nome_arquivo}.md"
-            r = upload_markdown_file(conteudo_md, caminho)
-            if r.status_code in [200, 201]:
-                st.success("✅ Dossiê enviado com sucesso!")
-            else:
-                st.error(f"Erro ao enviar: {r.json()}")
-
-# --- ABA 2: Biblioteca ---
-elif aba == "📚 Biblioteca de Dossiês":
-    st.header("📚 Navegação pelos Dossiês")
-    categorias = ["liga", "clube", "jogo", "outro"]
-
-    categoria = st.selectbox("Escolha uma categoria:", categorias)
-    arquivos = list_markdown_files(f"dossies/{categoria}")
-
-    if arquivos:
-        nomes = [arq['name'] for arq in arquivos if arq['name'].endswith(".md")]
-        selecionado = st.selectbox("📄 Escolha um dossiê:", nomes)
-
-        if selecionado:
-            conteudo = download_markdown_file(f"dossies/{categoria}/{selecionado}")
-            st.markdown("---")
-            st.markdown(f"### 📘 {selecionado}", unsafe_allow_html=True)
-            st.markdown(conteudo, unsafe_allow_html=True)
+if aba == "🔍 Visualizar Dossiês":
+    st.title("📖 Navegação de Dossiês")
+    gh = Github(GITHUB_TOKEN)
+    repo = gh.get_user(GITHUB_USERNAME).get_repo(GITHUB_REPO_NAME)
+    
+    arquivos_md = [f.path for f in repo.get_contents("") if f.path.endswith(".md")]
+    if arquivos_md:
+        dossie_selecionado = st.selectbox("Selecione um dossiê:", arquivos_md)
+        conteudo_md = download_markdown_file(repo, dossie_selecionado)
+        st.markdown("---")
+        st.markdown(f"### 📝 {dossie_selecionado}")
+        st.markdown(conteudo_md, unsafe_allow_html=True)
     else:
-        st.info("Nenhum dossiê disponível nesta categoria.")
+        st.info("Nenhum dossiê encontrado no repositório.")
 
-# --- ABA 3: Geração (placeholder) ---
-elif aba == "🧠 Geração (IA)":
-    st.header("🧠 Geração de Dossiês com IA")
-    st.info("Funcionalidade em desenvolvimento.")
+elif aba == "📤 Subir Novo Dossiê":
+    st.title("📤 Upload de Dossiê para o GitHub")
+    nome_arquivo = st.text_input("Nome do arquivo (ex: dossie_brasileirao.md):")
+    conteudo = st.text_area("Conteúdo do dossiê em Markdown:", height=300)
+    
+    if st.button("Enviar para o repositório"):
+        if nome_arquivo and conteudo:
+            try:
+                gh = Github(GITHUB_TOKEN)
+                repo = gh.get_user(GITHUB_USERNAME).get_repo(GITHUB_REPO_NAME)
+                data = datetime.now().strftime("%Y-%m-%d %H:%M")
+                repo.create_file(nome_arquivo, f"Upload via painel em {data}", conteudo)
+                st.success(f"Dossiê '{nome_arquivo}' enviado com sucesso!")
+            except Exception as e:
+                st.error(f"Erro ao enviar: {e}")
+        else:
+            st.warning("Preencha o nome e o conteúdo do dossiê.")
+
+elif aba == "🧠 (Em breve) Geração com IA":
+    st.title("🧠 Geração Inteligente de Dossiês (Em breve)")
+    st.info("Este módulo será ativado em breve com integração à IA para geração automatizada de dossiês táticos.")
