@@ -1,174 +1,154 @@
-# painel\_arquivo\_inteligente.py
-
 import streamlit as st
+import requests
 import base64
-from github import Github, UnknownObjectException
-import re
+import os
+from datetime import datetime
 
-# --- CONFIGURAÇÃO DA PÁGINA ---
+# Configuração da página
+st.set_page_config(page_title="Central de Arquivo Tático", page_icon="📚", layout="wide")
 
-st.set\_page\_config(page\_title="Central de Arquivo Tático", page\_icon="📚", layout="wide")
+# Estilo customizado para modo escuro e visual moderno
+def custom_css():
+    st.markdown("""
+        <style>
+            html, body, [class*="css"] {
+                background-color: #0e1117 !important;
+                color: #fafafa !important;
+            }
+            .markdown-body {
+                font-family: 'Segoe UI', sans-serif;
+                line-height: 1.7;
+                font-size: 16px;
+            }
+            .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+                color: #f8f8f2;
+                border-bottom: 1px solid #444;
+                padding-bottom: 4px;
+            }
+            .markdown-body blockquote {
+                color: #cccccc;
+                border-left: 4px solid #666;
+                margin-left: 0;
+                padding-left: 1em;
+                font-style: italic;
+                background-color: #1e1e1e;
+            }
+            .markdown-body ul {
+                list-style-type: '➤ ';
+            }
+            .markdown-body code {
+                background-color: #2d2d2d;
+                padding: 2px 4px;
+                border-radius: 4px;
+            }
+            .css-1aumxhk {
+                background-color: #0e1117;
+            }
+        </style>
+    """, unsafe_allow_html=True)
 
-# --- CSS MODERNO E ESCURO PARA VISUALIZAÇÃO DOS DOSSIÊS ---
+custom_css()
 
-def apply\_enhanced\_styling():
-st.markdown(""" <style>
-.dossier-viewer {
-font-family: 'Georgia', serif;
-background-color: #1f2937;
-padding: 2rem;
-border-radius: 12px;
-color: #f1f5f9;
-box-shadow: 0 0 20px rgba(0,0,0,0.2);
-line-height: 1.9;
-}
-.dossier-viewer h1, .dossier-viewer h2 {
-color: #a5b4fc;
-margin-top: 2rem;
-border-bottom: 2px solid #6366f1;
-padding-bottom: 0.3rem;
-}
-.dossier-viewer blockquote {
-font-style: italic;
-color: #93c5fd;
-background: rgba(147, 197, 253, 0.1);
-border-left: 4px solid #60a5fa;
-padding: 1rem;
-margin: 2rem 0;
-border-radius: 6px;
-}
-.dossier-viewer ul li {
-margin: 0.5rem 0;
-padding-left: 1rem;
-position: relative;
-}
-.dossier-viewer ul li::before {
-content: "\027A4";
-color: #38bdf8;
-position: absolute;
-left: 0;
-} </style>
-""", unsafe\_allow\_html=True)
+# Autenticação por senha
+def autenticar():
+    if "autenticado" not in st.session_state:
+        st.session_state.autenticado = False
+    if not st.session_state.autenticado:
+        senha = st.text_input("Digite a senha para acessar o painel:", type="password")
+        if senha == st.secrets["APP_PASSWORD"]:
+            st.session_state.autenticado = True
+            st.success("Acesso autorizado!")
+        else:
+            st.warning("Senha incorreta. Acesso negado.")
+        st.stop()
 
-# --- VERIFICAÇÃO DE SENHA ---
+autenticar()
 
-def check\_password():
-if st.session\_state.get("password\_correct", False): return True
-def password\_entered():
-if st.session\_state.get("password") == st.secrets.get("APP\_PASSWORD"):
-st.session\_state["password\_correct"] = True
-del st.session\_state["password"]
-else:
-st.session\_state["password\_correct"] = False
-st.text\_input("Senha", type="password", on\_change=password\_entered, key="password")
-if "password\_correct" in st.session\_state and not st.session\_state["password\_correct"]:
-st.error("Senha incorreta.")
-return False
+# Dados do repositório
+GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
+GITHUB_USERNAME = st.secrets["GITHUB_USERNAME"]
+GITHUB_REPO_NAME = st.secrets["GITHUB_REPO_NAME"]
 
-# --- FUNÇÕES GITHUB ---
+# Função de upload para GitHub
+def upload_file_to_github(file, folder):
+    now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    file_name = f"{folder}/{now}_{file.name}"
+    content = base64.b64encode(file.read()).decode("utf-8")
 
-@st.cache\_resource
-def get\_github\_repo():
-if not all(k in st.secrets for k in ["GITHUB\_TOKEN", "GITHUB\_USERNAME", "GITHUB\_REPO\_NAME"]):
-st.error("Secrets GitHub incompletas.")
-return None
-try:
-g = Github(st.secrets["GITHUB\_TOKEN"])
-repo = g.get\_repo(f"{st.secrets['GITHUB\_USERNAME']}/{st.secrets['GITHUB\_REPO\_NAME']}")
-return repo
-except Exception as e:
-st.error(f"Erro GitHub: {e}")
-return None
+    url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO_NAME}/contents/{file_name}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    data = {
+        "message": f"Upload automático: {file_name}",
+        "content": content
+    }
+    response = requests.put(url, headers=headers, json=data)
+    return response
 
-# --- EXIBIÇÃO DO REPOSITÓRIO ---
+# Função para visualizar Markdown com estilo
+def render_markdown(md_text):
+    st.markdown(f'<div class="markdown-body">{md_text}</div>', unsafe_allow_html=True)
 
-def display\_repo\_contents(repo, path=""):
-try:
-contents = repo.get\_contents(path)
-dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name)
-files = sorted([c for c in contents if c.type == 'file'], key=lambda x: x.name)
+# Sidebar com navegação
+st.sidebar.title("📁 Navegação")
+abas = ["📤 Upload de Dossiês", "📚 Biblioteca de Dossiês", "🤖 Geração por IA (em breve)"]
+aba = st.sidebar.radio("Escolha uma seção", abas)
 
-```
-    for content in dirs:
-        with st.expander(f"📁 {content.name}"):
-            display_repo_contents(repo, content.path)
+# ------------------------------
+# 📤 ABA 1: UPLOAD DE DOSSIÊS
+# ------------------------------
+if aba == "📤 Upload de Dossiês":
+    st.title("📤 Upload de Dossiês para o Arquivo Central")
 
-    for content in files:
-        if content.name.endswith(".md"):
-            if st.button(f"📄 {content.name}", key=content.path, use_container_width=True):
-                st.session_state.viewing_file_content = base64.b64decode(content.content).decode('utf-8')
-                st.session_state.viewing_file_name = content.name
-except Exception as e:
-    st.error(f"Erro: {e}")
-```
+    tipo = st.selectbox("Tipo de dossiê:", ["Selecione", "Clube", "Rodada", "Liga", "Análise Livre"])
+    uploaded_file = st.file_uploader("Escolha um arquivo .md", type=["md"])
 
-# --- APLICAÇÃO PRINCIPAL ---
+    if uploaded_file and tipo != "Selecione":
+        if st.button("📤 Enviar para o Repositório"):
+            with st.spinner("Enviando para o repositório GitHub..."):
+                res = upload_file_to_github(uploaded_file, tipo.lower())
+                if res.status_code == 201:
+                    st.success("✅ Upload realizado com sucesso!")
+                else:
+                    st.error(f"❌ Erro no upload: {res.status_code}")
+                    st.code(res.json(), language="json")
+    elif tipo == "Selecione":
+        st.info("Selecione o tipo de dossiê antes de enviar.")
 
-if check\_password():
-apply\_enhanced\_styling()
-repo = get\_github\_repo()
+# ------------------------------
+# 📚 ABA 2: BIBLIOTECA DE DOSSIÊS
+# ------------------------------
+elif aba == "📚 Biblioteca de Dossiês":
+    st.title("📚 Biblioteca de Dossiês")
 
-```
-st.title("📚 Central de Arquivo de Inteligência")
-tab1, tab2, tab3 = st.tabs(["📤 Upload de Dossiês", "📚 Biblioteca de Dossiês", "🛠️ Geração (IA)"])
+    def listar_arquivos(pasta):
+        url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO_NAME}/contents/{pasta}"
+        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            return [f["name"] for f in response.json() if f["name"].endswith(".md")]
+        return []
 
-# --- UPLOAD ---
-with tab1:
-    st.header("📤 Envio de Novo Dossiê para o GitHub")
-    with st.form("form_upload"):
-        tipo = st.selectbox("Tipo de Dossiê", ["Dossiê de Liga", "Dossiê de Clube", "Briefing Pré-Jogo", "Relatório Pós-Jogo"])
-        pais = st.text_input("País*")
-        liga = st.text_input("Liga*")
-        temporada = st.text_input("Temporada*")
-        clube = st.text_input("Clube (se aplicável)")
-        rodada = st.text_input("Rodada / Adversário (se aplicável)")
-        conteudo_md = st.text_area("Conteúdo em Markdown", height=250)
-        enviado = st.form_submit_button("Salvar no GitHub")
+    abas_dossies = st.columns(4)
+    pastas = ["clube", "rodada", "liga", "analise_livre"]
 
-        if enviado:
-            path_parts = [pais.replace(" ", "_"), liga.replace(" ", "_"), temporada]
-            file_name = ""
-            if tipo == "Dossiê de Liga":
-                file_name = "Dossie_Liga.md"
-            elif tipo == "Dossiê de Clube" and clube:
-                path_parts.append(clube.replace(" ", "_"))
-                file_name = "Dossie_Clube.md"
-            elif tipo in ["Briefing Pré-Jogo", "Relatório Pós-Jogo"] and clube and rodada:
-                path_parts.append(clube.replace(" ", "_"))
-                path_parts.append(rodada.replace(" ", "_"))
-                file_name = "Briefing_Pre.md" if tipo.startswith("Briefing") else "Relatorio_Pos.md"
+    with st.sidebar:
+        st.markdown("### 🔍 Escolha um tipo de dossiê:")
+        tipo_escolhido = st.selectbox("Tipo de dossiê", pastas)
 
-            if file_name:
-                full_path = "/".join(path_parts) + "/" + file_name
-                try:
-                    existing = repo.get_contents(full_path)
-                    repo.update_file(full_path, "Atualiza dossiê", conteudo_md, existing.sha)
-                    st.success("Dossiê atualizado com sucesso.")
-                except UnknownObjectException:
-                    repo.create_file(full_path, "Adiciona novo dossiê", conteudo_md)
-                    st.success("Dossiê salvo com sucesso.")
-                except Exception as e:
-                    st.error(f"Erro: {e}")
+        if tipo_escolhido:
+            arquivos = listar_arquivos(tipo_escolhido)
+            arquivo_escolhido = st.selectbox("Escolha o dossiê:", arquivos)
 
-# --- LEITURA ---
-with tab2:
-    st.header("📚 Biblioteca de Dossiês")
-    if repo:
-        col1, col2 = st.columns([1,2])
-        with col1:
-            display_repo_contents(repo)
-        with col2:
-            if "viewing_file_content" in st.session_state:
-                st.markdown(f"#### {st.session_state.viewing_file_name}")
-                cleaned = re.sub(r':contentReference\[.*?\]\{.*?\}', '', st.session_state.viewing_file_content)
-                html = f"<div class='dossier-viewer'>{cleaned}</div>"
-                st.markdown(html, unsafe_allow_html=True)
-            else:
-                st.info("Selecione um dossiê na árvore ao lado.")
-    else:
-        st.warning("GitHub não conectado.")
+            if arquivo_escolhido:
+                url_raw = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO_NAME}/main/{tipo_escolhido}/{arquivo_escolhido}"
+                conteudo_md = requests.get(url_raw).text
+                st.markdown(f"### 📄 {arquivo_escolhido}")
+                render_markdown(conteudo_md)
 
-# --- GERAÇÃO (MANUTENÇÃO) ---
-with tab3:
-    st.info("Módulo reservado para futuras integrações de geração via IA.")
-```
+# ------------------------------
+# 🤖 ABA 3: IA (em breve)
+# ------------------------------
+elif aba == "🤖 Geração por IA (em breve)":
+    st.title("🤖 Geração Automática por IA")
+    st.info("Esta funcionalidade será ativada em breve com a API Gemini.")
+
