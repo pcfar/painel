@@ -112,8 +112,53 @@ def check_password():
 # --- FUNÇÕES DE CHAMADA À IA (COM EXPONENTIAL BACKOFF) ---
 def gerar_resposta_ia(prompt, imagens_bytes=None):
     """Envia um pedido para a API da IA e retorna a resposta, com lógica de retentativas."""
-    # (Esta função permanece a mesma da versão anterior)
-    pass
+    # (Esta função permanece a mesma da versão anterior, pois já é robusta)
+    api_key = st.secrets.get("GEMINI_API_KEY")
+    if not api_key:
+        st.error("Chave da API do Gemini não encontrada.")
+        return None
+    
+    model_name = "gemini-1.5-flash-latest"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+    headers = {'Content-Type': 'application/json'}
+    
+    parts = [{"text": prompt}]
+    if imagens_bytes:
+        for imagem_bytes in imagens_bytes:
+            encoded_image = base64.b64encode(imagem_bytes).decode('utf-8')
+            parts.append({"inline_data": {"mime_type": "image/jpeg", "data": encoded_image}})
+            
+    tools = [{"google_search": {}}]
+    data = {"contents": [{"parts": parts}], "tools": tools}
+    
+    max_retries = 5
+    base_delay = 2
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(url, headers=headers, data=json.dumps(data), timeout=400)
+            if response.status_code == 429:
+                delay = base_delay * (2 ** attempt)
+                st.warning(f"Limite da API atingido. A tentar novamente em {delay} segundos...")
+                time.sleep(delay)
+                continue
+            response.raise_for_status()
+            result = response.json()
+            if 'candidates' in result and result['candidates']:
+                return result['candidates'][0]['content']['parts'][0]['text']
+            else:
+                st.error("A API respondeu, mas o formato do conteúdo é inesperado.")
+                st.json(result)
+                return None
+        except requests.exceptions.RequestException as e:
+            st.error(f"Erro na chamada à API na tentativa {attempt + 1}: {e}")
+            if attempt < max_retries - 1:
+                delay = base_delay * (2 ** attempt)
+                time.sleep(delay)
+            else:
+                st.error("Todas as tentativas de chamada à API falharam.")
+                return None
+    st.error("Falha ao comunicar com a API após múltiplas tentativas devido a limites de utilização.")
+    return None
 
 # --- FUNÇÕES DO ARQUIVO GITHUB ---
 @st.cache_resource
@@ -148,7 +193,12 @@ def display_repo_contents(repo, path=""):
                     st.session_state.viewing_file_content = base64.b64decode(content.content).decode('utf-8')
                     st.session_state.viewing_file_name = content.name
     except UnknownObjectException:
-        st.info("Este diretório está vazio.")
+        # Adiciona um ficheiro .gitkeep para inicializar o repositório se estiver vazio
+        try:
+            repo.create_file(".gitkeep", "Inicializa o repositório", "")
+            st.info("Repositório inicializado. Por favor, atualize a página.")
+        except Exception as e:
+            st.info("Este diretório está vazio.")
     except Exception as e:
         st.error(f"Erro ao listar o conteúdo do repositório: {e}")
 # --- APLICAÇÃO PRINCIPAL ---
