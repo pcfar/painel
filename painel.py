@@ -50,6 +50,21 @@ left: 0;
 } </style>
 """, unsafe\_allow\_html=True)
 
+# --- VERIFICAÇÃO DE SENHA ---
+
+def check\_password():
+if st.session\_state.get("password\_correct", False): return True
+def password\_entered():
+if st.session\_state.get("password") == st.secrets.get("APP\_PASSWORD"):
+st.session\_state["password\_correct"] = True
+del st.session\_state["password"]
+else:
+st.session\_state["password\_correct"] = False
+st.text\_input("Senha", type="password", on\_change=password\_entered, key="password")
+if "password\_correct" in st.session\_state and not st.session\_state["password\_correct"]:
+st.error("Senha incorreta.")
+return False
+
 # --- FUNÇÕES GITHUB ---
 
 @st.cache\_resource
@@ -87,75 +102,73 @@ except Exception as e:
     st.error(f"Erro: {e}")
 ```
 
-# --- APLICAÇÃO ---
+# --- APLICAÇÃO PRINCIPAL ---
 
+if check\_password():
 apply\_enhanced\_styling()
 repo = get\_github\_repo()
 
+```
 st.title("📚 Central de Arquivo de Inteligência")
 tab1, tab2, tab3 = st.tabs(["📤 Upload de Dossiês", "📚 Biblioteca de Dossiês", "🛠️ Geração (IA)"])
 
 # --- UPLOAD ---
-
 with tab1:
-st.header("📤 Envio de Novo Dossiê para o GitHub")
-with st.form("form\_upload"):
-tipo = st.selectbox("Tipo de Dossiê", ["Dossiê de Liga", "Dossiê de Clube", "Briefing Pré-Jogo", "Relatório Pós-Jogo"])
-pais = st.text\_input("País\*")
-liga = st.text\_input("Liga\*")
-temporada = st.text\_input("Temporada\*")
-clube = st.text\_input("Clube (se aplicável)")
-rodada = st.text\_input("Rodada / Adversário (se aplicável)")
-conteudo\_md = st.text\_area("Conteúdo em Markdown", height=250)
-enviado = st.form\_submit\_button("Salvar no GitHub")
+    st.header("📤 Envio de Novo Dossiê para o GitHub")
+    with st.form("form_upload"):
+        tipo = st.selectbox("Tipo de Dossiê", ["Dossiê de Liga", "Dossiê de Clube", "Briefing Pré-Jogo", "Relatório Pós-Jogo"])
+        pais = st.text_input("País*")
+        liga = st.text_input("Liga*")
+        temporada = st.text_input("Temporada*")
+        clube = st.text_input("Clube (se aplicável)")
+        rodada = st.text_input("Rodada / Adversário (se aplicável)")
+        conteudo_md = st.text_area("Conteúdo em Markdown", height=250)
+        enviado = st.form_submit_button("Salvar no GitHub")
 
-```
-    if enviado:
-        path_parts = [pais.replace(" ", "_"), liga.replace(" ", "_"), temporada]
-        file_name = ""
-        if tipo == "Dossiê de Liga":
-            file_name = "Dossie_Liga.md"
-        elif tipo == "Dossiê de Clube" and clube:
-            path_parts.append(clube.replace(" ", "_"))
-            file_name = "Dossie_Clube.md"
-        elif tipo in ["Briefing Pré-Jogo", "Relatório Pós-Jogo"] and clube and rodada:
-            path_parts.append(clube.replace(" ", "_"))
-            path_parts.append(rodada.replace(" ", "_"))
-            file_name = "Briefing_Pre.md" if tipo.startswith("Briefing") else "Relatorio_Pos.md"
+        if enviado:
+            path_parts = [pais.replace(" ", "_"), liga.replace(" ", "_"), temporada]
+            file_name = ""
+            if tipo == "Dossiê de Liga":
+                file_name = "Dossie_Liga.md"
+            elif tipo == "Dossiê de Clube" and clube:
+                path_parts.append(clube.replace(" ", "_"))
+                file_name = "Dossie_Clube.md"
+            elif tipo in ["Briefing Pré-Jogo", "Relatório Pós-Jogo"] and clube and rodada:
+                path_parts.append(clube.replace(" ", "_"))
+                path_parts.append(rodada.replace(" ", "_"))
+                file_name = "Briefing_Pre.md" if tipo.startswith("Briefing") else "Relatorio_Pos.md"
 
-        if file_name:
-            full_path = "/".join(path_parts) + "/" + file_name
-            try:
-                existing = repo.get_contents(full_path)
-                repo.update_file(full_path, "Atualiza dossiê", conteudo_md, existing.sha)
-                st.success("Dossiê atualizado com sucesso.")
-            except UnknownObjectException:
-                repo.create_file(full_path, "Adiciona novo dossiê", conteudo_md)
-                st.success("Dossiê salvo com sucesso.")
-            except Exception as e:
-                st.error(f"Erro: {e}")
-```
+            if file_name:
+                full_path = "/".join(path_parts) + "/" + file_name
+                try:
+                    existing = repo.get_contents(full_path)
+                    repo.update_file(full_path, "Atualiza dossiê", conteudo_md, existing.sha)
+                    st.success("Dossiê atualizado com sucesso.")
+                except UnknownObjectException:
+                    repo.create_file(full_path, "Adiciona novo dossiê", conteudo_md)
+                    st.success("Dossiê salvo com sucesso.")
+                except Exception as e:
+                    st.error(f"Erro: {e}")
 
 # --- LEITURA ---
-
 with tab2:
-st.header("📚 Biblioteca de Dossiês")
-if repo:
-col1, col2 = st.columns([1,2])
-with col1:
-display\_repo\_contents(repo)
-with col2:
-if "viewing\_file\_content" in st.session\_state:
-st.markdown(f"#### {st.session\_state.viewing\_file\_name}")
-cleaned = re.sub(r'\(.*?\){.\*?}', '', st.session\_state.viewing\_file\_content)
-html = f"<div class='dossier-viewer'>{cleaned}</div>"
-st.markdown(html, unsafe\_allow\_html=True)
-else:
-st.info("Selecione um dossiê na árvore ao lado.")
-else:
-st.warning("GitHub não conectado.")
+    st.header("📚 Biblioteca de Dossiês")
+    if repo:
+        col1, col2 = st.columns([1,2])
+        with col1:
+            display_repo_contents(repo)
+        with col2:
+            if "viewing_file_content" in st.session_state:
+                st.markdown(f"#### {st.session_state.viewing_file_name}")
+                cleaned = re.sub(r':contentReference\[.*?\]\{.*?\}', '', st.session_state.viewing_file_content)
+                html = f"<div class='dossier-viewer'>{cleaned}</div>"
+                st.markdown(html, unsafe_allow_html=True)
+            else:
+                st.info("Selecione um dossiê na árvore ao lado.")
+    else:
+        st.warning("GitHub não conectado.")
 
 # --- GERAÇÃO (MANUTENÇÃO) ---
-
 with tab3:
-st.info("Módulo reservado para futuras integrações de geração via IA.")
+    st.info("Módulo reservado para futuras integrações de geração via IA.")
+```
