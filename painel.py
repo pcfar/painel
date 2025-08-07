@@ -20,12 +20,78 @@ def apply_custom_styling():
     """Aplica CSS personalizado para tornar o markdown dos dossiês mais atraente."""
     st.markdown("""
         <style>
-            .dossier-viewer h1 { font-size: 2.25rem; font-weight: 700; color: #0f172a; border-bottom: 2px solid #cbd5e1; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
-            .dossier-viewer blockquote { border-left: 4px solid #4f46e5; padding-left: 1rem; margin-left: 0; font-style: italic; color: #475569; background-color: #f1f5f9; padding-top: 0.5rem; padding-bottom: 0.5rem; border-radius: 0.25rem; }
-            .dossier-viewer h3 { font-size: 1.5rem; font-weight: 600; color: #1e293b; margin-top: 2.5rem; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.25rem; }
-            .dossier-viewer h4 { font-size: 1.25rem; font-weight: 600; color: #334155; margin-top: 2rem; margin-bottom: 0.75rem; }
-            .dossier-viewer ul { list-style-type: '◆ '; padding-left: 1.5rem; margin-bottom: 1rem; }
-            .dossier-viewer li { margin-bottom: 0.5rem; padding-left: 0.5rem; }
+            /* Estilo geral para a área de visualização do dossiê */
+            .dossier-viewer {
+                font-family: 'Inter', sans-serif;
+                line-height: 1.7;
+                color: #334155; /* slate-700 */
+            }
+            /* Título Principal (H1) */
+            .dossier-viewer h1 {
+                font-size: 2.25rem; /* text-4xl */
+                font-weight: 700;
+                color: #0f172a; /* slate-900 */
+                border-bottom: 2px solid #cbd5e1; /* slate-300 */
+                padding-bottom: 0.5rem;
+                margin-bottom: 1.5rem;
+            }
+            /* Citação / Subtítulo */
+            .dossier-viewer blockquote {
+                border-left: 4px solid #4f46e5; /* indigo-600 */
+                padding-left: 1rem;
+                margin-left: 0;
+                font-style: italic;
+                color: #475569; /* slate-600 */
+                background-color: #f1f5f9; /* slate-100 */
+                padding-top: 0.5rem;
+                padding-bottom: 0.5rem;
+                border-radius: 0.25rem;
+            }
+            /* Títulos de Secção (H3) */
+            .dossier-viewer h3 {
+                font-size: 1.5rem; /* text-2xl */
+                font-weight: 600;
+                color: #1e293b; /* slate-800 */
+                margin-top: 2.5rem;
+                margin-bottom: 1rem;
+                border-bottom: 1px solid #e2e8f0; /* slate-200 */
+                padding-bottom: 0.25rem;
+            }
+            /* Títulos de Subsecção (H4) */
+             .dossier-viewer h4 {
+                font-size: 1.25rem; /* text-xl */
+                font-weight: 600;
+                color: #334155; /* slate-700 */
+                margin-top: 2rem;
+                margin-bottom: 0.75rem;
+            }
+            /* Listas */
+            .dossier-viewer ul {
+                list-style-type: '◆ ';
+                padding-left: 1.5rem;
+                margin-bottom: 1rem;
+            }
+            .dossier-viewer li {
+                margin-bottom: 0.5rem;
+                padding-left: 0.5rem;
+            }
+            /* Tabelas */
+            .dossier-viewer table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 1.5rem;
+            }
+            .dossier-viewer th {
+                background-color: #f8fafc; /* slate-50 */
+                font-weight: 600;
+                padding: 0.75rem;
+                text-align: left;
+                border-bottom: 2px solid #e2e8f0; /* slate-200 */
+            }
+            .dossier-viewer td {
+                padding: 0.75rem;
+                border-bottom: 1px solid #f1f5f9; /* slate-100 */
+            }
         </style>
     """, unsafe_allow_html=True)
 
@@ -46,20 +112,25 @@ def check_password():
 # --- FUNÇÕES DE CHAMADA À IA (COM EXPONENTIAL BACKOFF) ---
 def gerar_resposta_ia(prompt, imagens_bytes=None):
     """Envia um pedido para a API da IA e retorna a resposta, com lógica de retentativas."""
+    # (Esta função permanece a mesma da versão anterior, pois já é robusta)
     api_key = st.secrets.get("GEMINI_API_KEY")
     if not api_key:
         st.error("Chave da API do Gemini não encontrada.")
         return None
+    
     model_name = "gemini-1.5-flash-latest"
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
     headers = {'Content-Type': 'application/json'}
+    
     parts = [{"text": prompt}]
     if imagens_bytes:
         for imagem_bytes in imagens_bytes:
             encoded_image = base64.b64encode(imagem_bytes).decode('utf-8')
             parts.append({"inline_data": {"mime_type": "image/jpeg", "data": encoded_image}})
+            
     tools = [{"google_search": {}}]
     data = {"contents": [{"parts": parts}], "tools": tools}
+    
     max_retries = 5
     base_delay = 2
     for attempt in range(max_retries):
@@ -86,7 +157,7 @@ def gerar_resposta_ia(prompt, imagens_bytes=None):
             else:
                 st.error("Todas as tentativas de chamada à API falharam.")
                 return None
-    st.error("Falha ao comunicar com a API após múltiplas tentativas.")
+    st.error("Falha ao comunicar com a API após múltiplas tentativas devido a limites de utilização.")
     return None
 
 # --- FUNÇÕES DO ARQUIVO GITHUB ---
@@ -97,6 +168,7 @@ def get_github_repo():
         if not all(k in st.secrets for k in ["GITHUB_TOKEN", "GITHUB_USERNAME", "GITHUB_REPO_NAME"]):
             st.error("Uma ou mais secrets do GitHub (GITHUB_TOKEN, GITHUB_USERNAME, GITHUB_REPO_NAME) não foram encontradas.")
             return None
+
         g = Github(st.secrets["GITHUB_TOKEN"])
         repo_name = f"{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO_NAME']}"
         return g.get_repo(repo_name)
@@ -110,35 +182,47 @@ def display_repo_contents(repo, path=""):
         contents = repo.get_contents(path)
         dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name)
         files = sorted([c for c in contents if c.type == 'file'], key=lambda x: x.name)
+        
         for content in dirs:
             with st.expander(f"📁 {content.name}"):
                 display_repo_contents(repo, content.path)
+        
         for content in files:
             if content.name.endswith(".md"):
                 if st.button(f"📄 {content.name}", key=content.path, use_container_width=True):
                     st.session_state.viewing_file_content = base64.b64decode(content.content).decode('utf-8')
                     st.session_state.viewing_file_name = content.name
     except UnknownObjectException:
+        # Adiciona um ficheiro .gitkeep para inicializar o repositório se estiver vazio
         try:
-            repo.create_file(".gitkeep", "Inicializa o repositório", "", branch="main")
+            repo.create_file(".gitkeep", "Inicializa o repositório", "")
             st.info("Repositório inicializado. Por favor, atualize a página.")
         except Exception as e:
-            st.info(f"Este diretório está vazio. Não foi possível inicializar: {e}")
+            st.info("Este diretório está vazio.")
     except Exception as e:
         st.error(f"Erro ao listar o conteúdo do repositório: {e}")
 # --- APLICAÇÃO PRINCIPAL ---
 if check_password():
+    # Aplica o CSS personalizado em toda a aplicação após o login
     apply_custom_styling()
+
     st.sidebar.success("Autenticado com sucesso.")
     st.title("SISTEMA DE INTELIGÊNCIA TÁTICA")
     
     st.header("Central de Comando")
     tab1, tab2, tab3, tab4, tab5 = st.tabs(["Dossiê 1 (Liga)", "Dossiê 2 (Clube)", "Dossiê 3 (Pós-Jogo)", "Dossiê 4 (Pré-Jogo)", "Arquivo"])
 
-    with tab1: st.info("Funcionalidade de geração do Dossiê de Liga.")
-    with tab2: st.info("Funcionalidade de geração do Dossiê de Clube.")
-    with tab3: st.info("Funcionalidade de geração do Dossiê Pós-Jogo.")
-    with tab4: st.info("Funcionalidade de geração do Dossiê Pré-Jogo.")
+    with tab1:
+        st.info("Funcionalidade de geração do Dossiê de Liga.")
+    
+    with tab2:
+        st.info("Funcionalidade de geração do Dossiê de Clube.")
+
+    with tab3:
+        st.info("Funcionalidade de geração do Dossiê Pós-Jogo.")
+
+    with tab4:
+        st.info("Funcionalidade de geração do Dossiê Pré-Jogo.")
 
     # --- ABA 5: ARQUIVO DE INTELIGÊNCIA ---
     with tab5:
@@ -147,7 +231,9 @@ if check_password():
         repo = get_github_repo()
         if repo:
             col1, col2 = st.columns([1, 2])
+
             with col1:
+                # Módulo de Upload para salvar novos dossiês
                 st.subheader("Adicionar Novo Dossiê")
                 with st.form("form_arquivo"):
                     st.selectbox("Tipo de Dossiê*", ["Dossiê de Liga", "Dossiê de Clube", "Briefing Pré-Jogo", "Relatório Pós-Jogo"], key="tipo_dossie")
@@ -159,18 +245,27 @@ if check_password():
                     st.text_area("Conteúdo Markdown*", height=200, placeholder="Cole aqui o dossiê completo...", key="conteudo_md")
                     
                     if st.form_submit_button("Salvar no Arquivo do GitHub"):
-                        path_parts = [st.session_state.pais.replace(" ", "_"), st.session_state.liga.replace(" ", "_"), st.session_state.temporada]
+                        # Lógica para construir o caminho do ficheiro com base nos metadados
+                        path_parts = [
+                            st.session_state.pais.replace(" ", "_"),
+                            st.session_state.liga.replace(" ", "_"),
+                            st.session_state.temporada
+                        ]
+                        
                         file_name = ""
                         tipo = st.session_state.tipo_dossie
                         
-                        if tipo == "Dossiê de Liga": file_name = "Dossiê_Liga.md"
+                        if tipo == "Dossiê de Liga":
+                            file_name = "Dossiê_Liga.md"
                         elif tipo == "Dossiê de Clube":
-                            if not st.session_state.clube: st.error("O campo 'Clube' é obrigatório.")
+                            if not st.session_state.clube:
+                                st.error("O campo 'Clube' é obrigatório para este tipo de dossiê.")
                             else:
                                 path_parts.append(st.session_state.clube.replace(" ", "_"))
                                 file_name = "Dossiê_Clube.md"
                         elif tipo in ["Briefing Pré-Jogo", "Relatório Pós-Jogo"]:
-                            if not st.session_state.clube or not st.session_state.rodada: st.error("Os campos 'Clube' e 'Rodada / Adversário' são obrigatórios.")
+                            if not st.session_state.clube or not st.session_state.rodada:
+                                st.error("Os campos 'Clube' e 'Rodada / Adversário' são obrigatórios.")
                             else:
                                 path_parts.append(st.session_state.clube.replace(" ", "_"))
                                 path_parts.append(st.session_state.rodada.replace(" ", "_"))
@@ -183,26 +278,33 @@ if check_password():
                             
                             with st.spinner(f"A salvar '{full_path}' no GitHub..."):
                                 try:
+                                    # Verifica se o ficheiro já existe para decidir entre criar ou atualizar
                                     existing_file = repo.get_contents(full_path)
                                     repo.update_file(full_path, commit_message, content, existing_file.sha)
                                     st.success(f"Dossiê '{full_path}' atualizado com sucesso!")
                                 except UnknownObjectException:
+                                    # Se não existir, cria o ficheiro
                                     repo.create_file(full_path, commit_message, content)
                                     st.success(f"Dossiê '{full_path}' salvo com sucesso!")
                                 except Exception as e:
                                     st.error(f"Ocorreu um erro ao salvar: {e}")
                 
                 st.divider()
+                # Navegador do repositório
                 st.subheader("Navegador do Repositório")
                 display_repo_contents(repo)
 
             with col2:
+                # Visualizador de dossiês
                 st.subheader("Visualizador de Dossiês")
                 if "viewing_file_content" in st.session_state:
                     st.markdown(f"#### {st.session_state.viewing_file_name}")
-                    # Limpa as referências de citação antes de exibir
-                    cleaned_content = re.sub(r':contentReference\[.*?\]\{.*?\}', '', st.session_state.viewing_file_content)
-                    st.markdown(f"<div class='dossier-viewer'>{cleaned_content}</div>", unsafe_allow_html=True)
+                    
+                    # --- CORREÇÃO APLICADA AQUI ---
+                    # O conteúdo do markdown é envolvido por um div com a classe 'dossier-viewer'
+                    # para que o nosso CSS personalizado seja aplicado.
+                    html_content = f"<div class='dossier-viewer'>{st.session_state.viewing_file_content}</div>"
+                    st.markdown(html_content, unsafe_allow_html=True)
                 else:
                     st.info("Selecione um ficheiro no navegador para o visualizar aqui.")
         else:
