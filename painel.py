@@ -232,4 +232,9 @@ elif selected_action == "Carregar Dossiê":
 
 # ---- PÁGINA 3: GERAR COM IA ----
 elif selected_action == "Gerar com IA":
-    st.header("🧠 Geração de Dossiês com IA"); st.info("Esta seção agrupa os diferentes tipos de
+    st.header("🧠 Geração de Dossiês com IA"); st.info("Esta seção agrupa os diferentes tipos de geração de dossiês. (Em desenvolvimento)")
+    tab1, tab2, tab3, tab4 = st.tabs(["Dossiê Liga", "Dossiê de Clube", "Pós-Jogo", "Pré-Jogo"])
+    with tab1: st.write("Interface para gerar Dossiê de Liga...")
+    with tab2: st.write("Interface para gerar Dossiê de Clube...")
+    with tab3: st.write("Interface para gerar Dossiê Pós-Jogo...")
+    with tab4: st.write("Interface para gerar Dossiê Pré-Jogo...")
