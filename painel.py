@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - Versão com Design "Modo Tático" (Sintaxe Corrigida)
+Painel de Inteligência Tática - Versão Final com Tema Consistente e Design Suave
 """
 
 import streamlit as st
@@ -9,71 +9,93 @@ from datetime import datetime
 import base64
 import re
 import os
-# Importa o componente de menu para a sidebar
 from streamlit_option_menu import option_menu
 
 # --- 1. CONFIGURAÇÃO DA PÁGINA E ESTILOS GLOBAIS ---
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
 def apply_custom_styling():
-    """Aplica o novo design "Modo Tático", mais suave e profissional."""
+    """Aplica o design final "Modo Tático", focado em suavidade, consistência e conforto visual."""
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 
-            :root {
-                --primary-bg: #1A202C;       /* Cinza-azulado muito escuro */
-                --secondary-bg: #2D3748;     /* Cinza-azulado para containers */
-                --tertiary-bg: #4A5568;      /* Cinza para bordas e divisórias */
-                --accent-color: #4299E1;     /* Azul Foco para ações e destaques */
-                --accent-hover: #63B3ED;     /* Azul mais claro para hover */
-                --text-primary: #E2E8F0;     /* Cinza claro para texto principal */
-                --text-secondary: #A0AEC0;   /* Cinza médio para texto secundário */
-            }
-
-            body, .main {
-                background-color: var(--primary-bg);
-                color: var(--text-primary);
+            /* As cores base agora são controladas pelo config.toml. 
+               Este CSS refina os detalhes e garante a consistência. */
+            
+            body, .main, [data-testid="stSidebar"] {
                 font-family: 'Roboto', sans-serif;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
             }
 
-            [data-testid="stSidebar"] {
-                background-color: var(--secondary-bg);
-                border-right: 1px solid var(--tertiary-bg);
-            }
-            
-            .nav-link { color: var(--text-secondary); }
-            .nav-link:hover { background-color: var(--tertiary-bg); color: var(--text-primary); }
-            .nav-link-selected { background-color: var(--accent-color); color: white !important; font-weight: 700; }
-            .nav-link-selected:hover { background-color: var(--accent-hover); }
-
-            h1, h2, h3, h4, h5, h6 { color: var(--text-primary); font-weight: 700; }
-            
+            /* Suavizando os botões */
             .stButton>button {
-                background-color: var(--secondary-bg); color: var(--text-primary);
-                border: 1px solid var(--tertiary-bg); border-radius: 8px;
-                transition: all 0.2s ease-in-out;
+                border-radius: 8px;
+                transition: all 0.3s ease-in-out;
+                border: 1px solid #4A5568; /* Borda sutil */
+                background-color: #2D3748;
             }
-            .stButton>button:hover { border-color: var(--accent-color); color: var(--accent-color); }
-            .stButton>button[kind="primary"] { background-color: var(--accent-color); color: white; border: none; }
-            .stButton>button[kind="primary"]:hover { background-color: var(--accent-hover); }
+            .stButton>button:hover {
+                box-shadow: 0 0 10px 0 rgba(49, 130, 206, 0.5); /* Sombra azul no hover */
+                border: 1px solid #3182CE;
+            }
 
+            /* Suavizando inputs e text areas */
             .stTextInput, .stTextArea {
-                background-color: var(--secondary-bg); border: 1px solid var(--tertiary-bg);
-                border-radius: 8px; padding: 10px;
+                border-radius: 8px;
+                box-shadow: inset 0 0 0 1px #4A5568; /* Borda interna suave */
+                border: none !important;
+                background-color: #2D3748;
+                transition: all 0.3s ease-in-out;
             }
-            .stTextInput input, .stTextArea textarea { background-color: transparent !important; color: var(--text-primary) !important; }
+            .stTextInput:focus-within, .stTextArea:focus-within {
+                box-shadow: inset 0 0 0 2px #3182CE; /* Foco suave */
+            }
 
-            .st-expander { background-color: var(--secondary-bg); border: 1px solid var(--tertiary-bg); border-radius: 8px; }
+            /* Estilo refinado para o menu na sidebar */
+            .nav-link {
+                border-radius: 8px;
+                margin: 0px 5px 5px 5px;
+                transition: all 0.3s ease-in-out !important;
+            }
+            .nav-link:hover {
+                background-color: #4A5568 !important;
+            }
+            .nav-link-selected {
+                box-shadow: 0 2px 4px 0 rgba(0,0,0,0.2);
+            }
             
-            .dossier-viewer { font-family: 'Roboto', sans-serif; line-height: 1.8; color: var(--text-primary); }
-            .dossier-viewer h3 { border-bottom: 1px solid var(--accent-color); }
-            .dossier-viewer table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
-            .dossier-viewer th, .dossier-viewer td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--tertiary-bg); }
-            .dossier-viewer th { background-color: var(--secondary-bg); font-weight: 700; }
+            /* Estilo do Visualizador de Dossiê */
+            .dossier-viewer {
+                line-height: 1.8;
+                color: #E2E8F0;
+            }
+            .dossier-viewer h3 {
+                border-bottom: 2px solid #3182CE;
+                padding-bottom: 8px;
+            }
+            .dossier-viewer table {
+                border-collapse: separate;
+                border-spacing: 0;
+                width: 100%;
+                border: 1px solid #4A5568;
+                border-radius: 8px;
+                overflow: hidden; /* Garante que o border-radius aplique nas células */
+                margin: 1.5rem 0;
+            }
+            .dossier-viewer th { background-color: #2D3748; font-weight: 700; }
+            .dossier-viewer th, .dossier-viewer td {
+                padding: 10px 15px;
+                text-align: left;
+                border-bottom: 1px solid #4A5568;
+            }
+            .dossier-viewer tr:last-child td { border-bottom: none; }
         </style>
     """, unsafe_allow_html=True)
 
+# O restante do código Python é EXATAMENTE O MESMO.
+# A combinação do novo config.toml e este CSS refinado resolverá o problema.
 # --- 2. AUTENTICAÇÃO E CONEXÃO COM GITHUB ---
 def check_password():
     if st.session_state.get("password_correct", False): return True
@@ -124,7 +146,7 @@ repo = get_github_repo()
 
 # --- 4. NAVEGAÇÃO PRINCIPAL NA SIDEBAR ---
 with st.sidebar:
-    st.info(f"Autenticado. {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+    st.info(f"Autenticado. {datetime.now(tz=datetime.now().astimezone().tzinfo).strftime('%d/%m/%Y %H:%M')}")
     default_action = st.session_state.get("selected_action", "Leitor de Dossiês")
     default_index = ["Leitor de Dossiês", "Carregar Dossiê", "Gerar com IA"].index(default_action)
     selected_action = option_menu(
@@ -230,8 +252,6 @@ elif selected_action == "Carregar Dossiê":
 elif selected_action == "Gerar com IA":
     st.header("🧠 Geração de Dossiês com IA")
     st.info("Esta seção agrupa os diferentes tipos de geração de dossiês. (Em desenvolvimento)")
-    
-    # Bloco corrigido com cada 'with' em sua própria linha.
     tab1, tab2, tab3, tab4 = st.tabs(["Dossiê Liga", "Dossiê Clube", "Pós-Jogo", "Pré-Jogo"])
     with tab1:
         st.write("Interface para gerar Dossiê de Liga...")
