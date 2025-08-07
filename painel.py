@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - Versão com Design "Modo Tático"
+Painel de Inteligência Tática - Versão com Design "Modo Tático" (Sintaxe Corrigida)
 """
 
 import streamlit as st
@@ -21,7 +21,6 @@ def apply_custom_styling():
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 
-            /* Definindo a paleta de cores como variáveis CSS para fácil manutenção */
             :root {
                 --primary-bg: #1A202C;       /* Cinza-azulado muito escuro */
                 --secondary-bg: #2D3748;     /* Cinza-azulado para containers */
@@ -32,110 +31,52 @@ def apply_custom_styling():
                 --text-secondary: #A0AEC0;   /* Cinza médio para texto secundário */
             }
 
-            /* Estilo geral do corpo da página */
             body, .main {
                 background-color: var(--primary-bg);
                 color: var(--text-primary);
                 font-family: 'Roboto', sans-serif;
             }
 
-            /* Estilo da Sidebar */
             [data-testid="stSidebar"] {
                 background-color: var(--secondary-bg);
                 border-right: 1px solid var(--tertiary-bg);
             }
             
-            /* Estilo do Menu na Sidebar (streamlit-option-menu) */
-            .nav-link {
-                color: var(--text-secondary);
-            }
-            .nav-link:hover {
-                background-color: var(--tertiary-bg);
-                color: var(--text-primary);
-            }
-            .nav-link-selected {
-                background-color: var(--accent-color);
-                color: white !important;
-                font-weight: 700;
-            }
-            .nav-link-selected:hover {
-                 background-color: var(--accent-hover);
-            }
+            .nav-link { color: var(--text-secondary); }
+            .nav-link:hover { background-color: var(--tertiary-bg); color: var(--text-primary); }
+            .nav-link-selected { background-color: var(--accent-color); color: white !important; font-weight: 700; }
+            .nav-link-selected:hover { background-color: var(--accent-hover); }
 
-
-            /* Estilo dos Títulos */
-            h1, h2, h3, h4, h5, h6 {
-                color: var(--text-primary);
-                font-weight: 700;
-            }
+            h1, h2, h3, h4, h5, h6 { color: var(--text-primary); font-weight: 700; }
             
-            /* Estilo dos Botões */
             .stButton>button {
-                background-color: var(--secondary-bg);
-                color: var(--text-primary);
-                border: 1px solid var(--tertiary-bg);
-                border-radius: 8px;
+                background-color: var(--secondary-bg); color: var(--text-primary);
+                border: 1px solid var(--tertiary-bg); border-radius: 8px;
                 transition: all 0.2s ease-in-out;
             }
-            .stButton>button:hover {
-                border-color: var(--accent-color);
-                color: var(--accent-color);
-            }
-            .stButton>button[kind="primary"] {
-                background-color: var(--accent-color);
-                color: white;
-                border: none;
-            }
-            .stButton>button[kind="primary"]:hover {
-                background-color: var(--accent-hover);
-            }
+            .stButton>button:hover { border-color: var(--accent-color); color: var(--accent-color); }
+            .stButton>button[kind="primary"] { background-color: var(--accent-color); color: white; border: none; }
+            .stButton>button[kind="primary"]:hover { background-color: var(--accent-hover); }
 
-            /* Estilo dos Inputs de Texto */
             .stTextInput, .stTextArea {
-                background-color: var(--secondary-bg);
-                border: 1px solid var(--tertiary-bg);
-                border-radius: 8px;
-                padding: 10px;
+                background-color: var(--secondary-bg); border: 1px solid var(--tertiary-bg);
+                border-radius: 8px; padding: 10px;
             }
-            .stTextInput input, .stTextArea textarea {
-                background-color: transparent !important;
-                color: var(--text-primary) !important;
-            }
+            .stTextInput input, .stTextArea textarea { background-color: transparent !important; color: var(--text-primary) !important; }
 
-            /* Estilo dos Expanders */
-            .st-expander {
-                background-color: var(--secondary-bg);
-                border: 1px solid var(--tertiary-bg);
-                border-radius: 8px;
-            }
+            .st-expander { background-color: var(--secondary-bg); border: 1px solid var(--tertiary-bg); border-radius: 8px; }
             
-            /* Estilo do Visualizador de Dossiê */
-            .dossier-viewer {
-                font-family: 'Roboto', sans-serif;
-                line-height: 1.8;
-                color: var(--text-primary);
-            }
-             .dossier-viewer h3 {
-                border-bottom: 1px solid var(--accent-color);
-            }
-            .dossier-viewer table {
-                width: 100%; border-collapse: collapse; margin: 1.5rem 0;
-            }
-            .dossier-viewer th, .dossier-viewer td {
-                padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--tertiary-bg);
-            }
+            .dossier-viewer { font-family: 'Roboto', sans-serif; line-height: 1.8; color: var(--text-primary); }
+            .dossier-viewer h3 { border-bottom: 1px solid var(--accent-color); }
+            .dossier-viewer table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+            .dossier-viewer th, .dossier-viewer td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--tertiary-bg); }
             .dossier-viewer th { background-color: var(--secondary-bg); font-weight: 700; }
         </style>
     """, unsafe_allow_html=True)
 
-# O restante do código Python é EXATAMENTE O MESMO da versão anterior.
-# A única alteração necessária é na função de estilo acima.
-
 # --- 2. AUTENTICAÇÃO E CONEXÃO COM GITHUB ---
 def check_password():
-    if st.session_state.get("password_correct", False):
-        return True
-    
+    if st.session_state.get("password_correct", False): return True
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
         st.title("🔐 Painel de Inteligência")
@@ -144,8 +85,7 @@ def check_password():
             if password == st.secrets.get("APP_PASSWORD"):
                 st.session_state["password_correct"] = True
                 st.rerun()
-            else:
-                st.error("😕 Senha incorreta. Tente novamente.")
+            else: st.error("😕 Senha incorreta. Tente novamente.")
     return False
 
 @st.cache_resource
@@ -166,7 +106,6 @@ def parse_path_to_form(path):
         st.session_state.pais = parts[0].replace("_", " ")
         st.session_state.liga = parts[1].replace("_", " ")
         st.session_state.temporada = parts[2]
-        
         if file_name == "Dossiê_Liga.md": st.session_state.tipo_dossie = "Dossiê de Liga"
         elif file_name == "Dossiê_Clube.md":
             st.session_state.tipo_dossie = "Dossiê de Clube"
@@ -175,12 +114,10 @@ def parse_path_to_form(path):
             st.session_state.tipo_dossie = "Briefing Pré-Jogo" if file_name.startswith("Briefing") else "Relatório Pós-Jogo"
             st.session_state.clube = parts[3].replace("_", " ")
             st.session_state.rodada = parts[4].replace("_", " ")
-    except Exception:
-        st.warning("Não foi possível analisar o caminho do arquivo. Preencha os campos manualmente.")
+    except Exception: st.warning("Não foi possível analisar o caminho do arquivo. Preencha os campos manualmente.")
 
 # --- INÍCIO DA EXECUÇÃO DA APLICAÇÃO ---
-if not check_password():
-    st.stop()
+if not check_password(): st.stop()
 
 apply_custom_styling()
 repo = get_github_repo()
@@ -293,5 +230,14 @@ elif selected_action == "Carregar Dossiê":
 elif selected_action == "Gerar com IA":
     st.header("🧠 Geração de Dossiês com IA")
     st.info("Esta seção agrupa os diferentes tipos de geração de dossiês. (Em desenvolvimento)")
+    
+    # Bloco corrigido com cada 'with' em sua própria linha.
     tab1, tab2, tab3, tab4 = st.tabs(["Dossiê Liga", "Dossiê Clube", "Pós-Jogo", "Pré-Jogo"])
-    with tab1: st.write("Interface para gerar Dossiê de Liga..."); with tab2: st.write("Interface para gerar Dossiê de Clube..."); with tab3: st.write("Interface para gerar Dossiê Pós-Jogo..."); with tab4: st.write("Interface para gerar Dossiê Pré-Jogo...")
+    with tab1:
+        st.write("Interface para gerar Dossiê de Liga...")
+    with tab2:
+        st.write("Interface para gerar Dossiê de Clube...")
+    with tab3:
+        st.write("Interface para gerar Dossiê Pós-Jogo...")
+    with tab4:
+        st.write("Interface para gerar Dossiê Pré-Jogo...")
