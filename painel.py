@@ -2,7 +2,6 @@ import streamlit as st
 import os
 from github import Github
 from datetime import datetime
-from dotenv import load_dotenv
 
 # Carrega segredos do .streamlit/secrets.toml
 APP_PASSWORD = st.secrets["APP_PASSWORD"]
