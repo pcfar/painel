@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v12.2: Correção de Layout e Estabilidade
+Painel de Inteligência Tática - v12.3: Remoção de Campo Específico
 """
 
 import streamlit as st
@@ -112,14 +112,11 @@ if selected_action == "Leitor de Dossiês":
             if st.session_state.get("viewing_file_content"):
                 file_name = st.session_state.get("viewing_file_name", "")
                 st.markdown(f"#### {file_name}"); st.divider()
-                try:
-                    dossier_data = yaml.safe_load(st.session_state.viewing_file_content)
-                    if isinstance(dossier_data, dict):
-                        render_dossier_from_blueprint(dossier_data)
-                    else:
-                        st.warning("⚠️ Formato Inesperado"); st.code(st.session_state.viewing_file_content, language="yaml")
-                except yaml.YAMLError:
-                    st.error("⚠️ Formato de Arquivo Inválido ou Corrompido"); st.info("Este arquivo não pôde ser lido."); st.code(st.session_state.viewing_file_content, language="text")
+                if file_name.endswith(".yml"):
+                    try: dossier_data = yaml.safe_load(st.session_state.viewing_file_content); render_dossier_from_blueprint(dossier_data)
+                    except yaml.YAMLError:
+                        st.error("⚠️ Formato de Arquivo Inválido ou Corrompido"); st.info("Este arquivo não pôde ser lido."); st.code(st.session_state.viewing_file_content, language="text")
+                else: st.error("O sistema agora só suporta arquivos .yml criados pelo painel.")
             else: st.info("Selecione um dossiê para visualizar.")
 
 elif selected_action == "Carregar Dossiê":
@@ -129,32 +126,28 @@ elif selected_action == "Carregar Dossiê":
     dossier_type_options = ["", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes", "D2 P1 - Análise Comparativa de Planteis", "D2 P2 - Estudo Técnico e Tático dos Clubes", "D3 - Análise Tática (Pós Rodada)", "D4 - Briefing Semanal (Pré Rodada)"]
     dossier_type = st.selectbox("**Qual tipo de dossiê você quer criar?**", dossier_type_options, key="dossier_type_selector")
 
-    # Template 1: Dossiê de Liga
     if dossier_type == "D1 P1 - Análise da Liga":
         st.subheader("Template: Análise da Liga")
-        # --- CÓDIGO CORRIGIDO: Linhas de st.markdown removidas ---
-        with st.form("liga_form"):
+        with st.form("liga_form_final"):
             st.subheader("Informações de Arquivo")
             c1, c2, c3 = st.columns(3)
-            pais = c1.text_input("País*", key="pais_d1p1"); 
-            liga = c2.text_input("Liga*", key="liga_d1p1"); 
-            temporada = c3.text_input("Temporada*", key="temp_d1p1")
-            
+            pais = c1.text_input("País*")
+            liga = c2.text_input("Liga*")
+            temporada = c3.text_input("Temporada*")
             st.divider()
 
             st.subheader("Conteúdo do Dossiê")
-            contexto = st.text_area("Contexto Geral da Liga")
-            formato = st.text_area("Formato da Competição (um item por linha)")
+            # --- MUDANÇA AQUI: O campo "Formato da Competição" foi removido ---
+            contexto = st.text_area("Contexto Geral da Liga e Formato", placeholder="Descreva o contexto geral, formato, vagas, tendências, etc.")
             
             if st.form_submit_button("Gerar Dossiê", type="primary", use_container_width=True):
+                # --- MUDANÇA AQUI: A lógica de YAML foi ajustada para refletir a remoção do campo ---
                 dossier_data = {
                     'metadata': {'titulo_principal': f"ANÁLISE DA LIGA: {liga.upper()}", 'icone_principal': "🏆"},
                     'componentes': [
                         {'tipo': 'titulo_secao', 'icone': '🌍', 'texto': f'{liga} — Análise Estrutural {temporada}'},
-                        {'tipo': 'subtitulo_com_icone', 'icone': '📖', 'texto': 'Contexto Geral'},
+                        {'tipo': 'subtitulo_com_icone', 'icone': '📖', 'texto': 'Análise Geral'},
                         {'tipo': 'paragrafo', 'texto': contexto},
-                        {'tipo': 'subtitulo_com_icone', 'icone': '📐', 'texto': 'Formato da Competição'},
-                        {'tipo': 'lista_simples', 'itens': [item.strip() for item in formato.split('\n') if item.strip()]},
                     ]
                 }
                 yaml_string = yaml.dump(dossier_data, sort_keys=False, allow_unicode=True, indent=2)
