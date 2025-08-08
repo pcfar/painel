@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v6.1: Refinamento de Estilo nos Componentes
+Painel de Inteligência Tática - v6.2: Design Unificado e Consistente
 """
 
 import streamlit as st
@@ -12,18 +12,17 @@ import os
 from streamlit_option_menu import option_menu
 import yaml
 
-# --- 1. CONFIGURAÇÃO E ESTILOS ---
+# --- 1. CONFIGURAÇÃO E ESTILOS UNIFICADOS ---
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
 def apply_custom_styling():
-    """CSS projetado para renderizar os componentes do novo modelo de dossiê."""
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
             body, .main { font-family: 'Roboto', sans-serif; }
             .dossier-container { padding: 0 1rem; }
             
-            .comp-main-title { font-size: 1.8rem; font-weight: 900; letter-spacing: 1px; color: #E2E8F0; margin-bottom: 2rem; }
+            .comp-main-title { font-size: 1.8rem; font-weight: 900; color: #E2E8F0; margin-bottom: 2rem; }
             .comp-main-title span { vertical-align: middle; font-size: 2.5rem; margin-right: 15px; }
 
             .comp-section-title { font-size: 1.5rem; font-weight: 700; text-transform: uppercase; color: #FFFFFF; margin-top: 3rem; margin-bottom: 1.5rem; }
@@ -34,70 +33,43 @@ def apply_custom_styling():
 
             .comp-paragraph { font-size: 1.1rem; color: #A0AEC0; line-height: 1.9; margin-bottom: 1rem; }
 
-            /* --- MUDANÇA AQUI: Estilo do Divisor de Parte redesenhado --- */
-            .comp-part-divider {
-                display: flex;
-                align-items: center;
-                margin: 4rem 0; /* Mais espaçamento vertical */
-            }
-            .comp-part-divider-text {
-                font-size: 1.4rem; /* Maior */
-                font-weight: 900;  /* Mais pesado */
-                color: #FFFFFF;     /* Branco para máximo contraste */
-                text-transform: uppercase;
-                letter-spacing: 1.5px; /* Efeito "cinematográfico" */
-            }
-            .comp-part-divider span {
-                color: #3182CE;
-                margin: 0 20px;
-                font-size: 1.5rem;
-            }
-            .comp-part-divider hr {
-                flex-grow: 1;
-                border: none;
-                height: 2px; /* Linha mais grossa */
-                /* Efeito de gradiente para suavizar as pontas */
-                background: linear-gradient(to right, transparent, #4A5568, transparent);
-            }
-            
-            /* --- MUDANÇA AQUI: Estilo do Título da Lista Numerada redesenhado --- */
-            .comp-numbered-list h5 {
-                font-size: 1.3rem;      /* Maior */
-                font-weight: 700;
-                color: #a5b4fc;         /* Cor de destaque */
-                margin-bottom: 1.5rem;  /* Mais espaçamento inferior */
-            }
-            .comp-numbered-list ul { list-style-type: none; padding-left: 1rem; }
-            .comp-numbered-list li { margin-bottom: 0.5rem; color: #A0AEC0; }
-            .comp-numbered-list li::before { content: "▪"; color: #63B3ED; margin-right: 10px; }
-            
-            .club-logo { width: 30px; height: 30px; margin-right: 12px; vertical-align: middle; }
+            /* NOVO COMPONENTE DE LISTA SIMPLES, SUBSTITUINDO O ANTIGO */
+            .comp-simple-list ul { list-style-type: none; padding-left: 1rem; margin-top: 1rem; }
+            .comp-simple-list li { margin-bottom: 0.7rem; color: #A0AEC0; font-size: 1.1rem; }
+            .comp-simple-list li::before { content: "•"; color: #63B3ED; margin-right: 12px; font-size: 1.2rem; }
 
+            /* Estilos gerais do painel */
             [data-testid="stSidebar"] { border-right: 1px solid #4A5568; }
             .nav-link { border-radius: 8px; margin: 0px 5px 5px 5px; }
             .form-card { background-color: #2D3748; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.2); border: 1px solid #4A5568; margin-bottom: 25px; }
         </style>
     """, unsafe_allow_html=True)
 
-# --- 2. RENDERIZADOR E FUNÇÕES AUXILIARES ---
+# --- 2. RENDERIZADOR DE COMPONENTES (SIMPLIFICADO E UNIFICADO) ---
 def render_dossier_from_blueprint(data: dict):
     st.markdown('<div class="dossier-container">', unsafe_allow_html=True)
+
     if 'metadata' in data:
         meta = data['metadata']
         st.markdown(f'<h1 class="comp-main-title"><span>{meta.get("icone_principal", "📄")}</span> {meta.get("titulo_principal", "Dossiê")}</h1>', unsafe_allow_html=True)
+
     if 'componentes' in data:
         for comp in data['componentes']:
             tipo = comp.get('tipo')
-            if tipo == 'titulo_secao': st.markdown(f'<h2 class="comp-section-title"><span>{comp.get("icone", "■")}</span>{comp.get("texto", "")}</h2>', unsafe_allow_html=True)
-            elif tipo == 'subtitulo_com_icone': st.markdown(f'<h3 class="comp-subtitle-icon"><span>{comp.get("icone", "•")}</span>{comp.get("texto", "")}</h3>', unsafe_allow_html=True)
-            elif tipo == 'paragrafo': st.markdown(f'<p class="comp-paragraph">{comp.get("texto", "")}</p>', unsafe_allow_html=True)
-            elif tipo == 'divisor_parte': st.markdown(f'<div class="comp-part-divider"><hr><span class="comp-part-divider-text"><span>◆</span> {comp.get("texto", "")} <span>◆</span></span><hr></div>', unsafe_allow_html=True)
-            elif tipo == 'lista_numerada':
-                st.markdown(f'<div class="comp-numbered-list"><h5>{comp.get("titulo", "")}</h5>', unsafe_allow_html=True)
-                list_items_html = "<ul>" + "".join([f"<li>{item}</li>" for item in comp.get('itens', [])]) + "</ul></div>"
+            if tipo == 'titulo_secao':
+                st.markdown(f'<h2 class="comp-section-title"><span>{comp.get("icone", "■")}</span>{comp.get("texto", "")}</h2>', unsafe_allow_html=True)
+            elif tipo == 'subtitulo_com_icone':
+                st.markdown(f'<h3 class="comp-subtitle-icon"><span>{comp.get("icone", "•")}</span>{comp.get("texto", "")}</h3>', unsafe_allow_html=True)
+            elif tipo == 'paragrafo':
+                st.markdown(f'<p class="comp-paragraph">{comp.get("texto", "")}</p>', unsafe_allow_html=True)
+            elif tipo == 'lista_simples':
+                list_items_html = "<div class='comp-simple-list'><ul>" + "".join([f"<li>{item}</li>" for item in comp.get('itens', [])]) + "</ul></div>"
                 st.markdown(list_items_html, unsafe_allow_html=True)
+
     st.markdown('</div>', unsafe_allow_html=True)
 
+# --- 3. FUNÇÕES DE AUTENTICAÇÃO E LÓGICA ---
+# (O código para get_github_repo, check_password, parse_path_to_form, e display_repo_structure permanecem os mesmos da v6.1, pois já estão robustos)
 @st.cache_resource
 def get_github_repo():
     try: g = Github(st.secrets["GITHUB_TOKEN"]); repo_name = f"{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO_NAME']}"; return g.get_repo(repo_name)
@@ -145,6 +117,7 @@ def display_repo_structure(repo, path="", search_term="", show_actions=False):
             else: st.markdown(f"📄 `{content_file.name}`")
     except Exception as e: st.error(f"Erro ao listar arquivos em '{path}': {e}")
 
+
 # --- CÓDIGO PRINCIPAL DA APLICAÇÃO ---
 if not check_password(): st.stop()
 apply_custom_styling()
@@ -173,7 +146,7 @@ if selected_action == "Leitor de Dossiês":
                 if file_name.endswith(".yml"):
                     try: dossier_data = yaml.safe_load(st.session_state.viewing_file_content); render_dossier_from_blueprint(dossier_data)
                     except yaml.YAMLError as e: st.error(f"Erro ao ler o arquivo YAML: {e}"); st.code(st.session_state.viewing_file_content)
-                else: st.warning("Formato antigo (.md). Crie novos dossiês (.yml) para a nova visualização.") ; st.text(st.session_state.viewing_file_content)
+                else: st.warning("Formato antigo (.md). Crie/converta para .yml para a nova visualização.") ; st.text(st.session_state.viewing_file_content)
             else: st.info("Selecione um dossiê (.yml) para uma visualização rica.")
 
 elif selected_action == "Carregar Dossiê":
@@ -182,9 +155,9 @@ elif selected_action == "Carregar Dossiê":
     if repo:
         col_nav, col_form = st.columns([1, 2], gap="large")
         with col_nav:
-            st.subheader("Estrutura Atual"); st.info("Use esta visualização como guia."); display_repo_structure(repo, show_actions=False)
+            st.subheader("Estrutura Atual"); st.info("Use como guia."); display_repo_structure(repo, show_actions=False)
         with col_form:
-            st.subheader("Formulário de Dados"); st.warning("O conteúdo final deve ser no formato YAML.")
+            st.subheader("Formulário de Dados"); st.warning("O conteúdo deve ser no formato YAML, seguindo o novo padrão de componentes.")
             with st.form("dossier_form", clear_on_submit=False):
                 st.markdown('<div class="form-card">', unsafe_allow_html=True)
                 st.selectbox("Tipo de Dossiê*", ["Dossiê de Liga"], key="tipo_dossie", help="Apenas Dossiê de Liga usa o novo modelo YAML.")
