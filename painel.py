@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v16.5: Ajuste Fino Final de Alinhamento e Contraste
+Painel de Inteligência Tática - v16.6: Ajuste Fino Final de Alinhamento e Contraste
 """
 
 import streamlit as st
@@ -24,7 +24,6 @@ def apply_custom_styling():
             .dossier-viewer { 
                 line-height: 1.7; 
                 font-size: 1.1rem; 
-                color: #F3F4F6; /* --- MUDANÇA: Cor principal para branco mais puro --- */
             }
             .dossier-viewer h1 { 
                 font-size: 2.2rem; font-weight: 900; color: #FFFFFF; 
@@ -37,14 +36,14 @@ def apply_custom_styling():
                 border-left: 4px solid #38BDF8;
             }
             .dossier-viewer h3 { 
-                font-size: 1.4rem; font-weight: 700; color: #FACC15;
+                font-size: 1.4rem; font-weight: 700; color: #FACC15; /* Cor amarela/gold */
                 margin-top: 2.5rem; margin-bottom: 1rem; 
             }
-            /* --- MUDANÇA: Cor do parágrafo e alinhamento ajustado --- */
+            /* --- MUDANÇA: Cor do texto principal para máximo contraste --- */
             .dossier-viewer p { 
                 margin-bottom: 1rem; 
-                color: #E2E8F0; /* Tom de branco suave, mas mais claro que antes */
-                padding-left: 0; /* Garante que não haja recuo extra */
+                color: #F3F4F6; 
+                padding-left: 0; 
                 text-indent: 0;
             }
             .dossier-viewer strong { 
@@ -52,15 +51,21 @@ def apply_custom_styling():
                 font-weight: 900;
                 text-shadow: 0 0 8px rgba(165, 180, 252, 0.3);
             }
+            /* --- MUDANÇA: Estilo para os intertítulos para garantir alinhamento --- */
             .dossier-viewer p > strong:only-child {
-                color: #FACC15; font-size: 1.15rem; display: block;
-                margin-bottom: 0.8rem; text-shadow: none;
+                color: #FACC15;
+                font-size: 1.15rem;
+                display: block;
+                margin-bottom: 0.8rem;
+                text-shadow: none;
+                padding-left: 0;
+                text-indent: 0;
             }
             .dossier-viewer ul { list-style-type: none; padding-left: 0; margin-top: 1rem; }
-            /* --- MUDANÇA: Cor da lista e alinhamento ajustado --- */
+            /* --- MUDANÇA: Cor do texto da lista para máximo contraste --- */
             .dossier-viewer li { 
                 margin-bottom: 0.7rem; 
-                color: #E2E8F0; 
+                color: #F3F4F6;
                 padding-left: 1.5em; text-indent: -1.5em; 
             }
             .dossier-viewer li::before { content: "▪"; color: #63B3ED; margin-right: 10px; font-size: 1.2rem; }
@@ -75,12 +80,15 @@ def apply_custom_styling():
 
 # --- FUNÇÕES AUXILIARES E CÓDIGO PRINCIPAL (SEM ALTERAÇÕES) ---
 def sanitize_text(text: str) -> str:
+    # ... (código inalterado)
     return text.replace('\u00A0', ' ').replace('\u2011', '-')
 @st.cache_resource
 def get_github_repo():
+    # ... (código inalterado)
     try: g = Github(st.secrets["GITHUB_TOKEN"]); return g.get_repo(f"{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO_NAME']}")
     except Exception as e: st.error(f"Falha na conexão com o GitHub: {e}"); return None
 def check_password():
+    # ... (código inalterado)
     if st.session_state.get("password_correct", False): return True
     _, center_col, _ = st.columns([1, 1, 1])
     with center_col:
@@ -93,6 +101,7 @@ def check_password():
                     else: st.error("Senha incorreta.")
     return False
 def display_repo_structure(repo, path=""):
+    # ... (código inalterado)
     try:
         contents = repo.get_contents(path)
         dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name)
@@ -156,7 +165,6 @@ elif selected_action == "Carregar Dossiê":
     dossier_type_options = ["", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes da Liga", "D2 P1 - Análise Comparativa de Planteis", "D2 P2 - Estudo Técnico e Tático dos Clubes", "D3 - Análise Tática (Pós Rodada)", "D4 - Briefing Semanal (Pré Rodada)"]
     dossier_type = st.selectbox("**Qual tipo de dossiê você quer criar?**", dossier_type_options, key="dossier_type_selector")
     help_text_md = "Guia Rápido:\n- Título: # Título\n- Subtítulo: ## Subtítulo\n- Intertítulo: ### Título\n- Listas: - Item da lista\n- Destaque: **texto**"
-    
     def save_dossier(repo, file_name_template: str, path_parts: list, content: str, required_fields: dict):
         if not all(required_fields.values()): st.error("Todos os campos marcados com * são obrigatórios."); return
         format_dict = {k: v for k, v in required_fields.items() if k in ['liga', 'pais']}
@@ -170,7 +178,6 @@ elif selected_action == "Carregar Dossiê":
             except Exception as e:
                 st.error(f"Ocorreu um erro ao salvar: {e}")
                 st.info("Verifique se um arquivo com este nome já não existe.")
-
     if dossier_type == "D1 P1 - Análise da Liga":
         with st.form("d1_p1_form", clear_on_submit=True):
             st.subheader("Template: Análise da Liga")
@@ -178,8 +185,6 @@ elif selected_action == "Carregar Dossiê":
             conteudo = st.text_area("Resumo (Conteúdo do Dossiê)*", height=300, help=help_text_md)
             if st.form_submit_button("Salvar Dossiê", type="primary"):
                 save_dossier(repo, "D1P1_Analise_Liga_{liga}_{pais}", [pais, liga, temporada], conteudo, {"liga": liga, "pais": pais, "temporada": temporada, "conteudo": conteudo})
-    
     elif dossier_type: st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
-
 elif selected_action == "Gerar com IA":
     st.header("Gerar com IA"); st.info("Em desenvolvimento.")
