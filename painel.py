@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v6.0: Arquitetura Final de Renderização por Componentes
+Painel de Inteligência Tática - v6.1: Refinamento de Estilo nos Componentes
 """
 
 import streamlit as st
@@ -34,12 +34,39 @@ def apply_custom_styling():
 
             .comp-paragraph { font-size: 1.1rem; color: #A0AEC0; line-height: 1.9; margin-bottom: 1rem; }
 
-            .comp-part-divider { display: flex; align-items: center; margin: 3.5rem 0; }
-            .comp-part-divider span { color: #3182CE; font-size: 1.2rem; margin: 0 15px; }
-            .comp-part-divider hr { flex-grow: 1; border: none; border-top: 1px solid #4A5568; }
-            .comp-part-divider-text { font-weight: 700; color: #E2E8F0; }
-
-            .comp-numbered-list h5 { font-size: 1.1rem; font-weight: 700; color: #E2E8F0; margin-bottom: 1rem; }
+            /* --- MUDANÇA AQUI: Estilo do Divisor de Parte redesenhado --- */
+            .comp-part-divider {
+                display: flex;
+                align-items: center;
+                margin: 4rem 0; /* Mais espaçamento vertical */
+            }
+            .comp-part-divider-text {
+                font-size: 1.4rem; /* Maior */
+                font-weight: 900;  /* Mais pesado */
+                color: #FFFFFF;     /* Branco para máximo contraste */
+                text-transform: uppercase;
+                letter-spacing: 1.5px; /* Efeito "cinematográfico" */
+            }
+            .comp-part-divider span {
+                color: #3182CE;
+                margin: 0 20px;
+                font-size: 1.5rem;
+            }
+            .comp-part-divider hr {
+                flex-grow: 1;
+                border: none;
+                height: 2px; /* Linha mais grossa */
+                /* Efeito de gradiente para suavizar as pontas */
+                background: linear-gradient(to right, transparent, #4A5568, transparent);
+            }
+            
+            /* --- MUDANÇA AQUI: Estilo do Título da Lista Numerada redesenhado --- */
+            .comp-numbered-list h5 {
+                font-size: 1.3rem;      /* Maior */
+                font-weight: 700;
+                color: #a5b4fc;         /* Cor de destaque */
+                margin-bottom: 1.5rem;  /* Mais espaçamento inferior */
+            }
             .comp-numbered-list ul { list-style-type: none; padding-left: 1rem; }
             .comp-numbered-list li { margin-bottom: 0.5rem; color: #A0AEC0; }
             .comp-numbered-list li::before { content: "▪"; color: #63B3ED; margin-right: 10px; }
@@ -64,7 +91,7 @@ def render_dossier_from_blueprint(data: dict):
             if tipo == 'titulo_secao': st.markdown(f'<h2 class="comp-section-title"><span>{comp.get("icone", "■")}</span>{comp.get("texto", "")}</h2>', unsafe_allow_html=True)
             elif tipo == 'subtitulo_com_icone': st.markdown(f'<h3 class="comp-subtitle-icon"><span>{comp.get("icone", "•")}</span>{comp.get("texto", "")}</h3>', unsafe_allow_html=True)
             elif tipo == 'paragrafo': st.markdown(f'<p class="comp-paragraph">{comp.get("texto", "")}</p>', unsafe_allow_html=True)
-            elif tipo == 'divisor_parte': st.markdown(f'<div class="comp-part-divider"><hr><span class="comp-part-divider-text">◆ {comp.get("texto", "")} ◆</span><hr></div>', unsafe_allow_html=True)
+            elif tipo == 'divisor_parte': st.markdown(f'<div class="comp-part-divider"><hr><span class="comp-part-divider-text"><span>◆</span> {comp.get("texto", "")} <span>◆</span></span><hr></div>', unsafe_allow_html=True)
             elif tipo == 'lista_numerada':
                 st.markdown(f'<div class="comp-numbered-list"><h5>{comp.get("titulo", "")}</h5>', unsafe_allow_html=True)
                 list_items_html = "<ul>" + "".join([f"<li>{item}</li>" for item in comp.get('itens', [])]) + "</ul></div>"
@@ -146,7 +173,7 @@ if selected_action == "Leitor de Dossiês":
                 if file_name.endswith(".yml"):
                     try: dossier_data = yaml.safe_load(st.session_state.viewing_file_content); render_dossier_from_blueprint(dossier_data)
                     except yaml.YAMLError as e: st.error(f"Erro ao ler o arquivo YAML: {e}"); st.code(st.session_state.viewing_file_content)
-                else: st.warning("Este é um formato de arquivo antigo. Crie novos dossiês no formato .yml para a nova visualização.") ; st.text(st.session_state.viewing_file_content)
+                else: st.warning("Formato antigo (.md). Crie novos dossiês (.yml) para a nova visualização.") ; st.text(st.session_state.viewing_file_content)
             else: st.info("Selecione um dossiê (.yml) para uma visualização rica.")
 
 elif selected_action == "Carregar Dossiê":
@@ -157,10 +184,10 @@ elif selected_action == "Carregar Dossiê":
         with col_nav:
             st.subheader("Estrutura Atual"); st.info("Use esta visualização como guia."); display_repo_structure(repo, show_actions=False)
         with col_form:
-            st.subheader("Formulário de Dados"); st.warning("Preencha os campos abaixo para gerar um template YAML. O conteúdo final deve ser no formato YAML.")
+            st.subheader("Formulário de Dados"); st.warning("O conteúdo final deve ser no formato YAML.")
             with st.form("dossier_form", clear_on_submit=False):
                 st.markdown('<div class="form-card">', unsafe_allow_html=True)
-                st.selectbox("Tipo de Dossiê*", ["Dossiê de Liga"], key="tipo_dossie", help="No momento, apenas Dossiê de Liga usa o novo modelo YAML.")
+                st.selectbox("Tipo de Dossiê*", ["Dossiê de Liga"], key="tipo_dossie", help="Apenas Dossiê de Liga usa o novo modelo YAML.")
                 c1, c2, c3 = st.columns(3); c1.text_input("País*", placeholder="Ex: Inglaterra", key="pais"); c2.text_input("Liga*", placeholder="Ex: Premier League", key="liga"); c3.text_input("Temporada*", placeholder="Ex: 2025-26", key="temporada")
                 st.markdown('</div><div class="form-card">', unsafe_allow_html=True)
                 st.text_area("Conteúdo (cole o YAML aqui)*", height=400, placeholder="Cole o conteúdo do seu dossiê no formato YAML...", key="conteudo_md")
