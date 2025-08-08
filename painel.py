@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v12.5: Correção de Limpeza de Formulário
+Painel de Inteligência Tática - v12.6: Lógica de Salvar/Atualizar Robusta
 """
 
 import streamlit as st
@@ -134,46 +134,13 @@ if selected_action == "Leitor de Dossiês":
 elif selected_action == "Carregar Dossiê":
     st.header("Criar Novo Dossiê")
     st.info("Selecione o tipo de dossiê, preencha as informações e o conteúdo.")
-
     dossier_type_options = ["", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes", "D2 P1 - Análise Comparativa de Planteis", "D2 P2 - Estudo Técnico e Tático dos Clubes", "D3 - Análise Tática (Pós Rodada)", "D4 - Briefing Semanal (Pré Rodada)"]
     dossier_type = st.selectbox("**Qual tipo de dossiê você quer criar?**", dossier_type_options, key="dossier_type_selector")
 
     if dossier_type == "D1 P1 - Análise da Liga":
         st.subheader("Template: Análise da Liga")
-        
-        # --- MUDANÇA AQUI: Adicionado clear_on_submit=True ---
         with st.form("liga_form_final", clear_on_submit=True):
             st.subheader("Informações de Arquivo")
-            c1, c2, c3 = st.columns(3)
-            pais = c1.text_input("País*", key="pais")
-            liga = c2.text_input("Liga*", key="liga")
-            temporada = c3.text_input("Temporada*", key="temporada")
-            st.divider()
-            st.subheader("Conteúdo do Dossiê")
-            conteudo = st.text_area("Cole aqui a análise completa", height=400, key="conteudo", help="O sistema irá formatar automaticamente títulos (Ex: '1. Título') e listas (Ex: '• Item').")
-            
-            if st.form_submit_button("Gerar e Salvar Dossiê", type="primary", use_container_width=True):
-                if not all([pais, liga, temporada, conteudo]):
-                    st.error("Todos os campos * são obrigatórios.")
-                else:
-                    componentes = parse_text_to_components(conteudo)
-                    dossier_data = {
-                        'metadata': {'titulo_principal': f"ANÁLISE DA LIGA: {liga.upper()}", 'icone_principal': "🏆"},
-                        'componentes': componentes
-                    }
-                    yaml_string = yaml.dump(dossier_data, sort_keys=False, allow_unicode=True, indent=2)
-                    file_name = f"D1P1_Analise_Liga_{liga.replace(' ', '_')}_{pais.replace(' ', '_')}.yml"
-                    path_parts = [pais, liga, temporada]; full_path = "/".join(p.replace(" ", "_") for p in path_parts) + "/" + file_name
-                    with st.spinner("Salvando..."):
-                        try:
-                            repo.create_file(full_path, f"Adiciona: {file_name}", yaml_string)
-                            st.success(f"Salvo com sucesso: {full_path}")
-                            # --- MUDANÇA AQUI: A limpeza manual foi REMOVIDA ---
-                        except Exception as e:
-                            st.error(f"Erro ao salvar: {e}")
-
-    elif dossier_type:
-        st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
-
-elif selected_action == "Gerar com IA":
-    st.header("Gerar com IA"); st.info("Em desenvolvimento.")
+            c1, c2, c3 = st.columns(3); pais = c1.text_input("País*", key="pais"); liga = c2.text_input("Liga*", key="liga"); temporada = c3.text_input("Temporada*", key="temporada")
+            st.divider(); st.subheader("Conteúdo do Dossiê")
+            conteudo = st.text_area("Cole
