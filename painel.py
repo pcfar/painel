@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v12.3: Remoção de Campo Específico
+Painel de Inteligência Tática - v12.4: Limpeza de Formulário e Analisador de Conteúdo Inteligente
 """
 
 import streamlit as st
 from github import Github, UnknownObjectException
 from datetime import datetime
 import base64
+import re
 import os
 from streamlit_option_menu import option_menu
 import yaml
 
-# --- 1. CONFIGURAÇÃO E ESTILOS ---
+# --- 1. CONFIGURAÇÃO E ESTILOS (sem alterações) ---
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
 def apply_custom_styling():
+    # CSS permanece o mesmo
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
@@ -36,6 +38,7 @@ def apply_custom_styling():
 
 # --- 2. RENDERIZADOR E FUNÇÕES AUXILIARES ---
 def render_dossier_from_blueprint(data: dict):
+    # Função de renderização principal (sem alterações)
     st.markdown('<div class="dossier-container">', unsafe_allow_html=True)
     if 'metadata' in data: meta = data['metadata']; st.markdown(f'<h1 class="comp-main-title"><span>{meta.get("icone_principal", "📄")}</span> {meta.get("titulo_principal", "Dossiê")}</h1>', unsafe_allow_html=True)
     if 'componentes' in data:
@@ -46,6 +49,48 @@ def render_dossier_from_blueprint(data: dict):
             elif tipo == 'paragrafo': st.markdown(f'<p class="comp-paragraph">{comp.get("texto", "")}</p>', unsafe_allow_html=True)
             elif tipo == 'lista_simples': list_items_html = "<div class='comp-simple-list'><ul>" + "".join([f"<li>{item}</li>" for item in comp.get('itens', [])]) + "</ul></div>"; st.markdown(list_items_html, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
+
+# --- NOVA FUNÇÃO: O ANALISADOR DE CONTEÚDO INTELIGENTE ---
+def parse_text_to_components(text_content: str) -> list:
+    """Analisa um bloco de texto e o converte em uma lista de componentes estruturados."""
+    components = []
+    current_list_items = []
+    
+    # Dicionário de ícones para seções numeradas
+    icon_map = {"1": "1️⃣", "2": "2️⃣", "3": "3️⃣", "4": "4️⃣", "5": "5️⃣"}
+
+    def flush_list():
+        """Função interna para salvar a lista atual de itens e limpar."""
+        if current_list_items:
+            components.append({'tipo': 'lista_simples', 'itens': current_list_items.copy()})
+            current_list_items.clear()
+
+    for line in text_content.split('\n'):
+        line = line.strip()
+        if not line: continue
+
+        # Verifica por títulos de seção (ex: "1. Título")
+        match = re.match(r'^(\d+)\.\s(.+)', line)
+        if match:
+            flush_list() # Salva qualquer lista anterior antes de criar um novo título
+            num, text = match.groups()
+            icon = icon_map.get(num, '•')
+            components.append({'tipo': 'subtitulo_com_icone', 'icone': icon, 'texto': text})
+            continue
+
+        # Verifica por itens de lista (ex: "• item" ou "- item")
+        if line.startswith('• ') or line.startswith('- '):
+            current_list_items.append(line[2:].strip())
+            continue
+
+        # Se não for nenhum dos anteriores, é um parágrafo
+        flush_list() # Salva qualquer lista anterior
+        components.append({'tipo': 'paragrafo', 'texto': line})
+
+    flush_list() # Garante que a última lista seja salva
+    return components
+
+# (O restante das funções auxiliares como get_github_repo, check_password, etc., permanecem as mesmas)
 @st.cache_resource
 def get_github_repo():
     try: g = Github(st.secrets["GITHUB_TOKEN"]); repo_name = f"{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO_NAME']}"; return g.get_repo(repo_name)
@@ -112,16 +157,19 @@ if selected_action == "Leitor de Dossiês":
             if st.session_state.get("viewing_file_content"):
                 file_name = st.session_state.get("viewing_file_name", "")
                 st.markdown(f"#### {file_name}"); st.divider()
-                if file_name.endswith(".yml"):
-                    try: dossier_data = yaml.safe_load(st.session_state.viewing_file_content); render_dossier_from_blueprint(dossier_data)
-                    except yaml.YAMLError:
-                        st.error("⚠️ Formato de Arquivo Inválido ou Corrompido"); st.info("Este arquivo não pôde ser lido."); st.code(st.session_state.viewing_file_content, language="text")
-                else: st.error("O sistema agora só suporta arquivos .yml criados pelo painel.")
+                try:
+                    dossier_data = yaml.safe_load(st.session_state.viewing_file_content)
+                    if isinstance(dossier_data, dict):
+                        render_dossier_from_blueprint(dossier_data)
+                    else:
+                        st.warning("⚠️ Formato Inesperado"); st.code(st.session_state.viewing_file_content, language="yaml")
+                except yaml.YAMLError:
+                    st.error("⚠️ Formato de Arquivo Inválido ou Corrompido"); st.info("Este arquivo não pôde ser lido."); st.code(st.session_state.viewing_file_content, language="text")
             else: st.info("Selecione um dossiê para visualizar.")
 
 elif selected_action == "Carregar Dossiê":
     st.header("Criar Novo Dossiê")
-    st.info("Selecione o tipo de dossiê para ver os campos específicos e preencha as informações.")
+    st.info("Selecione o tipo de dossiê, preencha as informações e o conteúdo.")
 
     dossier_type_options = ["", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes", "D2 P1 - Análise Comparativa de Planteis", "D2 P2 - Estudo Técnico e Tático dos Clubes", "D3 - Análise Tática (Pós Rodada)", "D4 - Briefing Semanal (Pré Rodada)"]
     dossier_type = st.selectbox("**Qual tipo de dossiê você quer criar?**", dossier_type_options, key="dossier_type_selector")
@@ -131,31 +179,36 @@ elif selected_action == "Carregar Dossiê":
         with st.form("liga_form_final"):
             st.subheader("Informações de Arquivo")
             c1, c2, c3 = st.columns(3)
-            pais = c1.text_input("País*")
-            liga = c2.text_input("Liga*")
-            temporada = c3.text_input("Temporada*")
+            pais = c1.text_input("País*", key="pais")
+            liga = c2.text_input("Liga*", key="liga")
+            temporada = c3.text_input("Temporada*", key="temporada")
             st.divider()
-
             st.subheader("Conteúdo do Dossiê")
-            # --- MUDANÇA AQUI: O campo "Formato da Competição" foi removido ---
-            contexto = st.text_area("Contexto Geral da Liga e Formato", placeholder="Descreva o contexto geral, formato, vagas, tendências, etc.")
+            conteudo = st.text_area("Cole aqui a análise completa", height=400, key="conteudo", help="O sistema irá formatar automaticamente títulos (Ex: '1. Título') e listas (Ex: '• Item').")
             
-            if st.form_submit_button("Gerar Dossiê", type="primary", use_container_width=True):
-                # --- MUDANÇA AQUI: A lógica de YAML foi ajustada para refletir a remoção do campo ---
-                dossier_data = {
-                    'metadata': {'titulo_principal': f"ANÁLISE DA LIGA: {liga.upper()}", 'icone_principal': "🏆"},
-                    'componentes': [
-                        {'tipo': 'titulo_secao', 'icone': '🌍', 'texto': f'{liga} — Análise Estrutural {temporada}'},
-                        {'tipo': 'subtitulo_com_icone', 'icone': '📖', 'texto': 'Análise Geral'},
-                        {'tipo': 'paragrafo', 'texto': contexto},
-                    ]
-                }
-                yaml_string = yaml.dump(dossier_data, sort_keys=False, allow_unicode=True, indent=2)
-                file_name = f"D1P1_Analise_Liga_{liga.replace(' ', '_')}_{pais.replace(' ', '_')}.yml"
-                path_parts = [pais, liga, temporada]; full_path = "/".join(p.replace(" ", "_") for p in path_parts) + "/" + file_name
-                with st.spinner("Salvando..."):
-                    try: repo.create_file(full_path, f"Adiciona: {file_name}", yaml_string); st.success(f"Salvo com sucesso: {full_path}")
-                    except Exception as e: st.error(f"Erro ao salvar: {e}")
+            if st.form_submit_button("Gerar e Salvar Dossiê", type="primary", use_container_width=True):
+                if not all([pais, liga, temporada, conteudo]):
+                    st.error("Todos os campos * são obrigatórios.")
+                else:
+                    # --- MUDANÇA AQUI: USANDO O ANALISADOR INTELIGENTE ---
+                    componentes = parse_text_to_components(conteudo)
+                    dossier_data = {
+                        'metadata': {'titulo_principal': f"ANÁLISE DA LIGA: {liga.upper()}", 'icone_principal': "🏆"},
+                        'componentes': componentes
+                    }
+                    yaml_string = yaml.dump(dossier_data, sort_keys=False, allow_unicode=True, indent=2)
+                    file_name = f"D1P1_Analise_Liga_{liga.replace(' ', '_')}_{pais.replace(' ', '_')}.yml"
+                    path_parts = [pais, liga, temporada]; full_path = "/".join(p.replace(" ", "_") for p in path_parts) + "/" + file_name
+                    with st.spinner("Salvando..."):
+                        try:
+                            repo.create_file(full_path, f"Adiciona: {file_name}", yaml_string)
+                            st.success(f"Salvo com sucesso: {full_path}")
+                            # --- MUDANÇA AQUI: LIMPANDO O FORMULÁRIO ---
+                            for key in ['pais', 'liga', 'temporada', 'conteudo']:
+                                st.session_state[key] = ""
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Erro ao salvar: {e}")
 
     elif dossier_type:
         st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
