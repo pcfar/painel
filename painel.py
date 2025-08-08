@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v14.0: Versão Estável com Edição e Exclusão
+Painel de Inteligência Tática - v14.1: Modo de Leitura Focada
 """
 
 import streamlit as st
@@ -57,19 +57,10 @@ def check_password():
     return False
 
 def parse_path_to_form_state(path, name):
-    """Analisa o caminho e nome do arquivo para preencher o estado do formulário para edição."""
     try:
-        parts = path.split('/')
-        st.session_state.edit_pais = parts[0].replace("_", " ")
-        st.session_state.edit_liga = parts[1].replace("_", " ")
-        st.session_state.edit_temporada = parts[2]
-        
-        # Inferir o tipo de dossiê pelo prefixo do nome do arquivo
+        parts = path.split('/'); st.session_state.edit_pais = parts[0].replace("_", " "); st.session_state.edit_liga = parts[1].replace("_", " "); st.session_state.edit_temporada = parts[2]
         if name.startswith("D1P1_"): st.session_state.dossier_type_selector = "D1 P1 - Análise da Liga"
-        # Adicionar outras lógicas de `elif` para os outros 5 tipos de dossiê aqui
-        # Ex: elif name.startswith("D4_"): st.session_state.dossier_type_selector = "D4 - Briefing Semanal (Pré Rodada)"
-        
-    except Exception as e: st.error(f"Erro ao analisar caminho do arquivo para edição: {e}")
+    except Exception as e: st.error(f"Erro ao analisar caminho: {e}")
 
 def display_repo_structure(repo, path="", search_term="", show_actions=False):
     try:
@@ -81,19 +72,16 @@ def display_repo_structure(repo, path="", search_term="", show_actions=False):
             if show_actions:
                 c1, c2, c3 = st.columns([5, 1, 1])
                 with c1:
+                    # --- MUDANÇA AQUI: Botão agora ativa o modo de leitura ---
                     if st.button(f"📄 {content_file.name}", key=f"view_{content_file.path}", use_container_width=True):
-                        file_content_raw = repo.get_contents(content_file.path).decoded_content.decode("utf-8"); st.session_state.update(viewing_file_content=file_content_raw, viewing_file_name=content_file.name)
+                        with st.spinner("Carregando dossiê..."):
+                            file_content_raw = repo.get_contents(content_file.path).decoded_content.decode("utf-8")
+                            st.session_state.update(reading_mode=True, viewing_file_content=file_content_raw, viewing_file_name=content_file.name)
+                            st.rerun()
                 with c2:
                     if st.button("✏️", key=f"edit_{content_file.path}", help="Editar Dossiê", use_container_width=True):
                         with st.spinner("Carregando para edição..."):
-                            file_to_edit = repo.get_contents(content_file.path)
-                            st.session_state.edit_content = base64.b64decode(file_to_edit.content).decode("utf-8")
-                            st.session_state.edit_sha = file_to_edit.sha
-                            st.session_state.edit_path = file_to_edit.path
-                            parse_path_to_form_state(file_to_edit.path, file_to_edit.name)
-                            st.session_state.edit_mode = True
-                            st.session_state.selected_action = "Carregar Dossiê"
-                            st.rerun()
+                            file_to_edit = repo.get_contents(content_file.path); st.session_state.edit_content = base64.b64decode(file_to_edit.content).decode("utf-8"); st.session_state.edit_sha = file_to_edit.sha; st.session_state.edit_path = file_to_edit.path; parse_path_to_form_state(file_to_edit.path, file_to_edit.name); st.session_state.edit_mode = True; st.session_state.selected_action = "Carregar Dossiê"; st.rerun()
                 with c3:
                     if st.button("🗑️", key=f"delete_{content_file.path}", help="Excluir Dossiê", use_container_width=True):
                         st.session_state['file_to_delete'] = {'path': content_file.path, 'sha': content_file.sha}; st.rerun()
@@ -120,68 +108,59 @@ with st.sidebar:
 st.title("Sistema de Inteligência Tática")
 
 if selected_action == "Leitor de Dossiês":
-    st.header("📖 Leitor de Dossiês"); st.text("Navegue e visualize os dossiês salvos no repositório.")
-    if repo:
-        col1, col2 = st.columns([1, 2], gap="large")
-        with col1:
-            st.subheader("Navegador do Repositório"); search_term = st.text_input("Filtrar...", label_visibility="collapsed", placeholder="Filtrar por nome do arquivo..."); st.divider()
-            display_repo_structure(repo, search_term=search_term, show_actions=True)
-        with col2:
-            st.subheader("Visualizador de Conteúdo")
-            if st.session_state.get("viewing_file_content"):
-                file_name = st.session_state.get("viewing_file_name", "")
-                st.markdown(f"#### {file_name}"); st.divider()
-                html_content = markdown2.markdown(st.session_state.viewing_file_content, extras=['tables', 'fenced-code-blocks'])
-                st.markdown(f"<div class='dossier-viewer'>{html_content}</div>", unsafe_allow_html=True)
-            else: st.info("Selecione um arquivo para visualizar.")
+    st.header("📖 Leitor de Dossiês")
+
+    # --- LÓGICA DO MODO DE LEITURA FOCADA ---
+    if st.session_state.get("reading_mode", False):
+        st.markdown(f"### {st.session_state.viewing_file_name}")
+        st.divider()
+
+        # Botão para voltar ao navegador
+        if st.button("⬅️ Voltar ao Navegador"):
+            st.session_state.reading_mode = False
+            st.rerun()
+
+        # Renderiza o conteúdo em tela cheia
+        html_content = markdown2.markdown(st.session_state.viewing_file_content, extras=['tables', 'fenced-code-blocks'])
+        st.markdown(f"<div class='dossier-viewer'>{html_content}</div>", unsafe_allow_html=True)
+
+    else:
+        st.text("Navegue e visualize os dossiês salvos no repositório.")
+        if repo:
+            col1, col2 = st.columns([1, 2], gap="large")
+            with col1:
+                st.subheader("Navegador do Repositório"); search_term = st.text_input("Filtrar...", label_visibility="collapsed", placeholder="Filtrar por nome do arquivo..."); st.divider()
+                display_repo_structure(repo, search_term=search_term, show_actions=True)
+            with col2:
+                st.subheader("Pré-Visualização")
+                st.info("Clique em um dossiê (📄) à esquerda para abri-lo em modo de leitura focada.")
 
 elif selected_action == "Carregar Dossiê":
-    is_edit_mode = st.session_state.get("edit_mode", False)
-    header_text = "Editar Dossiê Existente" if is_edit_mode else "Criar Novo Dossiê"
-    st.header(header_text)
-
+    # O código desta página permanece o mesmo da v14.0
+    is_edit_mode = st.session_state.get("edit_mode", False); header_text = "Editar Dossiê Existente" if is_edit_mode else "Criar Novo Dossiê"; st.header(header_text)
     dossier_type_options = ["", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes", "D2 P1 - Análise Comparativa de Planteis", "D2 P2 - Estudo Técnico e Tático dos Clubes", "D3 - Análise Tática (Pós Rodada)", "D4 - Briefing Semanal (Pré Rodada)"]
     dossier_type = st.selectbox("**Qual tipo de dossiê você quer criar?**", dossier_type_options, key="dossier_type_selector")
-
     if dossier_type == "D1 P1 - Análise da Liga":
         st.subheader("Template: Análise da Liga")
         with st.form("liga_form"):
-            st.subheader("Informações de Arquivo")
-            c1, c2, c3 = st.columns(3)
-            pais = c1.text_input("País*", value=st.session_state.get("edit_pais", ""))
-            liga = c2.text_input("Liga*", value=st.session_state.get("edit_liga", ""))
-            temporada = c3.text_input("Temporada*", value=st.session_state.get("edit_temporada", ""))
-            st.divider()
-            st.subheader("Conteúdo do Dossiê")
-            conteudo = st.text_area("Conteúdo em Markdown*", height=400, value=st.session_state.get("edit_content", ""), help="Use a sintaxe Markdown para formatar: # Título, ## Subtítulo, - Item da lista, **negrito**")
-            
+            st.subheader("Informações de Arquivo"); c1, c2, c3 = st.columns(3); pais = c1.text_input("País*", value=st.session_state.get("edit_pais", "")); liga = c2.text_input("Liga*", value=st.session_state.get("edit_liga", "")); temporada = c3.text_input("Temporada*", value=st.session_state.get("edit_temporada", ""))
+            st.divider(); st.subheader("Conteúdo do Dossiê"); conteudo = st.text_area("Conteúdo em Markdown*", height=400, value=st.session_state.get("edit_content", ""), help="Use a sintaxe Markdown para formatar: # Título, ## Subtítulo, - Item da lista, **negrito**")
             submit_label = "Atualizar Dossiê" if is_edit_mode else "Salvar Novo Dossiê"
             if st.form_submit_button(submit_label, type="primary", use_container_width=True):
-                if not all([pais, liga, temporada, conteudo]):
-                    st.error("Todos os campos * são obrigatórios.")
+                if not all([pais, liga, temporada, conteudo]): st.error("Todos os campos * são obrigatórios.")
                 else:
-                    file_name = f"D1P1_Analise_Liga_{liga.replace(' ', '_')}_{pais.replace(' ', '_')}.md"
-                    path_parts = [pais, liga, temporada]; full_path = "/".join(p.replace(" ", "_") for p in path_parts) + "/" + file_name
+                    file_name = f"D1P1_Analise_Liga_{liga.replace(' ', '_')}_{pais.replace(' ', '_')}.md"; path_parts = [pais, liga, temporada]; full_path = "/".join(p.replace(" ", "_") for p in path_parts) + "/" + file_name
                     with st.spinner("Salvando no GitHub..."):
                         try:
                             if is_edit_mode:
-                                repo.update_file(st.session_state.edit_path, f"Atualiza: {file_name}", conteudo, st.session_state.edit_sha)
-                                st.success(f"Dossiê '{st.session_state.edit_path}' ATUALIZADO com sucesso!")
+                                repo.update_file(st.session_state.edit_path, f"Atualiza: {file_name}", conteudo, st.session_state.edit_sha); st.success(f"Dossiê '{st.session_state.edit_path}' ATUALIZADO com sucesso!")
                             else:
-                                repo.create_file(full_path, f"Adiciona: {file_name}", conteudo)
-                                st.success(f"Dossiê '{full_path}' CRIADO com sucesso!")
-                            
-                            # Limpa o estado de edição
+                                repo.create_file(full_path, f"Adiciona: {file_name}", conteudo); st.success(f"Dossiê '{full_path}' CRIADO com sucesso!")
                             for key in ['edit_mode', 'edit_content', 'edit_sha', 'edit_path', 'edit_pais', 'edit_liga', 'edit_temporada', 'dossier_type_selector']:
                                 if key in st.session_state: del st.session_state[key]
-                            st.success("Operação concluída. Retornando ao Leitor.")
-                            st.session_state.selected_action = "Leitor de Dossiês"
-                            st.rerun()
-
+                            st.success("Operação concluída. Retornando ao Leitor."); st.session_state.selected_action = "Leitor de Dossiês"; st.rerun()
                         except Exception as e: st.error(f"Ocorreu um erro: {e}")
-
-    elif dossier_type:
-        st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
+    elif dossier_type: st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
 
 elif selected_action == "Gerar com IA":
     st.header("Gerar com IA"); st.info("Em desenvolvimento.")
