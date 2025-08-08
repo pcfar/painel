@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v16.4: Refinamento de Estilo em Intertítulos e Texto
+Painel de Inteligência Tática - v16.5: Ajuste Fino Final de Alinhamento e Contraste
 """
 
 import streamlit as st
@@ -24,7 +24,7 @@ def apply_custom_styling():
             .dossier-viewer { 
                 line-height: 1.7; 
                 font-size: 1.1rem; 
-                color: #E2E8F0; 
+                color: #F3F4F6; /* --- MUDANÇA: Cor principal para branco mais puro --- */
             }
             .dossier-viewer h1 { 
                 font-size: 2.2rem; font-weight: 900; color: #FFFFFF; 
@@ -36,34 +36,31 @@ def apply_custom_styling():
                 padding-left: 1rem;
                 border-left: 4px solid #38BDF8;
             }
-            /* --- MUDANÇA: Estilo de H3 (intertítulos) aprimorado --- */
             .dossier-viewer h3 { 
-                font-size: 1.4rem; font-weight: 700; color: #FACC15; /* Cor amarela/gold */
+                font-size: 1.4rem; font-weight: 700; color: #FACC15;
                 margin-top: 2.5rem; margin-bottom: 1rem; 
             }
-            /* --- MUDANÇA: Cor do texto principal mais clara --- */
+            /* --- MUDANÇA: Cor do parágrafo e alinhamento ajustado --- */
             .dossier-viewer p { 
                 margin-bottom: 1rem; 
-                color: #CBD5E1; 
+                color: #E2E8F0; /* Tom de branco suave, mas mais claro que antes */
+                padding-left: 0; /* Garante que não haja recuo extra */
+                text-indent: 0;
             }
             .dossier-viewer strong { 
                 color: #a5b4fc; 
                 font-weight: 900;
                 text-shadow: 0 0 8px rgba(165, 180, 252, 0.3);
             }
-            /* --- MUDANÇA: Destaque para intertítulos em negrito terminados com : --- */
             .dossier-viewer p > strong:only-child {
-                color: #FACC15;
-                font-size: 1.15rem;
-                display: block;
-                margin-bottom: 0.8rem;
-                text-shadow: none;
+                color: #FACC15; font-size: 1.15rem; display: block;
+                margin-bottom: 0.8rem; text-shadow: none;
             }
             .dossier-viewer ul { list-style-type: none; padding-left: 0; margin-top: 1rem; }
-            /* --- MUDANÇA: Cor do texto da lista mais clara --- */
+            /* --- MUDANÇA: Cor da lista e alinhamento ajustado --- */
             .dossier-viewer li { 
                 margin-bottom: 0.7rem; 
-                color: #CBD5E1; 
+                color: #E2E8F0; 
                 padding-left: 1.5em; text-indent: -1.5em; 
             }
             .dossier-viewer li::before { content: "▪"; color: #63B3ED; margin-right: 10px; font-size: 1.2rem; }
