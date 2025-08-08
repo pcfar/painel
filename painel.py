@@ -143,4 +143,47 @@ elif selected_action == "Carregar Dossiê":
             st.subheader("Informações de Arquivo")
             c1, c2, c3 = st.columns(3); pais = c1.text_input("País*", key="pais"); liga = c2.text_input("Liga*", key="liga"); temporada = c3.text_input("Temporada*", key="temporada")
             st.divider(); st.subheader("Conteúdo do Dossiê")
-            conteudo = st.text_area("Cole
+            conteudo = st.text_area("Cole aqui a análise completa", height=400, key="conteudo", help="O sistema irá formatar automaticamente títulos (Ex: '1. Título') e listas (Ex: '• Item').")
+            if st.form_submit_button("Gerar e Salvar Dossiê", type="primary", use_container_width=True):
+                if not all([pais, liga, temporada, conteudo]):
+                    st.error("Todos os campos * são obrigatórios.")
+                else:
+                    componentes = parse_text_to_components(conteudo)
+                    dossier_data = {
+                        'metadata': {'titulo_principal': f"ANÁLISE DA LIGA: {liga.upper()}", 'icone_principal': "🏆"},
+                        'componentes': componentes
+                    }
+                    yaml_string = yaml.dump(dossier_data, sort_keys=False, allow_unicode=True, indent=2)
+                    file_name = f"D1P1_Analise_Liga_{liga.replace(' ', '_')}_{pais.replace(' ', '_')}.yml"
+                    path_parts = [pais, liga, temporada]; full_path = "/".join(p.replace(" ", "_") for p in path_parts) + "/" + file_name
+                    
+                    # --- MUDANÇA CENTRAL: LÓGICA DE SALVAR/ATUALIZAR ---
+                    with st.spinner("Verificando e salvando no GitHub..."):
+                        try:
+                            # Tenta obter o arquivo primeiro para ver se ele existe
+                            existing_file = repo.get_contents(full_path)
+                            # Se bem-sucedido, o arquivo existe, então o atualizamos
+                            repo.update_file(
+                                existing_file.path,
+                                f"Atualiza dossiê: {file_name}",
+                                yaml_string,
+                                existing_file.sha
+                            )
+                            st.success(f"Dossiê '{full_path}' ATUALIZADO com sucesso!")
+                        except UnknownObjectException:
+                            # Se o arquivo não for encontrado (erro 404), ele não existe, então o criamos
+                            repo.create_file(
+                                full_path,
+                                f"Adiciona dossiê: {file_name}",
+                                yaml_string
+                            )
+                            st.success(f"Dossiê '{full_path}' CRIADO com sucesso!")
+                        except Exception as e:
+                            # Captura quaisquer outros erros
+                            st.error(f"Ocorreu um erro inesperado: {e}")
+
+    elif dossier_type:
+        st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
+
+elif selected_action == "Gerar com IA":
+    st.header("Gerar com IA"); st.info("Em desenvolvimento.")
