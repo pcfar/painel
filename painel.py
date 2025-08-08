@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v15.3: Correção Definitiva e Simplificação dos Formulários
+Painel de Inteligência Tática - v15.4: Correção de NameError (import re)
 """
 
 import streamlit as st
@@ -10,6 +10,7 @@ import base64
 import os
 from streamlit_option_menu import option_menu
 import yaml
+import re # <-- LINHA CORRIGIDA/ADICIONADA
 
 # --- 1. CONFIGURAÇÃO E ESTILOS FINAIS ---
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
@@ -37,7 +38,6 @@ def apply_custom_styling():
 
 # --- 2. RENDERIZADORES E FUNÇÕES AUXILIARES ---
 def render_dossier_from_blueprint(data: dict):
-    # (Esta função permanece a mesma)
     st.markdown('<div class="dossier-container">', unsafe_allow_html=True)
     if 'metadata' in data: meta = data['metadata']; st.markdown(f'<h1 class="comp-main-title"><span>{meta.get("icone_principal", "📄")}</span> {meta.get("titulo_principal", "Dossiê")}</h1>', unsafe_allow_html=True)
     if 'componentes' in data:
@@ -50,7 +50,6 @@ def render_dossier_from_blueprint(data: dict):
     st.markdown('</div>', unsafe_allow_html=True)
 
 def parse_text_to_components(text_content: str) -> list:
-    # (Esta função permanece a mesma)
     components = []; current_list_items = []; icon_map = {"1": "1️⃣", "2": "2️⃣", "3": "3️⃣", "4": "4️⃣", "5": "5️⃣"}
     def flush_list():
         if current_list_items: components.append({'tipo': 'lista_simples', 'itens': current_list_items.copy()}); current_list_items.clear()
@@ -82,7 +81,6 @@ def check_password():
     return False
 
 def display_repo_structure(repo, path="", search_term="", show_actions=False):
-    # (Esta função permanece a mesma)
     try:
         contents = repo.get_contents(path); dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name); files = sorted([f for f in contents if f.type == 'file' and f.name.endswith(".yml")], key=lambda x: x.name)
         for content_dir in dirs:
@@ -151,7 +149,6 @@ elif selected_action == "Carregar Dossiê":
         with st.form("d1_p1_form", clear_on_submit=True):
             st.write("**Informações Gerais**"); c1, c2, c3 = st.columns(3); pais = c1.text_input("País*"); liga = c2.text_input("Liga*"); temporada = c3.text_input("Temporada*")
             st.divider(); st.write("**Conteúdo do Dossiê**"); conteudo = st.text_area("Resumo da Análise*", height=300, key="conteudo_d1p1")
-            
             if st.form_submit_button("Gerar Dossiê", type="primary", use_container_width=True):
                 if not all([pais, liga, temporada, conteudo]):
                     st.error("Todos os campos * são obrigatórios.")
@@ -166,7 +163,6 @@ elif selected_action == "Carregar Dossiê":
                             repo.create_file(full_path, f"Adiciona: {file_name}", yaml_string); st.success(f"Dossiê salvo: {full_path}")
                         except Exception as e: st.error(f"Erro ao salvar: {e}")
 
-    # --- CÓDIGO CORRIGIDO PARA D1 P2 ---
     elif dossier_type == "D1 P2 - Análise dos Clubes Dominantes da Liga":
         st.subheader("Template: Análise dos Clubes Dominantes")
         with st.form("d1_p2_form", clear_on_submit=True):
@@ -175,7 +171,6 @@ elif selected_action == "Carregar Dossiê":
             liga = c2.text_input("Liga*")
             temporada = c3.text_input("Temporada*")
             st.divider(); st.write("**Conteúdo do Dossiê**"); conteudo = st.text_area("Resumo da Análise de Dominância*", height=300, key="conteudo_d1p2")
-            
             if st.form_submit_button("Gerar Dossiê", type="primary", use_container_width=True):
                 if not all([pais, liga, temporada, conteudo]):
                     st.error("Todos os campos * são obrigatórios.")
@@ -189,7 +184,6 @@ elif selected_action == "Carregar Dossiê":
                         try:
                             repo.create_file(full_path, f"Adiciona: {file_name}", yaml_string); st.success(f"Dossiê salvo: {full_path}")
                         except Exception as e: st.error(f"Erro ao salvar: {e}")
-
     elif dossier_type:
         st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
 
