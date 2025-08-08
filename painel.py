@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v7.0: Assistente Inteligente de Criação de Dossiês
+Painel de Inteligência Tática - v7.1: Versão Sanitizada (Sem Emojis)
 """
 
 import streamlit as st
@@ -16,7 +16,6 @@ import yaml
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
 def apply_custom_styling():
-    """Aplica o design "Modo Tático" com o novo sistema de estilização de conteúdo."""
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
@@ -41,7 +40,7 @@ def apply_custom_styling():
 # --- 2. RENDERIZADOR E FUNÇÕES AUXILIARES ---
 def render_dossier_from_blueprint(data: dict):
     st.markdown('<div class="dossier-container">', unsafe_allow_html=True)
-    if 'metadata' in data: meta = data['metadata']; st.markdown(f'<h1 class="comp-main-title"><span>{meta.get("icone_principal", "📄")}</span> {meta.get("titulo_principal", "Dossiê")}</h1>', unsafe_allow_html=True)
+    if 'metadata' in data: meta = data['metadata']; st.markdown(f'<h1 class="comp-main-title"><span>{meta.get("icone_principal", "[i]")}</span> {meta.get("titulo_principal", "Dossiê")}</h1>', unsafe_allow_html=True)
     if 'componentes' in data:
         for comp in data['componentes']:
             tipo = comp.get('tipo')
@@ -60,25 +59,25 @@ def check_password():
     if st.session_state.get("password_correct", False): return True
     c1, c2, c3 = st.columns([1,2,1])
     with c2:
-        st.title("🔐 Painel de Inteligência"); password = st.text_input("Senha de Acesso", type="password", key="password_input")
+        st.title("Painel de Inteligência"); password = st.text_input("Senha de Acesso", type="password", key="password_input")
         if st.button("Acessar Painel"):
             if password == st.secrets.get("APP_PASSWORD"): st.session_state["password_correct"] = True; st.rerun()
-            else: st.error("😕 Senha incorreta.")
+            else: st.error("Senha incorreta.")
     return False
 
 def display_repo_structure(repo, path="", search_term="", show_actions=False):
     try:
         contents = repo.get_contents(path); dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name); files = sorted([f for f in contents if f.type == 'file' and f.name.endswith(".yml")], key=lambda x: x.name)
         for content_dir in dirs:
-            with st.expander(f"📁 {content_dir.name}"): display_repo_structure(repo, content_dir.path, search_term, show_actions)
+            with st.expander(f"[Pasta] {content_dir.name}"): display_repo_structure(repo, content_dir.path, search_term, show_actions)
         if search_term: files = [f for f in files if search_term.lower() in f.name.lower()]
         for content_file in files:
             if show_actions:
                 c1, c2, c3 = st.columns([3, 1, 1])
-                if c1.button(f"📄 {content_file.name}", key=f"view_{content_file.path}", use_container_width=True):
+                if c1.button(f"[Ver] {content_file.name}", key=f"view_{content_file.path}", use_container_width=True):
                     file_content_raw = repo.get_contents(content_file.path).decoded_content.decode("utf-8"); st.session_state.update(viewing_file_content=file_content_raw, viewing_file_name=content_file.name)
-                if c2.button("✏️", key=f"edit_{content_file.path}", help="Editar (desabilitado nesta versão)"): st.warning("A edição será reimplementada no novo Assistente.")
-                if c3.button("🗑️", key=f"delete_{content_file.path}", help="Excluir este arquivo"): st.session_state['file_to_delete'] = {'path': content_file.path, 'sha': content_file.sha}; st.rerun()
+                if c2.button("[Editar]", key=f"edit_{content_file.path}", help="Editar (desabilitado nesta versão)"): st.warning("A edição será reimplementada no novo Assistente.")
+                if c3.button("[Excluir]", key=f"delete_{content_file.path}", help="Excluir este arquivo"): st.session_state['file_to_delete'] = {'path': content_file.path, 'sha': content_file.sha}; st.rerun()
                 if st.session_state.get('file_to_delete', {}).get('path') == content_file.path:
                     st.warning(f"Excluir `{content_file.path}`?"); btn_c1, btn_c2 = st.columns(2)
                     if btn_c1.button("Sim, excluir!", key=f"confirm_del_{content_file.path}", type="primary"):
@@ -86,9 +85,8 @@ def display_repo_structure(repo, path="", search_term="", show_actions=False):
                         if st.session_state.get('viewing_file_name') == os.path.basename(file_info['path']): st.session_state.pop('viewing_file_content', None); st.session_state.pop('viewing_file_name', None)
                         st.success(f"Arquivo '{file_info['path']}' excluído."); st.rerun()
                     if btn_c2.button("Cancelar", key=f"cancel_del_{content_file.path}"): st.session_state.pop('file_to_delete'); st.rerun()
-            else: st.markdown(f"📄 `{content_file.name}`")
+            else: st.markdown(f"`{content_file.name}`")
     except Exception as e: st.error(f"Erro ao listar arquivos em '{path}': {e}")
-
 
 # --- CÓDIGO PRINCIPAL DA APLICAÇÃO ---
 if not check_password(): st.stop()
@@ -101,14 +99,14 @@ with st.sidebar:
     selected_action = option_menu(menu_title="Menu Principal", options=["Leitor de Dossiês", "Carregar Dossiê", "Gerar com IA"], icons=["book-half", "cloud-arrow-up-fill", "cpu-fill"], menu_icon="collection-play", default_index=default_index, key="main_menu")
     st.session_state.selected_action = selected_action
 
-st.title("⚽ Sistema de Inteligência Tática")
+st.title("Sistema de Inteligência Tática")
 
 if selected_action == "Leitor de Dossiês":
-    st.header("📖 Leitor de Dossiês"); st.text("Navegue e visualize os dossiês salvos no repositório.")
+    st.header("Leitor de Dossiês"); st.text("Navegue e visualize os dossiês salvos no repositório.")
     if repo:
         col1, col2 = st.columns([1, 2], gap="large")
         with col1:
-            st.subheader("Navegador do Repositório"); search_term = st.text_input("🔎 Filtrar...", label_visibility="collapsed", placeholder="🔎 Filtrar por nome do arquivo..."); st.divider()
+            st.subheader("Navegador do Repositório"); search_term = st.text_input("Filtrar...", label_visibility="collapsed", placeholder="Filtrar por nome do arquivo..."); st.divider()
             display_repo_structure(repo, search_term=search_term, show_actions=True)
         with col2:
             st.subheader("Visualizador de Conteúdo")
@@ -122,49 +120,26 @@ if selected_action == "Leitor de Dossiês":
             else: st.info("Selecione um dossiê (.yml) para uma visualização rica.")
 
 elif selected_action == "Carregar Dossiê":
-    st.header("📤 Assistente de Criação de Dossiês")
+    st.header("Assistente de Criação de Dossiês")
     st.info("Preencha os campos abaixo. O sistema irá gerar o arquivo YAML formatado corretamente para você.")
-
     if repo:
         with st.form("dossier_builder_form"):
-            st.markdown("---")
-            st.subheader("1. Metadados Gerais")
-            c1, c2 = st.columns(2)
-            meta_title = c1.text_input("Título Principal do Painel", "PAINEL DE DOSSIÊS TÉCNICOS")
-            meta_icon = c2.text_input("Ícone Principal (Emoji)", "🏆")
-
-            st.markdown("---")
-            st.subheader("2. Título do Dossiê")
-            c1, c2 = st.columns([1, 4])
-            comp_titulo_icon = c1.text_input("Ícone do Título", "🏴󠁧󠁢󠁥󠁮󠁧󠁿")
-            comp_titulo_text = c2.text_input("Texto do Título", "Premier League — Análise Estrutural")
-
-            st.markdown("---")
-            st.subheader("3. Seções de Conteúdo")
+            st.markdown("---"); st.subheader("1. Metadados Gerais")
+            c1, c2 = st.columns(2); meta_title = c1.text_input("Título Principal do Painel", "PAINEL DE DOSSIÊS TÉCNICOS"); meta_icon = c2.text_input("Ícone Principal", "Ex: [Taca]")
+            st.markdown("---"); st.subheader("2. Título do Dossiê")
+            c1, c2 = st.columns([1, 4]); comp_titulo_icon = c1.text_input("Ícone do Título", "Ex: [Bandeira]"); comp_titulo_text = c2.text_input("Texto do Título", "Premier League — Análise Estrutural")
+            st.markdown("---"); st.subheader("3. Seções de Conteúdo")
             st.warning("Para listas, coloque um item por linha.")
-            
-            comp_subtitulo_1_icon = st.text_input("Ícone do Subtítulo 1", "🌍")
-            comp_subtitulo_1_text = st.text_input("Texto do Subtítulo 1", "Contexto Geral da Liga")
+            comp_subtitulo_1_icon = st.text_input("Ícone do Subtítulo 1", "Ex: [Globo]"); comp_subtitulo_1_text = st.text_input("Texto do Subtítulo 1", "Contexto Geral da Liga")
             comp_paragrafo_1_text = st.text_area("Parágrafo após Subtítulo 1", "Considerada a liga mais competitiva e financeiramente poderosa do mundo.")
-
             st.divider()
-
-            comp_subtitulo_2_icon = st.text_input("Ícone do Subtítulo 2", "📐")
-            comp_subtitulo_2_text = st.text_input("Texto do Subtítulo 2", "Formato da Competição")
+            comp_subtitulo_2_icon = st.text_input("Ícone do Subtítulo 2", "Ex: [Regua]"); comp_subtitulo_2_text = st.text_input("Texto do Subtítulo 2", "Formato da Competição")
             comp_lista_2_itens = st.text_area("Itens da Lista (um por linha)", "Número de clubes: 20\nSistema de rebaixamento: 3 últimos colocados")
-
-            st.markdown("---")
-            st.subheader("4. Informações para Salvar o Arquivo")
-            c1, c2, c3 = st.columns(3)
-            pais = c1.text_input("País*", placeholder="Ex: Inglaterra")
-            liga = c2.text_input("Liga*", placeholder="Ex: Premier League")
-            temporada = c3.text_input("Temporada*", placeholder="Ex: 2025-26")
-            
-            if st.form_submit_button("💾 Gerar e Salvar Dossiê", type="primary", use_container_width=True):
-                if not all([pais, liga, temporada]):
-                    st.error("Os campos País, Liga e Temporada são obrigatórios para salvar o arquivo.")
+            st.markdown("---"); st.subheader("4. Informações para Salvar o Arquivo")
+            c1, c2, c3 = st.columns(3); pais = c1.text_input("País*", placeholder="Ex: Inglaterra"); liga = c2.text_input("Liga*", placeholder="Ex: Premier League"); temporada = c3.text_input("Temporada*", placeholder="Ex: 2025-26")
+            if st.form_submit_button("[Salvar] Gerar e Salvar Dossiê", type="primary", use_container_width=True):
+                if not all([pais, liga, temporada]): st.error("Os campos País, Liga e Temporada são obrigatórios para salvar o arquivo.")
                 else:
-                    # Construção da estrutura de dados (dicionário Python)
                     dossier_data = {
                         'metadata': {'titulo_principal': meta_title, 'icone_principal': meta_icon},
                         'componentes': [
@@ -175,15 +150,10 @@ elif selected_action == "Carregar Dossiê":
                             {'tipo': 'lista_simples', 'itens': [item.strip() for item in comp_lista_2_itens.split('\n') if item.strip()]}
                         ]
                     }
-                    
                     yaml_string = yaml.dump(dossier_data, sort_keys=False, allow_unicode=True, indent=2)
-
-                    liga_fmt = liga.replace(' ', '_'); pais_fmt = pais.replace(' ', '_')
-                    file_name = f"Dossie_{liga_fmt}_{pais_fmt}.yml"
-                    path_parts = [pais.replace(" ", "_"), liga.replace(" ", "_"), temporada]
-                    full_path = "/".join(path_parts) + "/" + file_name
+                    liga_fmt = liga.replace(' ', '_'); pais_fmt = pais.replace(' ', '_'); file_name = f"Dossie_{liga_fmt}_{pais_fmt}.yml"
+                    path_parts = [pais.replace(" ", "_"), liga.replace(" ", "_"), temporada]; full_path = "/".join(path_parts) + "/" + file_name
                     commit_message = f"Adiciona dossiê via assistente: {file_name}"
-
                     with st.spinner("Gerando e salvando arquivo YAML no GitHub..."):
                         try:
                             repo.create_file(full_path, commit_message, yaml_string)
@@ -194,4 +164,4 @@ elif selected_action == "Carregar Dossiê":
                             st.info("É possível que um arquivo com este nome já exista. Verifique o navegador.")
 
 elif selected_action == "Gerar com IA":
-    st.header("🧠 Geração de Dossiês com IA"); st.info("Em desenvolvimento.")
+    st.header("Gerar com IA"); st.info("Em desenvolvimento.")
