@@ -2,3 +2,4 @@ streamlit
 pygithub
 streamlit-option-menu
 PyYAML
+markdown2
