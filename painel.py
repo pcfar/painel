@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v8.0: Construtor de Dossiês Dinâmico
+Painel de Inteligência Tática - v8.1: Construtor de Dossiês Intuitivo
 """
 
 import streamlit as st
@@ -15,8 +15,8 @@ import yaml
 # --- 1. CONFIGURAÇÃO E ESTILOS ---
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
+# A função apply_custom_styling() e as outras funções auxiliares permanecem as mesmas
 def apply_custom_styling():
-    # O CSS da versão anterior é mantido, pois já está robusto.
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
@@ -37,9 +37,6 @@ def apply_custom_styling():
             .form-card { background-color: #2D3748; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.2); border: 1px solid #4A5568; margin-bottom: 25px; }
         </style>
     """, unsafe_allow_html=True)
-
-# --- 2. RENDERIZADOR E FUNÇÕES AUXILIARES ---
-# (As funções auxiliares como render_dossier_from_blueprint, get_github_repo, etc., permanecem as mesmas)
 def render_dossier_from_blueprint(data: dict):
     st.markdown('<div class="dossier-container">', unsafe_allow_html=True)
     if 'metadata' in data: meta = data['metadata']; st.markdown(f'<h1 class="comp-main-title"><span>{meta.get("icone_principal", "[i]")}</span> {meta.get("titulo_principal", "Dossiê")}</h1>', unsafe_allow_html=True)
@@ -58,11 +55,10 @@ def get_github_repo():
 def check_password():
     if st.session_state.get("password_correct", False): return True
     c1, c2, c3 = st.columns([1,2,1])
-    with c2:
-        st.title("Painel de Inteligência"); password = st.text_input("Senha de Acesso", type="password", key="password_input")
-        if st.button("Acessar Painel"):
-            if password == st.secrets.get("APP_PASSWORD"): st.session_state["password_correct"] = True; st.rerun()
-            else: st.error("Senha incorreta.")
+    with c2: st.title("Painel de Inteligência"); password = st.text_input("Senha de Acesso", type="password", key="password_input")
+    if st.button("Acessar Painel"):
+        if password == st.secrets.get("APP_PASSWORD"): st.session_state["password_correct"] = True; st.rerun()
+        else: st.error("Senha incorreta.")
     return False
 def display_repo_structure(repo, path="", search_term="", show_actions=False):
     try:
@@ -86,7 +82,6 @@ def display_repo_structure(repo, path="", search_term="", show_actions=False):
                     if btn_c2.button("Cancelar", key=f"cancel_del_{content_file.path}"): st.session_state.pop('file_to_delete'); st.rerun()
             else: st.markdown(f"`{content_file.name}`")
     except Exception as e: st.error(f"Erro ao listar arquivos em '{path}': {e}")
-
 
 # --- CÓDIGO PRINCIPAL DA APLICAÇÃO ---
 if not check_password(): st.stop()
@@ -124,7 +119,6 @@ elif selected_action == "Carregar Dossiê":
     st.header("Construtor de Dossiês")
     st.info("Adicione e preencha os componentes para montar seu dossiê passo a passo.")
 
-    # Inicializa a lista de componentes no estado da sessão se não existir
     if 'components' not in st.session_state:
         st.session_state.components = []
 
@@ -139,9 +133,23 @@ elif selected_action == "Carregar Dossiê":
         st.markdown('<div class="form-card">', unsafe_allow_html=True)
         st.subheader("2. Seções de Conteúdo")
         
+        # --- MELHORIA DE UI: BOTÕES DE ADICIONAR ESTÃO AQUI ---
+        st.write("Clique nos botões abaixo para adicionar seções ao seu dossiê:")
+        c1, c2, c3 = st.columns(3)
+        if c1.form_submit_button("➕ Adicionar Título de Seção"):
+            st.session_state.components.append({'tipo': 'titulo_secao', 'icone': '', 'texto': ''})
+            st.rerun()
+        if c2.form_submit_button("➕ Adicionar Subtítulo"):
+            st.session_state.components.append({'tipo': 'subtitulo_com_icone', 'icone': '', 'texto': ''})
+            st.rerun()
+        if c3.form_submit_button("➕ Adicionar Parágrafo/Lista"):
+            st.session_state.components.append({'tipo': 'paragrafo', 'texto': ''}) # Simplificado para um tipo por enquanto
+            st.rerun()
+        st.divider()
+        
         # Renderiza os componentes que já foram adicionados
         for i, comp in enumerate(st.session_state.components):
-            st.markdown(f"**Componente {i+1}: {comp['tipo'].replace('_', ' ').title()}**")
+            st.markdown(f"**Componente {i+1}: `{comp['tipo'].replace('_', ' ').title()}`**")
             if comp['tipo'] == 'titulo_secao':
                 comp['icone'] = st.text_input("Ícone", value=comp.get('icone', ''), key=f"icon_{i}")
                 comp['texto'] = st.text_input("Texto do Título", value=comp.get('texto', ''), key=f"text_{i}")
@@ -149,12 +157,8 @@ elif selected_action == "Carregar Dossiê":
                 comp['icone'] = st.text_input("Ícone", value=comp.get('icone', ''), key=f"icon_{i}")
                 comp['texto'] = st.text_input("Texto do Subtítulo", value=comp.get('texto', ''), key=f"text_{i}")
             elif comp['tipo'] == 'paragrafo':
-                comp['texto'] = st.text_area("Texto do Parágrafo", value=comp.get('texto', ''), key=f"text_{i}")
-            elif comp['tipo'] == 'lista_simples':
-                items_text = "\n".join(comp.get('itens', []))
-                new_items_text = st.text_area("Itens (um por linha)", value=items_text, key=f"items_{i}")
-                comp['itens'] = [item.strip() for item in new_items_text.split('\n') if item.strip()]
-            st.divider()
+                comp['texto'] = st.text_area("Texto do Parágrafo ou Lista (um item por linha)", value=comp.get('texto', ''), key=f"text_{i}")
+            st.markdown("---")
         
         st.markdown('</div>', unsafe_allow_html=True)
         
@@ -166,13 +170,21 @@ elif selected_action == "Carregar Dossiê":
         temporada = c3.text_input("Temporada*", placeholder="Ex: 2025-26", key="temporada")
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Botão de salvar dentro do formulário
-        if st.form_submit_button("💾 Gerar e Salvar Dossiê", type="primary", use_container_width=True):
+        if st.form_submit_button("💾 Gerar e Salvar Dossiê Final", type="primary", use_container_width=True):
             if not all([pais, liga, temporada]):
                 st.error("Os campos País, Liga e Temporada são obrigatórios para salvar o arquivo.")
             else:
-                dossier_data = {'metadata': {'titulo_principal': meta_title, 'icone_principal': meta_icon}, 'componentes': st.session_state.components}
+                final_components = []
+                for comp in st.session_state.components:
+                    # Lógica para converter o parágrafo de volta para lista se necessário
+                    if comp['tipo'] == 'paragrafo' and '\n' in comp['texto']:
+                        final_components.append({'tipo': 'lista_simples', 'itens': [item.strip() for item in comp['texto'].split('\n') if item.strip()]})
+                    else:
+                        final_components.append(comp)
+                
+                dossier_data = {'metadata': {'titulo_principal': meta_title, 'icone_principal': meta_icon}, 'componentes': final_components}
                 yaml_string = yaml.dump(dossier_data, sort_keys=False, allow_unicode=True, indent=2)
+                
                 liga_fmt = liga.replace(' ', '_'); pais_fmt = pais.replace(' ', '_'); file_name = f"Dossie_{liga_fmt}_{pais_fmt}.yml"
                 path_parts = [pais.replace(" ", "_"), liga.replace(" ", "_"), temporada]; full_path = "/".join(path_parts) + "/" + file_name
                 commit_message = f"Adiciona dossiê via construtor: {file_name}"
@@ -182,24 +194,7 @@ elif selected_action == "Carregar Dossiê":
                         st.success(f"Dossiê '{full_path}' salvo com sucesso!")
                         st.code(yaml_string, language="yaml")
                         st.session_state.components = [] # Limpa para o próximo
-                    except Exception as e:
-                        st.error(f"Ocorreu um erro ao salvar: {e}")
-
-    # Botões para adicionar componentes (fora do formulário principal)
-    st.subheader("Adicionar Novos Componentes")
-    c1, c2, c3, c4 = st.columns(4)
-    if c1.button("➕ Título de Seção"):
-        st.session_state.components.append({'tipo': 'titulo_secao', 'icone': '■', 'texto': ''})
-        st.rerun()
-    if c2.button("➕ Subtítulo"):
-        st.session_state.components.append({'tipo': 'subtitulo_com_icone', 'icone': '•', 'texto': ''})
-        st.rerun()
-    if c3.button("➕ Parágrafo"):
-        st.session_state.components.append({'tipo': 'paragrafo', 'texto': ''})
-        st.rerun()
-    if c4.button("➕ Lista"):
-        st.session_state.components.append({'tipo': 'lista_simples', 'itens': []})
-        st.rerun()
+                    except Exception as e: st.error(f"Ocorreu um erro ao salvar: {e}")
 
 elif selected_action == "Gerar com IA":
     st.header("Gerar com IA"); st.info("Em desenvolvimento.")
