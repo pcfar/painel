@@ -59,12 +59,37 @@ def get_github_repo():
     except Exception as e: st.error(f"Falha na conexão com o GitHub: {e}"); return None
 
 def check_password():
-    if st.session_state.get("password_correct", False): return True
-    c1, c2, c3 = st.columns([1,2,1])
-    with c2: st.title("Painel de Inteligência"); password = st.text_input("Senha de Acesso", type="password", key="password_input")
-    if st.button("Acessar Painel"):
-        if password == st.secrets.get("APP_PASSWORD"): st.session_state["password_correct"] = True; st.rerun()
-        else: st.error("Senha incorreta.")
+    """Verifica a senha com um layout de login centralizado e profissional."""
+    if st.session_state.get("password_correct", False):
+        return True
+
+    # Cria colunas para centralizar o conteúdo
+    _, center_col, _ = st.columns([1, 1, 1])
+
+    with center_col:
+        st.title("Painel de Inteligência")
+        st.write(" ") # Adiciona um espaço vertical
+
+        # Usamos um container para agrupar os elementos do formulário
+        with st.container(border=True):
+            st.subheader("Login de Acesso")
+            password = st.text_input(
+                "Senha de Acesso", 
+                type="password", 
+                key="password_input", 
+                label_visibility="collapsed",
+                placeholder="Digite sua senha"
+            )
+            
+            # Botão de acesso com destaque (primary) e largura total do container
+            if st.button("Acessar Painel", type="primary", use_container_width=True):
+                with st.spinner("Verificando..."):
+                    if password == st.secrets.get("APP_PASSWORD"):
+                        st.session_state["password_correct"] = True
+                        st.rerun()
+                    else:
+                        st.error("Senha incorreta.")
+    
     return False
 
 def display_repo_structure(repo, path="", search_term="", show_actions=False):
