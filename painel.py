@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v14.2: Renderizador Final com Filtro de Limpeza
+Painel de Inteligência Tática - v14.3: Adicionado Template D1 P2
 """
 
 import streamlit as st
@@ -25,6 +25,7 @@ def apply_custom_styling():
             .dossier-viewer h3 { font-size: 1.3rem; font-weight: 700; color: #a5b4fc; margin-top: 2rem; margin-bottom: 1rem; }
             .dossier-viewer p { margin-bottom: 1rem; color: #A0AEC0; }
             .dossier-viewer strong { color: #a5b4fc; font-weight: 700; }
+            .dossier-viewer blockquote { border-left: 4px solid #63b3ed; padding: 10px 20px; margin-left: 0; background-color: rgba(49, 130, 206, 0.1); border-radius: 8px;}
             .dossier-viewer ul { list-style-type: none; padding-left: 0; margin-top: 1rem; }
             .dossier-viewer li { margin-bottom: 0.7rem; color: #A0AEC0; padding-left: 1.5em; text-indent: -1.5em; }
             .dossier-viewer li::before { content: "▪"; color: #63B3ED; margin-right: 10px; font-size: 1.2rem; }
@@ -39,19 +40,12 @@ def apply_custom_styling():
 
 # --- 2. FUNÇÕES AUXILIARES ---
 def sanitize_text(text: str) -> str:
-    """Limpa o texto de caracteres Unicode problemáticos antes da renderização."""
-    # Substitui espaços não-quebráveis por espaços normais
-    text = text.replace('\u00A0', ' ')
-    # Substitui hífens não-quebráveis por hífens normais
-    text = text.replace('\u2011', '-')
-    # Adicione outras substituições se encontrar mais caracteres problemáticos
+    text = text.replace('\u00A0', ' ').replace('\u2011', '-')
     return text
-
 @st.cache_resource
 def get_github_repo():
     try: g = Github(st.secrets["GITHUB_TOKEN"]); repo_name = f"{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO_NAME']}"; return g.get_repo(repo_name)
     except Exception as e: st.error(f"Falha na conexão com o GitHub: {e}"); return None
-
 def check_password():
     if st.session_state.get("password_correct", False): return True
     _, center_col, _ = st.columns([1, 1, 1])
@@ -64,9 +58,13 @@ def check_password():
                     if password == st.secrets.get("APP_PASSWORD"): st.session_state["password_correct"] = True; st.rerun()
                     else: st.error("Senha incorreta.")
     return False
-
+def parse_path_to_form_state(path, name):
+    try:
+        parts = path.split('/'); st.session_state.edit_pais = parts[0].replace("_", " "); st.session_state.edit_liga = parts[1].replace("_", " "); st.session_state.edit_temporada = parts[2]
+        if name.startswith("D1P1_"): st.session_state.dossier_type_selector = "D1 P1 - Análise da Liga"
+        # Adicionar outras lógicas de `elif` para os outros tipos de dossiê aqui
+    except Exception as e: st.error(f"Erro ao analisar caminho para edição: {e}")
 def display_repo_structure(repo, path="", search_term="", show_actions=False):
-    # Lógica de exibição de arquivos (sem alterações)
     try:
         contents = repo.get_contents(path); dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name); files = sorted([f for f in contents if f.type == 'file' and (f.name.endswith(".yml") or f.name.endswith(".md"))], key=lambda x: x.name)
         for content_dir in dirs:
@@ -74,14 +72,17 @@ def display_repo_structure(repo, path="", search_term="", show_actions=False):
         if search_term: files = [f for f in files if search_term.lower() in f.name.lower()]
         for content_file in files:
             if show_actions:
-                c1, c2, c3, c4 = st.columns([4, 1, 1, 1])
+                c1, c2, c3 = st.columns([5, 1, 1])
                 with c1:
                     if st.button(f"📄 {content_file.name}", key=f"view_{content_file.path}", use_container_width=True):
                         file_content_raw = repo.get_contents(content_file.path).decoded_content.decode("utf-8"); st.session_state.update(viewing_file_content=file_content_raw, viewing_file_name=content_file.name)
+                with c2:
+                    if st.button("✏️", key=f"edit_{content_file.path}", help="Editar Dossiê", use_container_width=True):
+                        # ... (lógica de edição) ...
+                        st.warning("Edição em desenvolvimento.")
                 with c3:
-                    if st.button("✏️", key=f"edit_{content_file.path}", help="Editar (desabilitado)", use_container_width=True): st.warning("A edição será reimplementada.")
-                with c4:
-                    if st.button("🗑️", key=f"delete_{content_file.path}", help="Excluir", use_container_width=True): st.session_state['file_to_delete'] = {'path': content_file.path, 'sha': content_file.sha}; st.rerun()
+                    if st.button("🗑️", key=f"delete_{content_file.path}", help="Excluir Dossiê", use_container_width=True):
+                        st.session_state['file_to_delete'] = {'path': content_file.path, 'sha': content_file.sha}; st.rerun()
                 if st.session_state.get('file_to_delete', {}).get('path') == content_file.path:
                     st.warning(f"Excluir `{content_file.path}`?"); btn_c1, btn_c2 = st.columns(2)
                     if btn_c1.button("Sim, excluir!", key=f"confirm_del_{content_file.path}", type="primary"):
@@ -116,35 +117,58 @@ if selected_action == "Leitor de Dossiês":
             if st.session_state.get("viewing_file_content"):
                 file_name = st.session_state.get("viewing_file_name", "")
                 st.markdown(f"#### {file_name}"); st.divider()
-
-                # --- LÓGICA DE RENDERIZAÇÃO FINAL ---
-                # 1. Limpa o texto de caracteres problemáticos
                 sanitized_content = sanitize_text(st.session_state.viewing_file_content)
-                # 2. Converte todo o conteúdo Markdown para HTML
-                html_content = markdown2.markdown(sanitized_content, extras=['tables', 'fenced-code-blocks'])
-                # 3. Envolve no nosso container de estilo e renderiza
+                html_content = markdown2.markdown(sanitized_content, extras=['tables', 'fenced-code-blocks', 'blockquote'])
                 st.markdown(f"<div class='dossier-viewer'>{html_content}</div>", unsafe_allow_html=True)
-
             else: st.info("Selecione um arquivo para visualizar.")
 
 elif selected_action == "Carregar Dossiê":
     st.header("Criar Novo Dossiê"); st.info("Selecione o tipo de dossiê, preencha as informações e o conteúdo em Markdown.")
-    dossier_type_options = ["", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes", "D2 P1 - Análise Comparativa de Planteis", "D2 P2 - Estudo Técnico e Tático dos Clubes", "D3 - Análise Tática (Pós Rodada)", "D4 - Briefing Semanal (Pré Rodada)"]
+    dossier_type_options = ["", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes da Liga", "D2 P1 - Análise Comparativa de Planteis", "D2 P2 - Estudo Técnico e Tático dos Clubes", "D3 - Análise Tática (Pós Rodada)", "D4 - Briefing Semanal (Pré Rodada)"]
     dossier_type = st.selectbox("**Qual tipo de dossiê você quer criar?**", dossier_type_options, key="dossier_type_selector")
+    
     help_text_md = "Guia Rápido:\n- Título: # Título\n- Subtítulo: ## Subtítulo\n- Listas: - Item da lista\n- Negrito: **texto**"
-    def salvar_dossie(file_name_pattern, path_parts, content):
-        if not all(path_parts + [content]): st.error("Todos os campos marcados com * são obrigatórios."); return
-        file_name = file_name_pattern.format(**st.session_state).replace(" ", "_") + ".md"; full_path = "/".join([p.replace(" ", "_") for p in path_parts]) + "/" + file_name
-        commit_message = f"Adiciona: {file_name}"
-        with st.spinner("Salvando dossiê..."):
-            try: repo.create_file(full_path, commit_message, content); st.success(f"Dossiê '{full_path}' salvo com sucesso!")
-            except Exception as e: st.error(f"Ocorreu um erro ao salvar: {e}")
+
     if dossier_type == "D1 P1 - Análise da Liga":
-        with st.form("d1_p1_form"):
-            st.subheader("Template: Análise da Liga"); c1, c2, c3 = st.columns(3); st.session_state.pais = c1.text_input("País*"); st.session_state.liga = c2.text_input("Liga*"); st.session_state.temporada = c3.text_input("Temporada*")
+        with st.form("d1_p1_form", clear_on_submit=True):
+            st.subheader("Template: Análise da Liga"); c1, c2, c3 = st.columns(3)
+            pais = c1.text_input("País*")
+            liga = c2.text_input("Liga*")
+            temporada = c3.text_input("Temporada*")
             conteudo = st.text_area("Conteúdo do Dossiê*", height=300, help=help_text_md)
-            if st.form_submit_button("Salvar Dossiê", type="primary"): salvar_dossie("D1P1_Analise_Liga_{liga}_{pais}", [st.session_state.pais, st.session_state.liga, st.session_state.temporada], conteudo)
-    elif dossier_type: st.warning(f"O template para '{dossier_type}' será adicionado em breve.")
+            if st.form_submit_button("Salvar Dossiê", type="primary"):
+                if not all([pais, liga, temporada, conteudo]):
+                    st.error("Todos os campos * são obrigatórios.")
+                else:
+                    file_name = f"D1P1_Analise_Liga_{liga.replace(' ', '_')}_{pais.replace(' ', '_')}.md"
+                    path_parts = [pais, liga, temporada]; full_path = "/".join(p.replace(" ", "_") for p in path_parts) + "/" + file_name
+                    with st.spinner("Salvando..."):
+                        try:
+                            repo.create_file(full_path, f"Adiciona: {file_name}", conteudo); st.success(f"Dossiê '{full_path}' salvo com sucesso!")
+                        except Exception as e: st.error(f"Ocorreu um erro ao salvar: {e}")
+
+    # --- NOVO TEMPLATE ADICIONADO AQUI ---
+    elif dossier_type == "D1 P2 - Análise dos Clubes Dominantes da Liga":
+        with st.form("d1_p2_form", clear_on_submit=True):
+            st.subheader("Template: Análise dos Clubes Dominantes")
+            c1, c2, c3 = st.columns(3)
+            pais = c1.text_input("País*")
+            liga = c2.text_input("Liga*")
+            temporada = c3.text_input("Temporada*")
+            conteudo = st.text_area("Conteúdo da Análise de Dominância*", height=300, help=help_text_md)
+            if st.form_submit_button("Salvar Dossiê", type="primary"):
+                if not all([pais, liga, temporada, conteudo]):
+                    st.error("Todos os campos * são obrigatórios.")
+                else:
+                    file_name = f"D1P2_Clubes_Dominantes_{liga.replace(' ', '_')}_{pais.replace(' ', '_')}.md"
+                    path_parts = [pais, liga, temporada]; full_path = "/".join(p.replace(" ", "_") for p in path_parts) + "/" + file_name
+                    with st.spinner("Salvando..."):
+                        try:
+                            repo.create_file(full_path, f"Adiciona: {file_name}", conteudo); st.success(f"Dossiê '{full_path}' salvo com sucesso!")
+                        except Exception as e: st.error(f"Ocorreu um erro ao salvar: {e}")
+
+    elif dossier_type:
+        st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
 
 elif selected_action == "Gerar com IA":
     st.header("Gerar com IA"); st.info("Em desenvolvimento.")
