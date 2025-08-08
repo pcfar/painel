@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v6.2: Design Unificado e Consistente
+Painel de Inteligência Tática - v7.0: Assistente Inteligente de Criação de Dossiês
 """
 
 import streamlit as st
@@ -12,64 +12,45 @@ import os
 from streamlit_option_menu import option_menu
 import yaml
 
-# --- 1. CONFIGURAÇÃO E ESTILOS UNIFICADOS ---
+# --- 1. CONFIGURAÇÃO E ESTILOS ---
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
 def apply_custom_styling():
+    # O CSS da versão anterior é mantido, pois já está robusto.
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
             body, .main { font-family: 'Roboto', sans-serif; }
             .dossier-container { padding: 0 1rem; }
-            
             .comp-main-title { font-size: 1.8rem; font-weight: 900; color: #E2E8F0; margin-bottom: 2rem; }
             .comp-main-title span { vertical-align: middle; font-size: 2.5rem; margin-right: 15px; }
-
             .comp-section-title { font-size: 1.5rem; font-weight: 700; text-transform: uppercase; color: #FFFFFF; margin-top: 3rem; margin-bottom: 1.5rem; }
             .comp-section-title span { vertical-align: middle; font-size: 1.2rem; margin-right: 12px; }
-
             .comp-subtitle-icon { font-size: 1.2rem; font-weight: 700; color: #E2E8F0; margin-top: 2rem; margin-bottom: 1rem; }
             .comp-subtitle-icon span { vertical-align: middle; margin-right: 10px; }
-
             .comp-paragraph { font-size: 1.1rem; color: #A0AEC0; line-height: 1.9; margin-bottom: 1rem; }
-
-            /* NOVO COMPONENTE DE LISTA SIMPLES, SUBSTITUINDO O ANTIGO */
             .comp-simple-list ul { list-style-type: none; padding-left: 1rem; margin-top: 1rem; }
             .comp-simple-list li { margin-bottom: 0.7rem; color: #A0AEC0; font-size: 1.1rem; }
             .comp-simple-list li::before { content: "•"; color: #63B3ED; margin-right: 12px; font-size: 1.2rem; }
-
-            /* Estilos gerais do painel */
             [data-testid="stSidebar"] { border-right: 1px solid #4A5568; }
             .nav-link { border-radius: 8px; margin: 0px 5px 5px 5px; }
             .form-card { background-color: #2D3748; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.2); border: 1px solid #4A5568; margin-bottom: 25px; }
         </style>
     """, unsafe_allow_html=True)
 
-# --- 2. RENDERIZADOR DE COMPONENTES (SIMPLIFICADO E UNIFICADO) ---
+# --- 2. RENDERIZADOR E FUNÇÕES AUXILIARES ---
+# (As funções render_dossier_from_blueprint, get_github_repo, check_password, etc., permanecem as mesmas)
 def render_dossier_from_blueprint(data: dict):
     st.markdown('<div class="dossier-container">', unsafe_allow_html=True)
-
-    if 'metadata' in data:
-        meta = data['metadata']
-        st.markdown(f'<h1 class="comp-main-title"><span>{meta.get("icone_principal", "📄")}</span> {meta.get("titulo_principal", "Dossiê")}</h1>', unsafe_allow_html=True)
-
+    if 'metadata' in data: meta = data['metadata']; st.markdown(f'<h1 class="comp-main-title"><span>{meta.get("icone_principal", "📄")}</span> {meta.get("titulo_principal", "Dossiê")}</h1>', unsafe_allow_html=True)
     if 'componentes' in data:
         for comp in data['componentes']:
             tipo = comp.get('tipo')
-            if tipo == 'titulo_secao':
-                st.markdown(f'<h2 class="comp-section-title"><span>{comp.get("icone", "■")}</span>{comp.get("texto", "")}</h2>', unsafe_allow_html=True)
-            elif tipo == 'subtitulo_com_icone':
-                st.markdown(f'<h3 class="comp-subtitle-icon"><span>{comp.get("icone", "•")}</span>{comp.get("texto", "")}</h3>', unsafe_allow_html=True)
-            elif tipo == 'paragrafo':
-                st.markdown(f'<p class="comp-paragraph">{comp.get("texto", "")}</p>', unsafe_allow_html=True)
-            elif tipo == 'lista_simples':
-                list_items_html = "<div class='comp-simple-list'><ul>" + "".join([f"<li>{item}</li>" for item in comp.get('itens', [])]) + "</ul></div>"
-                st.markdown(list_items_html, unsafe_allow_html=True)
-
+            if tipo == 'titulo_secao': st.markdown(f'<h2 class="comp-section-title"><span>{comp.get("icone", "■")}</span>{comp.get("texto", "")}</h2>', unsafe_allow_html=True)
+            elif tipo == 'subtitulo_com_icone': st.markdown(f'<h3 class="comp-subtitle-icon"><span>{comp.get("icone", "•")}</span>{comp.get("texto", "")}</h3>', unsafe_allow_html=True)
+            elif tipo == 'paragrafo': st.markdown(f'<p class="comp-paragraph">{comp.get("texto", "")}</p>', unsafe_allow_html=True)
+            elif tipo == 'lista_simples': list_items_html = "<div class='comp-simple-list'><ul>" + "".join([f"<li>{item}</li>" for item in comp.get('itens', [])]) + "</ul></div>"; st.markdown(list_items_html, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
-
-# --- 3. FUNÇÕES DE AUTENTICAÇÃO E LÓGICA ---
-# (O código para get_github_repo, check_password, parse_path_to_form, e display_repo_structure permanecem os mesmos da v6.1, pois já estão robustos)
 @st.cache_resource
 def get_github_repo():
     try: g = Github(st.secrets["GITHUB_TOKEN"]); repo_name = f"{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO_NAME']}"; return g.get_repo(repo_name)
@@ -77,24 +58,15 @@ def get_github_repo():
 def check_password():
     if st.session_state.get("password_correct", False): return True
     c1, c2, c3 = st.columns([1,2,1])
-    with c2:
-        st.title("🔐 Painel de Inteligência"); password = st.text_input("Senha de Acesso", type="password", key="password_input")
-        if st.button("Acessar Painel"):
-            if password == st.secrets.get("APP_PASSWORD"): st.session_state["password_correct"] = True; st.rerun()
-            else: st.error("😕 Senha incorreta.")
+    with c2: st.title("🔐 Painel de Inteligência"); password = st.text_input("Senha de Acesso", type="password", key="password_input")
+    if st.button("Acessar Painel"):
+        if password == st.secrets.get("APP_PASSWORD"): st.session_state["password_correct"] = True; st.rerun()
+        else: st.error("😕 Senha incorreta.")
     return False
-def parse_path_to_form(path):
-    try:
-        parts = [p for p in path.split('/') if p]
-        for key in ['pais', 'liga', 'temporada', 'clube', 'rodada', 'tipo_dossie']:
-            if key in st.session_state: del st.session_state[key]
-        st.session_state.update(pais=parts[0].replace("_", " "), liga=parts[1].replace("_", " "), temporada=parts[2])
-    except Exception as e: st.error(f"Erro ao analisar o caminho: {e}.")
 def display_repo_structure(repo, path="", search_term="", show_actions=False):
+    # Esta função não precisa de mudanças
     try:
-        contents = repo.get_contents(path)
-        dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name)
-        files = sorted([f for f in contents if f.type == 'file' and f.name.endswith(".yml")], key=lambda x: x.name)
+        contents = repo.get_contents(path); dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name); files = sorted([f for f in contents if f.type == 'file' and f.name.endswith(".yml")], key=lambda x: x.name)
         for content_dir in dirs:
             with st.expander(f"📁 {content_dir.name}"): display_repo_structure(repo, content_dir.path, search_term, show_actions)
         if search_term: files = [f for f in files if search_term.lower() in f.name.lower()]
@@ -103,10 +75,9 @@ def display_repo_structure(repo, path="", search_term="", show_actions=False):
                 c1, c2, c3 = st.columns([3, 1, 1])
                 if c1.button(f"📄 {content_file.name}", key=f"view_{content_file.path}", use_container_width=True):
                     file_content_raw = repo.get_contents(content_file.path).decoded_content.decode("utf-8"); st.session_state.update(viewing_file_content=file_content_raw, viewing_file_name=content_file.name)
-                if c2.button("✏️", key=f"edit_{content_file.path}", help="Editar este arquivo"):
-                    file_content_raw = repo.get_contents(content_file.path).decoded_content.decode("utf-8"); parse_path_to_form(content_file.path); st.session_state.update(edit_mode=True, file_to_edit_path=content_file.path, conteudo_md=file_content_raw, selected_action="Carregar Dossiê"); st.rerun()
-                if c3.button("🗑️", key=f"delete_{content_file.path}", help="Excluir este arquivo"):
-                    st.session_state['file_to_delete'] = {'path': content_file.path, 'sha': content_file.sha}; st.rerun()
+                # A lógica de edição precisará ser reconstruída para popular o novo formulário. Por enquanto, a removeremos para evitar erros.
+                if c2.button("✏️", key=f"edit_{content_file.path}", help="Editar (desabilitado nesta versão)"): st.warning("Edição será reimplementada em breve.")
+                if c3.button("🗑️", key=f"delete_{content_file.path}", help="Excluir este arquivo"): st.session_state['file_to_delete'] = {'path': content_file.path, 'sha': content_file.sha}; st.rerun()
                 if st.session_state.get('file_to_delete', {}).get('path') == content_file.path:
                     st.warning(f"Excluir `{content_file.path}`?"); btn_c1, btn_c2 = st.columns(2)
                     if btn_c1.button("Sim, excluir!", key=f"confirm_del_{content_file.path}", type="primary"):
@@ -146,51 +117,85 @@ if selected_action == "Leitor de Dossiês":
                 if file_name.endswith(".yml"):
                     try: dossier_data = yaml.safe_load(st.session_state.viewing_file_content); render_dossier_from_blueprint(dossier_data)
                     except yaml.YAMLError as e: st.error(f"Erro ao ler o arquivo YAML: {e}"); st.code(st.session_state.viewing_file_content)
-                else: st.warning("Formato antigo (.md). Crie/converta para .yml para a nova visualização.") ; st.text(st.session_state.viewing_file_content)
+                else: st.warning("Formato antigo (.md)."); st.text(st.session_state.viewing_file_content)
             else: st.info("Selecione um dossiê (.yml) para uma visualização rica.")
 
+# --- PÁGINA "CARREGAR DOSSIÊ" TOTALMENTE RECONSTRUÍDA ---
 elif selected_action == "Carregar Dossiê":
-    is_edit_mode = st.session_state.get('edit_mode', False)
-    st.header("✏️ Editor de Dossiê" if is_edit_mode else "📤 Carregar Novo Dossiê")
+    st.header("📤 Assistente de Criação de Dossiês")
+    st.info("Preencha os campos abaixo. O sistema irá gerar o arquivo YAML formatado corretamente para você.")
+
     if repo:
-        col_nav, col_form = st.columns([1, 2], gap="large")
-        with col_nav:
-            st.subheader("Estrutura Atual"); st.info("Use como guia."); display_repo_structure(repo, show_actions=False)
-        with col_form:
-            st.subheader("Formulário de Dados"); st.warning("O conteúdo deve ser no formato YAML, seguindo o novo padrão de componentes.")
-            with st.form("dossier_form", clear_on_submit=False):
-                st.markdown('<div class="form-card">', unsafe_allow_html=True)
-                st.selectbox("Tipo de Dossiê*", ["Dossiê de Liga"], key="tipo_dossie", help="Apenas Dossiê de Liga usa o novo modelo YAML.")
-                c1, c2, c3 = st.columns(3); c1.text_input("País*", placeholder="Ex: Inglaterra", key="pais"); c2.text_input("Liga*", placeholder="Ex: Premier League", key="liga"); c3.text_input("Temporada*", placeholder="Ex: 2025-26", key="temporada")
-                st.markdown('</div><div class="form-card">', unsafe_allow_html=True)
-                st.text_area("Conteúdo (cole o YAML aqui)*", height=400, placeholder="Cole o conteúdo do seu dossiê no formato YAML...", key="conteudo_md")
-                st.markdown('</div>', unsafe_allow_html=True)
-                submit_label = "💾 Atualizar Dossiê" if is_edit_mode else "💾 Salvar Novo Dossiê"
-                if st.form_submit_button(submit_label, type="primary", use_container_width=True):
-                    if not all([st.session_state.pais, st.session_state.liga, st.session_state.temporada, st.session_state.conteudo_md]): st.error("Todos os campos com * são obrigatórios.")
-                    else:
-                        path_parts = [st.session_state.pais.replace(" ", "_"), st.session_state.liga.replace(" ", "_"), st.session_state.temporada]; file_name = ""
-                        tipo = st.session_state.tipo_dossie
-                        if tipo == "Dossiê de Liga":
-                            liga_formatada = st.session_state.liga.replace(' ', '_'); pais_formatado = st.session_state.pais.replace(' ', '_')
-                            file_name = f"Dossie_{liga_formatada}_{pais_formatado}.yml"
-                        if file_name:
-                            full_path = "/".join(path_parts) + "/" + file_name; commit_message = f"Atualiza: {file_name}" if is_edit_mode else f"Adiciona: {file_name}"
-                            with st.spinner("Salvando no GitHub..."):
-                                try:
-                                    if is_edit_mode:
-                                        original_path = st.session_state.file_to_edit_path; existing_file = repo.get_contents(original_path)
-                                        repo.update_file(original_path, commit_message, st.session_state.conteudo_md, existing_file.sha); st.success(f"Dossiê '{original_path}' atualizado!")
-                                    else: repo.create_file(full_path, commit_message, st.session_state.conteudo_md); st.success(f"Dossiê '{full_path}' salvo!")
-                                    for key in list(st.session_state.keys()):
-                                        if key not in ['password_correct', 'main_menu']: del st.session_state[key]
-                                    st.session_state.selected_action = "Leitor de Dossiês"; st.rerun()
-                                except Exception as e: st.error(f"Ocorreu um erro: {e}")
-            if is_edit_mode:
-                if st.button("Cancelar Edição", use_container_width=True):
-                    for key in list(st.session_state.keys()):
-                        if key not in ['password_correct', 'main_menu']: del st.session_state[key]
-                    st.session_state.selected_action = "Leitor de Dossiês"; st.rerun()
+        with st.form("dossier_builder_form"):
+            st.markdown("---")
+            st.subheader("1. Metadados Gerais")
+            c1, c2 = st.columns(2)
+            meta_title = c1.text_input("Título Principal do Painel", "PAINEL DE DOSSIÊS TÉCNICOS")
+            meta_icon = c2.text_input("Ícone Principal (Emoji)", "🏆")
+
+            st.markdown("---")
+            st.subheader("2. Título do Dossiê")
+            c1, c2 = st.columns([1, 4])
+            comp_titulo_icon = c1.text_input("Ícone do Título", "🏴󠁧󠁢󠁥󠁮󠁧󠁿")
+            comp_titulo_text = c2.text_input("Texto do Título", "Premier League — Análise Estrutural")
+
+            st.markdown("---")
+            st.subheader("3. Seções de Conteúdo")
+            st.warning("Para listas, coloque um item por linha.")
+            
+            comp_subtitulo_1_icon = st.text_input("Ícone do Subtítulo 1", "🌍")
+            comp_subtitulo_1_text = st.text_input("Texto do Subtítulo 1", "Contexto Geral da Liga")
+            comp_paragrafo_1_text = st.text_area("Parágrafo após Subtítulo 1", "Considerada a liga mais competitiva e financeiramente poderosa do mundo.")
+
+            st.divider()
+
+            comp_subtitulo_2_icon = st.text_input("Ícone do Subtítulo 2", "📐")
+            comp_subtitulo_2_text = st.text_input("Texto do Subtítulo 2", "Formato da Competição")
+            comp_lista_2_itens = st.text_area("Itens da Lista (um por linha)", "Número de clubes: 20\nSistema de rebaixamento: 3 últimos colocados")
+
+            st.markdown("---")
+            st.subheader("4. Informações para Salvar o Arquivo")
+            c1, c2, c3 = st.columns(3)
+            pais = c1.text_input("País*", placeholder="Ex: Inglaterra")
+            liga = c2.text_input("Liga*", placeholder="Ex: Premier League")
+            temporada = c3.text_input("Temporada*", placeholder="Ex: 2025-26")
+            
+            if st.form_submit_button("💾 Gerar e Salvar Dossiê", type="primary", use_container_width=True):
+                if not all([pais, liga, temporada]):
+                    st.error("Os campos País, Liga e Temporada são obrigatórios para salvar o arquivo.")
+                else:
+                    # Construção da estrutura de dados (dicionário Python)
+                    dossier_data = {
+                        'metadata': {'titulo_principal': meta_title, 'icone_principal': meta_icon},
+                        'componentes': [
+                            {'tipo': 'titulo_secao', 'icone': comp_titulo_icon, 'texto': comp_titulo_text},
+                            {'tipo': 'subtitulo_com_icone', 'icone': comp_subtitulo_1_icon, 'texto': comp_subtitulo_1_text},
+                            {'tipo': 'paragrafo', 'texto': comp_paragrafo_1_text},
+                            {'tipo': 'subtitulo_com_icone', 'icone': comp_subtitulo_2_icon, 'texto': comp_subtitulo_2_text},
+                            {'tipo': 'lista_simples', 'itens': [item.strip() for item in comp_lista_2_itens.split('\n') if item.strip()]}
+                        ]
+                    }
+                    
+                    # Converte o dicionário para uma string YAML
+                    # sort_keys=False mantém a ordem que definimos
+                    # allow_unicode=True preserva emojis e caracteres especiais
+                    yaml_string = yaml.dump(dossier_data, sort_keys=False, allow_unicode=True, indent=2)
+
+                    # Lógica para salvar o arquivo no GitHub
+                    liga_fmt = liga.replace(' ', '_'); pais_fmt = pais.replace(' ', '_')
+                    file_name = f"Dossie_{liga_fmt}_{pais_fmt}.yml"
+                    path_parts = [pais.replace(" ", "_"), liga.replace(" ", "_"), temporada]
+                    full_path = "/".join(path_parts) + "/" + file_name
+                    commit_message = f"Adiciona dossiê via assistente: {file_name}"
+
+                    with st.spinner("Gerando e salvando arquivo YAML no GitHub..."):
+                        try:
+                            repo.create_file(full_path, commit_message, yaml_string)
+                            st.success(f"Dossiê '{full_path}' salvo com sucesso!")
+                            st.code(yaml_string, language="yaml")
+                        except Exception as e:
+                            st.error(f"Ocorreu um erro ao salvar: {e}")
+                            st.info("É possível que um arquivo com este nome já exista. Verifique o navegador.")
 
 elif selected_action == "Gerar com IA":
     st.header("🧠 Geração de Dossiês com IA"); st.info("Em desenvolvimento.")
