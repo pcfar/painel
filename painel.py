@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v15.4: Correção de TypeError e Estabilidade
+Painel de Inteligência Tática - v16.0: Versão Estável e Definitiva
 """
 
 import streamlit as st
@@ -9,105 +9,135 @@ from datetime import datetime
 import base64
 import os
 from streamlit_option_menu import option_menu
-import yaml
+import markdown2
 
 # --- 1. CONFIGURAÇÃO E ESTILOS FINAIS ---
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
 def apply_custom_styling():
-    # CSS para o template "Dark Pro" e outros componentes
     st.markdown("""
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
-            html, body, [class*="css"]  { font-family: 'Roboto', sans-serif; background-color: #0F172A; color: #E2E8F0; }
+            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
+            body, .main { font-family: 'Roboto', sans-serif; }
+            .dossier-viewer { line-height: 1.8; font-size: 1.1rem; color: #E2E8F0; }
+            .dossier-viewer h1 { font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #3182CE; padding-bottom: 0.5rem; margin-bottom: 2rem; }
+            .dossier-viewer h2 { font-size: 1.6rem; font-weight: 700; color: #E2E8F0; margin-top: 2.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid #4A5568; padding-bottom: 0.5rem;}
+            .dossier-viewer h3 { font-size: 1.3rem; font-weight: 700; color: #a5b4fc; margin-top: 2rem; margin-bottom: 1rem; }
+            .dossier-viewer p { margin-bottom: 1rem; color: #A0AEC0; }
+            .dossier-viewer strong { color: #a5b4fc; font-weight: 700; }
+            .dossier-viewer blockquote { border-left: 4px solid #63b3ed; padding: 10px 20px; margin-left: 0; background-color: rgba(49, 130, 206, 0.1); border-radius: 8px;}
+            .dossier-viewer ul { list-style-type: none; padding-left: 0; margin-top: 1rem; }
+            .dossier-viewer li { margin-bottom: 0.7rem; color: #A0AEC0; padding-left: 1.5em; text-indent: -1.5em; }
+            .dossier-viewer li::before { content: "▪"; color: #63B3ED; margin-right: 10px; font-size: 1.2rem; }
+            .dossier-viewer hr { border: none; border-top: 2px solid #4A5568; margin: 3rem 0; }
+            .dossier-viewer table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background-color: #2D3748; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); }
+            .dossier-viewer th, .dossier-viewer td { padding: 1rem; text-align: left; font-size: 1rem; color: #F3F4F6; border-bottom: 1px solid #4A5568;}
+            .dossier-viewer th { background-color: #3B82F6; font-weight: 700; }
+            .dossier-viewer tr:nth-child(even) { background-color: rgba(74, 85, 104, 0.5); }
             [data-testid="stSidebar"] { border-right: 1px solid #4A5568; }
-            .report-container { padding: 1rem; }
-            .report-title { font-size: 2.3rem; font-weight: 700; color: #FACC15; margin-bottom: 0.5rem; }
-            .report-sub { font-size: 1rem; color: #94A3B8; margin-bottom: 2rem; }
-            .section { background: rgba(255, 255, 255, 0.05); padding: 1.2rem; margin-bottom: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
-            .section h2 { font-size: 1.4rem; color: #38BDF8; margin-bottom: 1rem; }
-            .section h3 { font-size: 1.1rem; color: #FACC15; margin-top: 1rem; margin-bottom: 0.5rem;}
-            .section ul { list-style-position: inside; padding-left: 10px; }
-            .section li { margin-bottom: 0.5rem; line-height: 1.6; }
-            .section hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 1.5rem 0; }
-            .section table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 1rem; }
-            .section th, .section td { border: 1px solid #4A5568; padding: 10px; text-align: left; }
-            .section th { background-color: #1E293B; color: #94A3B8; }
         </style>
     """, unsafe_allow_html=True)
 
-# --- 2. RENDERIZADORES E FUNÇÕES AUXILIARES ---
-def render_dark_pro_liga_dossier(data: dict):
-    def process_list_items(items):
-        html = "<ul>"
-        for item in items:
-            if isinstance(item, dict):
-                for key, sub_items in item.items():
-                    html += f"<li>{key}<ul>" + "".join([f"<li>{sub_item}</li>" for sub_item in sub_items]) + "</ul></li>"
-            else: html += f"<li>{item}</li>"
-        html += "</ul>"; return html
-    sections_html = ""
-    for secao in data.get('secoes', []):
-        sections_html += f"<div class='section'><h2>{secao.get('titulo_secao', '')}</h2>"
-        for sub in secao.get('subsecoes', []):
-            sections_html += f"<h3>{sub.get('titulo_sub', '')}</h3>"
-            if 'conteudo' in sub: sections_html += process_list_items(sub['conteudo'])
-            if 'tabela' in sub:
-                sections_html += "<table>"; headers = sub['tabela'].get('cabecalho', [])
-                sections_html += "<tr>" + "".join([f"<th>{h}</th>" for h in headers]) + "</tr>"
-                for row in sub['tabela'].get('linhas', []): sections_html += "<tr>" + "".join([f"<td>{cell}</td>" for cell in row]) + "</tr>"
-                sections_html += "</table>"
-        sections_html += "</div>"
-    dossier_html = f"""
-    <div class="report-container">
-        <div class='report-title'>{data.get('titulo_geral', '')}</div>
-        <div class='report-sub'>📅 Atualizado em: {data.get('data_atualizacao', 'N/D')}</div>
-        {sections_html}
-    </div>"""
-    st.markdown(dossier_html, unsafe_allow_html=True)
+# --- 2. FUNÇÕES AUXILIARES ---
+def sanitize_text(text: str) -> str:
+    return text.replace('\u00A0', ' ').replace('\u2011', '-')
 
 @st.cache_resource
 def get_github_repo():
-    try: g = Github(st.secrets["GITHUB_TOKEN"]); repo_name = f"{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO_NAME']}"; return g.get_repo(repo_name)
-    except Exception as e: st.error(f"Falha na conexão com o GitHub: {e}"); return None
+    try:
+        g = Github(st.secrets["GITHUB_TOKEN"])
+        return g.get_repo(f"{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO_NAME']}")
+    except Exception as e:
+        st.error(f"Falha na conexão com o GitHub: {e}")
+        return None
+
 def check_password():
     if st.session_state.get("password_correct", False): return True
-    _, center_col, _ = st.columns([1, 1, 1]);
+    _, center_col, _ = st.columns([1, 1, 1])
     with center_col:
         st.title("Painel de Inteligência"); st.write(" ")
         with st.container(border=True):
             st.subheader("Login de Acesso"); password = st.text_input("Senha de Acesso", type="password", key="password_input", label_visibility="collapsed", placeholder="Digite sua senha")
             if st.button("Acessar Painel", type="primary", use_container_width=True):
                 with st.spinner("Verificando..."):
-                    if password == st.secrets.get("APP_PASSWORD"): st.session_state["password_correct"] = True; st.rerun()
+                    if password == st.secrets.get("APP_PASSWORD"):
+                        st.session_state["password_correct"] = True; st.rerun()
                     else: st.error("Senha incorreta.")
     return False
 
-# --- FUNÇÃO CORRIGIDA ---
-def display_repo_structure(repo, path="", search_term=""):
+def parse_path_to_form_state(path, name):
+    """Analisa o caminho e nome do arquivo para preencher o estado do formulário para edição."""
     try:
-        contents = repo.get_contents(path); dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name); files = sorted([f for f in contents if f.type == 'file' and f.name.endswith(".yml")], key=lambda x: x.name)
+        parts = path.split('/')
+        st.session_state.edit_pais = parts[0].replace("_", " ")
+        st.session_state.edit_liga = parts[1].replace("_", " ")
+        st.session_state.edit_temporada = parts[2]
+        
+        # Mapeia o prefixo do nome do arquivo de volta para o tipo de dossiê
+        type_map = {
+            "D1P1": "D1 P1 - Análise da Liga",
+            "D1P2": "D1 P2 - Análise dos Clubes Dominantes da Liga",
+            "D2P1": "D2 P1 - Análise Comparativa de Planteis",
+            "D2P2": "D2 P2 - Estudo Técnico e Tático dos Clubes",
+            "D3": "D3 - Análise Tática (Pós Rodada)",
+            "D4": "D4 - Briefing Semanal (Pré Rodada)"
+        }
+        for prefix, dossier_type in type_map.items():
+            if name.startswith(prefix):
+                st.session_state.dossier_type_selector = dossier_type
+                break
+        
+        # Adiciona campos específicos se necessário (ex: para D3 e D4)
+        # Esta parte pode ser expandida conforme os formulários ficam mais complexos
+        if name.startswith("D3_"):
+            # Exemplo de como extrair informações adicionais do nome do arquivo
+            match = re.search(r'_vs_(\w+)_R(\d+)', name)
+            if match:
+                st.session_state.edit_time_visitante = match.group(1).replace("_", " ")
+                st.session_state.edit_rodada = match.group(2)
+    except Exception as e:
+        st.error(f"Erro ao analisar caminho do arquivo para edição: {e}")
+
+def display_repo_structure(repo, path=""):
+    try:
+        contents = repo.get_contents(path)
+        dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name)
+        files = sorted([f for f in contents if f.type == 'file' and f.name.endswith(".md")], key=lambda x: x.name)
+        
         for content_dir in dirs:
-            with st.expander(f"📁 {content_dir.name}"): display_repo_structure(repo, content_dir.path, search_term) # Chamada recursiva corrigida
-        if search_term: files = [f for f in files if search_term.lower() in f.name.lower()]
+            with st.expander(f"📁 {content_dir.name}"):
+                display_repo_structure(repo, content_dir.path)
+
         for content_file in files:
-            c1, c2, c3 = st.columns([0.7, 0.15, 0.15]) 
-            with c1:
+            col1, col2, col3 = st.columns([0.7, 0.15, 0.15])
+            with col1:
                 if st.button(f"📄 {content_file.name}", key=f"view_{content_file.path}", use_container_width=True):
-                    file_content_raw = repo.get_contents(content_file.path).decoded_content.decode("utf-8"); st.session_state.update(viewing_file_content=file_content_raw, viewing_file_name=content_file.name)
-            with c2:
-                if st.button("✏️", key=f"edit_{content_file.path}", help="Editar Dossiê", use_container_width=True): st.warning("Edição em desenvolvimento.")
-            with c3:
-                if st.button("🗑️", key=f"delete_{content_file.path}", help="Excluir Dossiê", use_container_width=True): st.session_state['file_to_delete'] = {'path': content_file.path, 'sha': content_file.sha}; st.rerun()
+                    file_content_raw = repo.get_contents(content_file.path).decoded_content.decode("utf-8")
+                    st.session_state.update(viewing_file_content=file_content_raw, viewing_file_name=content_file.name)
+            with col2:
+                if st.button("✏️", key=f"edit_{content_file.path}", help="Editar Dossiê", use_container_width=True):
+                    with st.spinner("Carregando para edição..."):
+                        file_to_edit = repo.get_contents(content_file.path)
+                        st.session_state.edit_content = base64.b64decode(file_to_edit.content).decode("utf-8")
+                        st.session_state.edit_sha = file_to_edit.sha
+                        st.session_state.edit_path = file_to_edit.path
+                        parse_path_to_form_state(file_to_edit.path, file_to_edit.name)
+                        st.session_state.edit_mode = True
+                        st.session_state.selected_action = "Carregar Dossiê"
+                        st.rerun()
+            with col3:
+                if st.button("🗑️", key=f"delete_{content_file.path}", help="Excluir Dossiê", use_container_width=True):
+                    st.session_state['file_to_delete'] = {'path': content_file.path, 'sha': content_file.sha}
+                    st.rerun()
             if st.session_state.get('file_to_delete', {}).get('path') == content_file.path:
-                st.warning(f"Excluir `{content_file.path}`?"); btn_c1, btn_c2 = st.columns(2)
+                st.warning(f"Excluir `{content_file.path}`?")
+                btn_c1, btn_c2 = st.columns(2)
                 if btn_c1.button("Sim, excluir!", key=f"confirm_del_{content_file.path}", type="primary"):
                     file_info = st.session_state.pop('file_to_delete'); repo.delete_file(file_info['path'], f"Exclui {file_info['path']}", file_info['sha'])
                     if st.session_state.get('viewing_file_name') == os.path.basename(file_info['path']): st.session_state.pop('viewing_file_content', None); st.session_state.pop('viewing_file_name', None)
                     st.success(f"Arquivo '{file_info['path']}' excluído."); st.rerun()
                 if btn_c2.button("Cancelar", key=f"cancel_del_{content_file.path}"): st.session_state.pop('file_to_delete'); st.rerun()
     except Exception as e: st.error(f"Erro ao listar arquivos: {e}")
-
 
 # --- CÓDIGO PRINCIPAL DA APLICAÇÃO ---
 if not check_password(): st.stop()
@@ -127,56 +157,87 @@ if selected_action == "Leitor de Dossiês":
     if repo:
         col1, col2 = st.columns([1, 2], gap="large")
         with col1:
-            st.subheader("Navegador do Repositório"); st.text_input("Filtrar...", label_visibility="collapsed", placeholder="Filtrar por nome do arquivo...", key="search_term"); st.divider()
-            # --- CHAMADA CORRIGIDA ---
+            st.subheader("Navegador do Repositório"); st.text_input("Filtrar...", label_visibility="collapsed", placeholder="Filtrar por nome do arquivo...", key="search_term")
+            st.divider()
             display_repo_structure(repo, search_term=st.session_state.get("search_term", ""))
         with col2:
             st.subheader("Visualizador de Conteúdo")
             if st.session_state.get("viewing_file_content"):
                 file_name = st.session_state.get("viewing_file_name", "")
                 st.markdown(f"#### {file_name}"); st.divider()
-                try:
-                    dossier_data = yaml.safe_load(st.session_state.viewing_file_content)
-                    if isinstance(dossier_data, dict):
-                        if dossier_data.get("template_type") == "liga_dark_pro": render_dark_pro_liga_dossier(dossier_data)
-                        else: st.warning("Template desconhecido."); st.json(dossier_data)
-                    else: st.warning("⚠️ Formato Inesperado"); st.code(st.session_state.viewing_file_content, language="yaml")
-                except yaml.YAMLError: st.error("⚠️ Formato de Arquivo Inválido"); st.code(st.session_state.viewing_file_content, language="text")
-            else: st.info("Selecione um dossiê para visualizar.")
+                sanitized_content = sanitize_text(st.session_state.viewing_file_content)
+                html_content = markdown2.markdown(sanitized_content, extras=['tables', 'fenced-code-blocks', 'blockquote'])
+                st.markdown(f"<div class='dossier-viewer'>{html_content}</div>", unsafe_allow_html=True)
+            else: st.info("Selecione um arquivo para visualizar.")
 
 elif selected_action == "Carregar Dossiê":
-    st.header("Criar Novo Dossiê"); st.info("Selecione o tipo de dossiê para ver os campos específicos.")
-    dossier_type_options = ["", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes da Liga"]
-    dossier_type = st.selectbox("**Qual tipo de dossiê você quer criar?**", dossier_type_options, key="dossier_type_selector")
+    is_edit_mode = st.session_state.get("edit_mode", False)
+    st.header("Editar Dossiê" if is_edit_mode else "Criar Novo Dossiê")
+
+    dossier_type_options = ["", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes da Liga", "D2 P1 - Análise Comparativa de Planteis", "D2 P2 - Estudo Técnico e Tático dos Clubes", "D3 - Análise Tática (Pós Rodada)", "D4 - Briefing Semanal (Pré Rodada)"]
+    dossier_type_index = dossier_type_options.index(st.session_state.get("dossier_type_selector", "")) if st.session_state.get("dossier_type_selector") in dossier_type_options else 0
+    dossier_type = st.selectbox("**Qual tipo de dossiê você quer criar?**", dossier_type_options, index=dossier_type_index, key="dossier_type_selector", disabled=is_edit_mode)
+    
+    help_text_md = "Guia Rápido:\n- Título: # Título\n- Subtítulo: ## Subtítulo\n- Listas: - Item da lista\n- Destaque: **texto**"
+
+    def get_value(key, default=''): return st.session_state.get(key, default) if is_edit_mode else default
+
+    def clear_edit_state():
+        keys_to_clear = [k for k in st.session_state if k.startswith('edit_')] + ['dossier_type_selector', 'edit_mode']
+        for key in keys_to_clear:
+            if key in st.session_state: del st.session_state[key]
+
+    def save_or_update(file_name_template: str, path_parts: list, content: str, required_fields: list, format_dict: dict):
+        if not all(required_fields): st.error("Todos os campos * são obrigatórios."); return
+        
+        file_name = file_name_template.format(**{k: v.replace(' ', '_') for k, v in format_dict.items()}) + ".md"
+        full_path = "/".join([p.replace(" ", "_") for p in path_parts]) + "/" + file_name
+        
+        with st.spinner("Salvando..."):
+            try:
+                if is_edit_mode:
+                    repo.update_file(st.session_state.edit_path, f"Atualiza: {os.path.basename(st.session_state.edit_path)}", content, st.session_state.edit_sha)
+                    st.success(f"Dossiê '{st.session_state.edit_path}' ATUALIZADO com sucesso!")
+                else:
+                    repo.create_file(full_path, f"Adiciona: {file_name}", content)
+                    st.success(f"Dossiê '{full_path}' CRIADO com sucesso!")
+                
+                clear_edit_state()
+                st.session_state.selected_action = "Leitor de Dossiês"
+                st.rerun()
+            except Exception as e: st.error(f"Ocorreu um erro ao salvar: {e}")
 
     if dossier_type == "D1 P1 - Análise da Liga":
-        st.subheader("Template: Análise da Liga (Modelo Dark Pro)")
-        with st.form("d1_p1_form", clear_on_submit=True):
-            st.write("**Metadados**"); c1, c2, c3 = st.columns(3); pais = c1.text_input("País*"); liga = c2.text_input("Liga*"); temporada = c3.text_input("Temporada*")
-            data_atualizacao = st.text_input("Data de Atualização*", value=datetime.now().strftime("%d de %B de %Y"))
-            st.divider(); st.write("**Seções de Conteúdo**"); help_text = "Para sub-itens, use dois espaços no início da linha. Para tabelas, separe colunas com ';'. Ex: Posição;Competição"
-            secao1_titulo = st.text_input("Título da Seção 1", "⚽ Estrutura e Identidade da Liga")
-            secao1_sub1_titulo = st.text_input("Título do Subitem 1.1", "📋 Visão Geral")
-            secao1_sub1_conteudo = st.text_area("Conteúdo do Subitem 1.1 (lista)", "País: Portugal\nNúmero de clubes: 18", help=help_text)
-            secao1_sub2_titulo = st.text_input("Título do Subitem 1.2", "🏆 Vagas Europeias")
-            secao1_sub2_tabela = st.text_area("Tabela do Subitem 1.2", "Posição;Competição\n1º;Fase de grupos da UEFA Champions League", help=help_text)
+        with st.form("d1_p1_form"):
+            st.subheader("Template: Análise da Liga")
+            c1, c2, c3 = st.columns(3)
+            pais = c1.text_input("País*", value=get_value("edit_pais"))
+            liga = c2.text_input("Liga*", value=get_value("edit_liga"))
+            temporada = c3.text_input("Temporada*", value=get_value("edit_temporada"))
+            conteudo = st.text_area("Resumo (Conteúdo do Dossiê)*", height=300, value=get_value("edit_content"), help=help_text_md)
+            
+            submit_label = "Atualizar Dossiê" if is_edit_mode else "Salvar Dossiê"
+            if st.form_submit_button(submit_label, type="primary"):
+                save_or_update("D1P1_Analise_Liga_{liga}_{pais}", [pais, liga, temporada], conteudo, [pais, liga, temporada, conteudo], {"liga": liga, "pais": pais})
 
-            if st.form_submit_button("Gerar Dossiê", type="primary", use_container_width=True):
-                def parse_list(text): return [item.strip() for item in text.split('\n') if item.strip()]
-                def parse_table(text):
-                    lines = [line.strip() for line in text.split('\n') if line.strip()]; return {'cabecalho': [h.strip() for h in lines[0].split(';')], 'linhas': [[cell.strip() for cell in row.split(';')] for row in lines[1:]]}
-                dossier_data = {
-                    "template_type": "liga_dark_pro", "titulo_geral": f"Dossiê Técnico-Tático: {liga} – {pais} – Temporada {temporada}",
-                    "data_atualizacao": data_atualizacao,
-                    "secoes": [{"titulo_secao": secao1_titulo, "subsecoes": [{"titulo_sub": secao1_sub1_titulo, "conteudo": parse_list(secao1_sub1_conteudo)}, {"titulo_sub": secao1_sub2_titulo, "tabela": parse_table(secao1_sub2_tabela)}]}]}
-                yaml_string = yaml.dump(dossier_data, sort_keys=False, allow_unicode=True, indent=2)
-                file_name = f"D1P1_Analise_Liga_{liga.replace(' ', '_')}_{pais.replace(' ', '_')}.yml"
-                path_parts = [pais, liga, temporada]; full_path = "/".join(p.replace(" ", "_") for p in path_parts) + "/" + file_name
-                with st.spinner("Salvando..."):
-                    try: repo.create_file(full_path, f"Adiciona: {file_name}", yaml_string); st.success(f"Dossiê salvo: {full_path}")
-                    except Exception as e: st.error(f"Erro ao salvar: {e}")
-    elif dossier_type:
+    elif dossier_type == "D1 P2 - Análise dos Clubes Dominantes da Liga":
+        with st.form("d1_p2_form"):
+            st.subheader("Template: Análise dos Clubes Dominantes")
+            c1, c2, c3 = st.columns(3)
+            pais = c1.text_input("País*")
+            liga = c2.text_input("Liga*")
+            temporada = c3.text_input("Temporada*")
+            conteudo = st.text_area("Resumo (Conteúdo da Análise)*", height=300, help=help_text_md)
+            
+            submit_label = "Atualizar Dossiê" if is_edit_mode else "Salvar Dossiê"
+            if st.form_submit_button(submit_label, type="primary"):
+                save_or_update("D1P2_Clubes_Dominantes_{liga}_{pais}", [pais, liga, temporada], conteudo, [pais, liga, temporada, conteudo], {"liga": liga, "pais": pais})
+
+    elif dossier_type and not is_edit_mode:
         st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
+    
+    if is_edit_mode and not dossier_type:
+        st.info("Carregando dados para edição... por favor, aguarde.")
 
 elif selected_action == "Gerar com IA":
     st.header("Gerar com IA"); st.info("Em desenvolvimento.")
