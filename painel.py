@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v16.6: Ajuste Fino Final de Alinhamento e Contraste
+Painel de Inteligência Tática - v16.7: Alinhamento Fino de Intertítulos
 """
 
 import streamlit as st
@@ -24,6 +24,7 @@ def apply_custom_styling():
             .dossier-viewer { 
                 line-height: 1.7; 
                 font-size: 1.1rem; 
+                color: #F3F4F6;
             }
             .dossier-viewer h1 { 
                 font-size: 2.2rem; font-weight: 900; color: #FFFFFF; 
@@ -36,13 +37,12 @@ def apply_custom_styling():
                 border-left: 4px solid #38BDF8;
             }
             .dossier-viewer h3 { 
-                font-size: 1.4rem; font-weight: 700; color: #FACC15; /* Cor amarela/gold */
+                font-size: 1.4rem; font-weight: 700; color: #FACC15;
                 margin-top: 2.5rem; margin-bottom: 1rem; 
             }
-            /* --- MUDANÇA: Cor do texto principal para máximo contraste --- */
             .dossier-viewer p { 
                 margin-bottom: 1rem; 
-                color: #F3F4F6; 
+                color: #F3F4F6;
                 padding-left: 0; 
                 text-indent: 0;
             }
@@ -51,18 +51,19 @@ def apply_custom_styling():
                 font-weight: 900;
                 text-shadow: 0 0 8px rgba(165, 180, 252, 0.3);
             }
-            /* --- MUDANÇA: Estilo para os intertítulos para garantir alinhamento --- */
+            /* --- MUDANÇA: Ajuste fino no alinhamento do intertítulo --- */
             .dossier-viewer p > strong:only-child {
                 color: #FACC15;
                 font-size: 1.15rem;
                 display: block;
                 margin-bottom: 0.8rem;
                 text-shadow: none;
-                padding-left: 0;
-                text-indent: 0;
+                padding-left: 0;      /* Remove qualquer preenchimento */
+                text-indent: 0;       /* Remove qualquer indentação */
+                margin-left: -1.5em;    /* Puxa o texto para a esquerda para alinhar com a lista */
+                position: relative;
             }
             .dossier-viewer ul { list-style-type: none; padding-left: 0; margin-top: 1rem; }
-            /* --- MUDANÇA: Cor do texto da lista para máximo contraste --- */
             .dossier-viewer li { 
                 margin-bottom: 0.7rem; 
                 color: #F3F4F6;
@@ -79,6 +80,7 @@ def apply_custom_styling():
     """, unsafe_allow_html=True)
 
 # --- FUNÇÕES AUXILIARES E CÓDIGO PRINCIPAL (SEM ALTERAÇÕES) ---
+# O restante do código permanece exatamente o mesmo da versão anterior.
 def sanitize_text(text: str) -> str:
     # ... (código inalterado)
     return text.replace('\u00A0', ' ').replace('\u2011', '-')
