@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v8.1: Construtor de Dossiês Intuitivo
+Painel de Inteligência Tática - v9.0: Formulários Inteligentes por Template
 """
 
 import streamlit as st
@@ -15,8 +15,8 @@ import yaml
 # --- 1. CONFIGURAÇÃO E ESTILOS ---
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
-# A função apply_custom_styling() e as outras funções auxiliares permanecem as mesmas
 def apply_custom_styling():
+    # O CSS da versão anterior é mantido, pois já está robusto.
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
@@ -37,6 +37,9 @@ def apply_custom_styling():
             .form-card { background-color: #2D3748; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.2); border: 1px solid #4A5568; margin-bottom: 25px; }
         </style>
     """, unsafe_allow_html=True)
+
+# --- 2. RENDERIZADOR E FUNÇÕES AUXILIARES ---
+# (As funções auxiliares como render_dossier_from_blueprint, get_github_repo, etc., permanecem as mesmas)
 def render_dossier_from_blueprint(data: dict):
     st.markdown('<div class="dossier-container">', unsafe_allow_html=True)
     if 'metadata' in data: meta = data['metadata']; st.markdown(f'<h1 class="comp-main-title"><span>{meta.get("icone_principal", "[i]")}</span> {meta.get("titulo_principal", "Dossiê")}</h1>', unsafe_allow_html=True)
@@ -55,10 +58,11 @@ def get_github_repo():
 def check_password():
     if st.session_state.get("password_correct", False): return True
     c1, c2, c3 = st.columns([1,2,1])
-    with c2: st.title("Painel de Inteligência"); password = st.text_input("Senha de Acesso", type="password", key="password_input")
-    if st.button("Acessar Painel"):
-        if password == st.secrets.get("APP_PASSWORD"): st.session_state["password_correct"] = True; st.rerun()
-        else: st.error("Senha incorreta.")
+    with c2:
+        st.title("Painel de Inteligência"); password = st.text_input("Senha de Acesso", type="password", key="password_input")
+        if st.button("Acessar Painel"):
+            if password == st.secrets.get("APP_PASSWORD"): st.session_state["password_correct"] = True; st.rerun()
+            else: st.error("Senha incorreta.")
     return False
 def display_repo_structure(repo, path="", search_term="", show_actions=False):
     try:
@@ -71,7 +75,7 @@ def display_repo_structure(repo, path="", search_term="", show_actions=False):
                 c1, c2, c3 = st.columns([3, 1, 1])
                 if c1.button(f"[Ver] {content_file.name}", key=f"view_{content_file.path}", use_container_width=True):
                     file_content_raw = repo.get_contents(content_file.path).decoded_content.decode("utf-8"); st.session_state.update(viewing_file_content=file_content_raw, viewing_file_name=content_file.name)
-                if c2.button("[Editar]", key=f"edit_{content_file.path}", help="Editar (desabilitado nesta versão)"): st.warning("A edição será reimplementada no novo Assistente.")
+                if c2.button("[Editar]", key=f"edit_{content_file.path}", help="Editar (desabilitado)"): st.warning("A edição será reimplementada no novo modelo.")
                 if c3.button("[Excluir]", key=f"delete_{content_file.path}", help="Excluir este arquivo"): st.session_state['file_to_delete'] = {'path': content_file.path, 'sha': content_file.sha}; st.rerun()
                 if st.session_state.get('file_to_delete', {}).get('path') == content_file.path:
                     st.warning(f"Excluir `{content_file.path}`?"); btn_c1, btn_c2 = st.columns(2)
@@ -114,87 +118,70 @@ if selected_action == "Leitor de Dossiês":
                 else: st.warning("Formato antigo (.md)."); st.text(st.session_state.viewing_file_content)
             else: st.info("Selecione um dossiê (.yml) para uma visualização rica.")
 
-# --- PÁGINA "CARREGAR DOSSIÊ" COM O NOVO CONSTRUTOR DINÂMICO ---
+# --- PÁGINA "CARREGAR DOSSIÊ" COM FORMULÁRIOS INTELIGENTES ---
 elif selected_action == "Carregar Dossiê":
-    st.header("Construtor de Dossiês")
-    st.info("Adicione e preencha os componentes para montar seu dossiê passo a passo.")
+    st.header("Criar Novo Dossiê")
+    st.info("Selecione o tipo de dossiê para ver os campos específicos e preencha as informações.")
 
-    if 'components' not in st.session_state:
-        st.session_state.components = []
+    dossier_type = st.selectbox(
+        "**Qual tipo de dossiê você quer criar?**",
+        ["", "Dossiê de Liga", "Dossiê de Clube", "Briefing Pré-Jogo"],
+        key="dossier_type_selector"
+    )
 
-    with st.form("dossier_dynamic_form"):
-        st.markdown('<div class="form-card">', unsafe_allow_html=True)
-        st.subheader("1. Metadados Gerais")
-        c1, c2 = st.columns(2)
-        meta_title = c1.text_input("Título Principal do Painel", "PAINEL DE DOSSIÊS TÉCNICOS", key="meta_title")
-        meta_icon = c2.text_input("Ícone Principal", "Ex: [Taca]", key="meta_icon")
-        st.markdown('</div>', unsafe_allow_html=True)
+    if dossier_type == "Dossiê de Liga":
+        st.subheader("Template: Dossiê de Liga")
+        with st.form("liga_form"):
+            st.markdown('<div class="form-card">', unsafe_allow_html=True)
+            st.write("**Informações de Arquivo**")
+            c1, c2, c3 = st.columns(3)
+            pais = c1.text_input("País*", placeholder="Ex: Inglaterra")
+            liga = c2.text_input("Liga*", placeholder="Ex: Premier League")
+            temporada = c3.text_input("Temporada*", placeholder="Ex: 2025-26")
+            st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown('<div class="form-card">', unsafe_allow_html=True)
-        st.subheader("2. Seções de Conteúdo")
-        
-        # --- MELHORIA DE UI: BOTÕES DE ADICIONAR ESTÃO AQUI ---
-        st.write("Clique nos botões abaixo para adicionar seções ao seu dossiê:")
-        c1, c2, c3 = st.columns(3)
-        if c1.form_submit_button("➕ Adicionar Título de Seção"):
-            st.session_state.components.append({'tipo': 'titulo_secao', 'icone': '', 'texto': ''})
-            st.rerun()
-        if c2.form_submit_button("➕ Adicionar Subtítulo"):
-            st.session_state.components.append({'tipo': 'subtitulo_com_icone', 'icone': '', 'texto': ''})
-            st.rerun()
-        if c3.form_submit_button("➕ Adicionar Parágrafo/Lista"):
-            st.session_state.components.append({'tipo': 'paragrafo', 'texto': ''}) # Simplificado para um tipo por enquanto
-            st.rerun()
-        st.divider()
-        
-        # Renderiza os componentes que já foram adicionados
-        for i, comp in enumerate(st.session_state.components):
-            st.markdown(f"**Componente {i+1}: `{comp['tipo'].replace('_', ' ').title()}`**")
-            if comp['tipo'] == 'titulo_secao':
-                comp['icone'] = st.text_input("Ícone", value=comp.get('icone', ''), key=f"icon_{i}")
-                comp['texto'] = st.text_input("Texto do Título", value=comp.get('texto', ''), key=f"text_{i}")
-            elif comp['tipo'] == 'subtitulo_com_icone':
-                comp['icone'] = st.text_input("Ícone", value=comp.get('icone', ''), key=f"icon_{i}")
-                comp['texto'] = st.text_input("Texto do Subtítulo", value=comp.get('texto', ''), key=f"text_{i}")
-            elif comp['tipo'] == 'paragrafo':
-                comp['texto'] = st.text_area("Texto do Parágrafo ou Lista (um item por linha)", value=comp.get('texto', ''), key=f"text_{i}")
-            st.markdown("---")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        st.markdown('<div class="form-card">', unsafe_allow_html=True)
-        st.subheader("3. Informações para Salvar")
-        c1, c2, c3 = st.columns(3)
-        pais = c1.text_input("País*", placeholder="Ex: Inglaterra", key="pais")
-        liga = c2.text_input("Liga*", placeholder="Ex: Premier League", key="liga")
-        temporada = c3.text_input("Temporada*", placeholder="Ex: 2025-26", key="temporada")
-        st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('<div class="form-card">', unsafe_allow_html=True)
+            st.write("**Conteúdo do Dossiê** (um item por linha para listas)")
+            contexto = st.text_area("Contexto Geral da Liga")
+            formato = st.text_area("Formato da Competição (itens da lista)")
+            vagas = st.text_area("Vagas Continentais (itens da lista)")
+            tendencias = st.text_area("Tendências Táticas")
+            st.markdown('</div>', unsafe_allow_html=True)
 
-        if st.form_submit_button("💾 Gerar e Salvar Dossiê Final", type="primary", use_container_width=True):
-            if not all([pais, liga, temporada]):
-                st.error("Os campos País, Liga e Temporada são obrigatórios para salvar o arquivo.")
-            else:
-                final_components = []
-                for comp in st.session_state.components:
-                    # Lógica para converter o parágrafo de volta para lista se necessário
-                    if comp['tipo'] == 'paragrafo' and '\n' in comp['texto']:
-                        final_components.append({'tipo': 'lista_simples', 'itens': [item.strip() for item in comp['texto'].split('\n') if item.strip()]})
-                    else:
-                        final_components.append(comp)
-                
-                dossier_data = {'metadata': {'titulo_principal': meta_title, 'icone_principal': meta_icon}, 'componentes': final_components}
+            if st.form_submit_button("Gerar e Salvar Dossiê de Liga", type="primary", use_container_width=True):
+                # Lógica para construir o YAML a partir dos campos
+                dossier_data = {
+                    'metadata': {'titulo_principal': f"DOSSIÊ TÉCNICO: {liga.upper()}", 'icone_principal': "🏆"},
+                    'componentes': [
+                        {'tipo': 'titulo_secao', 'icone': '🌍', 'texto': f'{liga} — Análise Estrutural {temporada}'},
+                        {'tipo': 'subtitulo_com_icone', 'icone': '📖', 'texto': 'Contexto Geral'},
+                        {'tipo': 'paragrafo', 'texto': contexto},
+                        {'tipo': 'subtitulo_com_icone', 'icone': '📐', 'texto': 'Formato da Competição'},
+                        {'tipo': 'lista_simples', 'itens': [item.strip() for item in formato.split('\n') if item.strip()]},
+                        {'tipo': 'subtitulo_com_icone', 'icone': '✈️', 'texto': 'Vagas Continentais'},
+                        {'tipo': 'lista_simples', 'itens': [item.strip() for item in vagas.split('\n') if item.strip()]},
+                        {'tipo': 'subtitulo_com_icone', 'icone': '📈', 'texto': 'Tendências Táticas'},
+                        {'tipo': 'paragrafo', 'texto': tendencias},
+                    ]
+                }
                 yaml_string = yaml.dump(dossier_data, sort_keys=False, allow_unicode=True, indent=2)
                 
+                # Lógica para salvar o arquivo
                 liga_fmt = liga.replace(' ', '_'); pais_fmt = pais.replace(' ', '_'); file_name = f"Dossie_{liga_fmt}_{pais_fmt}.yml"
                 path_parts = [pais.replace(" ", "_"), liga.replace(" ", "_"), temporada]; full_path = "/".join(path_parts) + "/" + file_name
-                commit_message = f"Adiciona dossiê via construtor: {file_name}"
-                with st.spinner("Gerando e salvando arquivo YAML..."):
+                commit_message = f"Adiciona Dossiê de Liga: {file_name}"
+                with st.spinner("Gerando e salvando..."):
                     try:
                         repo.create_file(full_path, commit_message, yaml_string)
                         st.success(f"Dossiê '{full_path}' salvo com sucesso!")
                         st.code(yaml_string, language="yaml")
-                        st.session_state.components = [] # Limpa para o próximo
-                    except Exception as e: st.error(f"Ocorreu um erro ao salvar: {e}")
+                    except Exception as e: st.error(f"Ocorreu um erro: {e}")
+
+    elif dossier_type == "Dossiê de Clube":
+        st.warning("O template para 'Dossiê de Clube' ainda está em desenvolvimento.")
+
+    elif dossier_type == "Briefing Pré-Jogo":
+        st.warning("O template para 'Briefing Pré-Jogo' ainda está em desenvolvimento.")
 
 elif selected_action == "Gerar com IA":
     st.header("Gerar com IA"); st.info("Em desenvolvimento.")
