@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v12.1: Versão Definitiva com Leitor Robusto
+Painel de Inteligência Tática - v12.2: Correção de Layout e Estabilidade
 """
 
 import streamlit as st
@@ -11,11 +11,10 @@ import os
 from streamlit_option_menu import option_menu
 import yaml
 
-# --- 1. CONFIGURAÇÃO E ESTILOS (sem alterações) ---
+# --- 1. CONFIGURAÇÃO E ESTILOS ---
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
 def apply_custom_styling():
-    # O CSS da v12.0 é mantido, pois é a nossa referência de design.
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
@@ -32,11 +31,10 @@ def apply_custom_styling():
             .comp-simple-list li { margin-bottom: 0.7rem; color: #A0AEC0; font-size: 1.1rem; }
             .comp-simple-list li::before { content: "▪"; color: #63B3ED; margin-right: 12px; font-size: 1.2rem; }
             [data-testid="stSidebar"] { border-right: 1px solid #4A5568; }
-            .form-card { background-color: #2D3748; padding: 25px; border-radius: 12px; border: 1px solid #4A5568; margin-bottom: 25px; }
         </style>
     """, unsafe_allow_html=True)
 
-# --- 2. RENDERIZADOR E FUNÇÕES AUXILIARES (sem alterações) ---
+# --- 2. RENDERIZADOR E FUNÇÕES AUXILIARES ---
 def render_dossier_from_blueprint(data: dict):
     st.markdown('<div class="dossier-container">', unsafe_allow_html=True)
     if 'metadata' in data: meta = data['metadata']; st.markdown(f'<h1 class="comp-main-title"><span>{meta.get("icone_principal", "📄")}</span> {meta.get("titulo_principal", "Dossiê")}</h1>', unsafe_allow_html=True)
@@ -56,7 +54,7 @@ def check_password():
     if st.session_state.get("password_correct", False): return True
     _, center_col, _ = st.columns([1, 1, 1])
     with center_col:
-        st.title("Painel de Inteligência"); st.write(" ");
+        st.title("Painel de Inteligência"); st.write(" ")
         with st.container(border=True):
             st.subheader("Login de Acesso"); password = st.text_input("Senha de Acesso", type="password", key="password_input", label_visibility="collapsed", placeholder="Digite sua senha")
             if st.button("Acessar Painel", type="primary", use_container_width=True):
@@ -114,46 +112,40 @@ if selected_action == "Leitor de Dossiês":
             if st.session_state.get("viewing_file_content"):
                 file_name = st.session_state.get("viewing_file_name", "")
                 st.markdown(f"#### {file_name}"); st.divider()
-                
-                # --- MUDANÇA CENTRAL: O LEITOR INTELIGENTE E ROBUSTO ---
                 try:
-                    # Tenta ler o conteúdo como YAML
                     dossier_data = yaml.safe_load(st.session_state.viewing_file_content)
-                    # Se for bem-sucedido e for um dicionário, renderiza com o modelo novo
                     if isinstance(dossier_data, dict):
                         render_dossier_from_blueprint(dossier_data)
                     else:
-                        # Se o YAML for válido mas não for a estrutura esperada (ex: um arquivo só com texto)
-                        st.warning("⚠️ Formato Inesperado")
-                        st.info("O arquivo parece ser um YAML válido, mas não segue a estrutura de componentes do painel. Exibindo como texto.")
-                        st.code(st.session_state.viewing_file_content, language="yaml")
+                        st.warning("⚠️ Formato Inesperado"); st.code(st.session_state.viewing_file_content, language="yaml")
                 except yaml.YAMLError:
-                    # Se falhar a leitura do YAML (nosso caso do arquivo da Turquia)
-                    st.error("⚠️ Formato de Arquivo Inválido ou Corrompido")
-                    st.info("Este arquivo não pôde ser lido como um dossiê do novo sistema. Provavelmente foi criado com uma versão antiga do painel.")
-                    st.write("**Ação Recomendada:**")
-                    st.write("1. Exclua este arquivo antigo usando o botão (🗑️) no navegador de arquivos.")
-                    st.write("2. Crie o dossiê novamente usando o formulário inteligente na aba 'Carregar Dossiê'.")
-                    st.code(st.session_state.viewing_file_content, language="text") # Mostra o conteúdo bruto
-            else:
-                st.info("Selecione um dossiê para visualizar.")
+                    st.error("⚠️ Formato de Arquivo Inválido ou Corrompido"); st.info("Este arquivo não pôde ser lido."); st.code(st.session_state.viewing_file_content, language="text")
+            else: st.info("Selecione um dossiê para visualizar.")
 
 elif selected_action == "Carregar Dossiê":
-    # O código para "Carregar Dossiê" da v12.0 é mantido, pois é a solução robusta para a criação.
     st.header("Criar Novo Dossiê")
     st.info("Selecione o tipo de dossiê para ver os campos específicos e preencha as informações.")
+
     dossier_type_options = ["", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes", "D2 P1 - Análise Comparativa de Planteis", "D2 P2 - Estudo Técnico e Tático dos Clubes", "D3 - Análise Tática (Pós Rodada)", "D4 - Briefing Semanal (Pré Rodada)"]
     dossier_type = st.selectbox("**Qual tipo de dossiê você quer criar?**", dossier_type_options, key="dossier_type_selector")
 
+    # Template 1: Dossiê de Liga
     if dossier_type == "D1 P1 - Análise da Liga":
         st.subheader("Template: Análise da Liga")
+        # --- CÓDIGO CORRIGIDO: Linhas de st.markdown removidas ---
         with st.form("liga_form"):
-            st.markdown('<div class="form-card">', unsafe_allow_html=True)
-            st.write("**Informações de Arquivo**"); c1, c2, c3 = st.columns(3)
-            pais = c1.text_input("País*", key="pais_d1p1"); liga = c2.text_input("Liga*", key="liga_d1p1"); temporada = c3.text_input("Temporada*", key="temp_d1p1")
-            st.markdown('</div><div class="form-card">', unsafe_allow_html=True)
-            st.write("**Conteúdo do Dossiê**"); contexto = st.text_area("Contexto Geral da Liga"); formato = st.text_area("Formato da Competição (um item por linha)")
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.subheader("Informações de Arquivo")
+            c1, c2, c3 = st.columns(3)
+            pais = c1.text_input("País*", key="pais_d1p1"); 
+            liga = c2.text_input("Liga*", key="liga_d1p1"); 
+            temporada = c3.text_input("Temporada*", key="temp_d1p1")
+            
+            st.divider()
+
+            st.subheader("Conteúdo do Dossiê")
+            contexto = st.text_area("Contexto Geral da Liga")
+            formato = st.text_area("Formato da Competição (um item por linha)")
+            
             if st.form_submit_button("Gerar Dossiê", type="primary", use_container_width=True):
                 dossier_data = {
                     'metadata': {'titulo_principal': f"ANÁLISE DA LIGA: {liga.upper()}", 'icone_principal': "🏆"},
@@ -171,6 +163,7 @@ elif selected_action == "Carregar Dossiê":
                 with st.spinner("Salvando..."):
                     try: repo.create_file(full_path, f"Adiciona: {file_name}", yaml_string); st.success(f"Salvo com sucesso: {full_path}")
                     except Exception as e: st.error(f"Erro ao salvar: {e}")
+
     elif dossier_type:
         st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
 
