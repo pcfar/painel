@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v16.8: Alinhamento Definitivo de Listas e Intertítulos
+Painel de Inteligência Tática - v16.9: Alinhamento e Contraste Finais
 """
 
 import streamlit as st
@@ -24,7 +24,6 @@ def apply_custom_styling():
             .dossier-viewer { 
                 line-height: 1.7; 
                 font-size: 1.1rem; 
-                color: #F3F4F6;
             }
             .dossier-viewer h1 { 
                 font-size: 2.2rem; font-weight: 900; color: #FFFFFF; 
@@ -36,43 +35,28 @@ def apply_custom_styling():
                 padding-left: 1rem;
                 border-left: 4px solid #38BDF8;
             }
+            /* --- MUDANÇA: Estilo final para H3 (intertítulos) --- */
             .dossier-viewer h3 { 
-                font-size: 1.4rem; font-weight: 700; color: #FACC15;
+                font-size: 1.4rem; font-weight: 700; color: #FACC15; /* Cor amarela/gold */
                 margin-top: 2.5rem; margin-bottom: 1rem; 
             }
+            /* --- MUDANÇA: Cor do texto principal para branco --- */
             .dossier-viewer p { 
                 margin-bottom: 1rem; 
-                color: #F3F4F6;
-                padding-left: 0; 
-                text-indent: 0;
+                color: #FFFFFF; 
             }
             .dossier-viewer strong { 
-                color: #FACC15; /* Cor amarela/gold para todos os negritos */
-                font-weight: 700; /* Peso 700 para consistência */
-                text-shadow: none; /* Removido o glow para um look mais limpo */
+                color: #a5b4fc; 
+                font-weight: 900;
             }
-            
-            /* --- MUDANÇA CENTRAL: Novo sistema de listas para alinhamento perfeito --- */
-            .dossier-viewer ul { 
-                list-style-type: none; 
-                padding-left: 0; 
-                margin-top: 1rem; 
-            }
+            .dossier-viewer ul { list-style-type: none; padding-left: 0; margin-top: 1rem; }
+            /* --- MUDANÇA: Cor do texto da lista para branco --- */
             .dossier-viewer li { 
-                color: #F3F4F6;
-                margin-bottom: 1rem;
-                position: relative;      /* Cria o contexto para o marcador */
-                padding-left: 2em;       /* Cria espaço à esquerda para o marcador */
+                margin-bottom: 0.7rem; 
+                color: #FFFFFF; 
+                padding-left: 1.5em; text-indent: -1.5em; 
             }
-            .dossier-viewer li::before { 
-                content: "▪"; 
-                color: #63B3ED; 
-                position: absolute;      /* Posiciona o marcador no espaço criado */
-                left: 0;
-                top: 0.1em;              /* Ajuste fino da altura do marcador */
-                font-size: 1.2rem;
-            }
-
+            .dossier-viewer li::before { content: "▪"; color: #63B3ED; margin-right: 10px; font-size: 1.2rem; }
             .dossier-viewer hr { border: none; border-top: 2px solid #4A5568; margin: 3rem 0; }
             .dossier-viewer table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background-color: #2D3748; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); }
             .dossier-viewer th, .dossier-viewer td { padding: 1rem; text-align: left; font-size: 1rem; color: #F3F4F6; border-bottom: 1px solid #4A5568;}
