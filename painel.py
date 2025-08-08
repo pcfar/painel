@@ -16,7 +16,7 @@ import yaml
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
 def apply_custom_styling():
-    # O CSS da versão anterior é mantido, pois já está robusto.
+    """Aplica o design "Modo Tático" com o novo sistema de estilização de conteúdo."""
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
@@ -39,7 +39,6 @@ def apply_custom_styling():
     """, unsafe_allow_html=True)
 
 # --- 2. RENDERIZADOR E FUNÇÕES AUXILIARES ---
-# (As funções render_dossier_from_blueprint, get_github_repo, check_password, etc., permanecem as mesmas)
 def render_dossier_from_blueprint(data: dict):
     st.markdown('<div class="dossier-container">', unsafe_allow_html=True)
     if 'metadata' in data: meta = data['metadata']; st.markdown(f'<h1 class="comp-main-title"><span>{meta.get("icone_principal", "📄")}</span> {meta.get("titulo_principal", "Dossiê")}</h1>', unsafe_allow_html=True)
@@ -51,20 +50,23 @@ def render_dossier_from_blueprint(data: dict):
             elif tipo == 'paragrafo': st.markdown(f'<p class="comp-paragraph">{comp.get("texto", "")}</p>', unsafe_allow_html=True)
             elif tipo == 'lista_simples': list_items_html = "<div class='comp-simple-list'><ul>" + "".join([f"<li>{item}</li>" for item in comp.get('itens', [])]) + "</ul></div>"; st.markdown(list_items_html, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
+
 @st.cache_resource
 def get_github_repo():
     try: g = Github(st.secrets["GITHUB_TOKEN"]); repo_name = f"{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO_NAME']}"; return g.get_repo(repo_name)
     except Exception as e: st.error(f"Falha na conexão com o GitHub: {e}"); return None
+
 def check_password():
     if st.session_state.get("password_correct", False): return True
     c1, c2, c3 = st.columns([1,2,1])
-    with c2: st.title("🔐 Painel de Inteligência"); password = st.text_input("Senha de Acesso", type="password", key="password_input")
-    if st.button("Acessar Painel"):
-        if password == st.secrets.get("APP_PASSWORD"): st.session_state["password_correct"] = True; st.rerun()
-        else: st.error("😕 Senha incorreta.")
+    with c2:
+        st.title("🔐 Painel de Inteligência"); password = st.text_input("Senha de Acesso", type="password", key="password_input")
+        if st.button("Acessar Painel"):
+            if password == st.secrets.get("APP_PASSWORD"): st.session_state["password_correct"] = True; st.rerun()
+            else: st.error("😕 Senha incorreta.")
     return False
+
 def display_repo_structure(repo, path="", search_term="", show_actions=False):
-    # Esta função não precisa de mudanças
     try:
         contents = repo.get_contents(path); dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name); files = sorted([f for f in contents if f.type == 'file' and f.name.endswith(".yml")], key=lambda x: x.name)
         for content_dir in dirs:
@@ -75,8 +77,7 @@ def display_repo_structure(repo, path="", search_term="", show_actions=False):
                 c1, c2, c3 = st.columns([3, 1, 1])
                 if c1.button(f"📄 {content_file.name}", key=f"view_{content_file.path}", use_container_width=True):
                     file_content_raw = repo.get_contents(content_file.path).decoded_content.decode("utf-8"); st.session_state.update(viewing_file_content=file_content_raw, viewing_file_name=content_file.name)
-                # A lógica de edição precisará ser reconstruída para popular o novo formulário. Por enquanto, a removeremos para evitar erros.
-                if c2.button("✏️", key=f"edit_{content_file.path}", help="Editar (desabilitado nesta versão)"): st.warning("Edição será reimplementada em breve.")
+                if c2.button("✏️", key=f"edit_{content_file.path}", help="Editar (desabilitado nesta versão)"): st.warning("A edição será reimplementada no novo Assistente.")
                 if c3.button("🗑️", key=f"delete_{content_file.path}", help="Excluir este arquivo"): st.session_state['file_to_delete'] = {'path': content_file.path, 'sha': content_file.sha}; st.rerun()
                 if st.session_state.get('file_to_delete', {}).get('path') == content_file.path:
                     st.warning(f"Excluir `{content_file.path}`?"); btn_c1, btn_c2 = st.columns(2)
@@ -120,7 +121,6 @@ if selected_action == "Leitor de Dossiês":
                 else: st.warning("Formato antigo (.md)."); st.text(st.session_state.viewing_file_content)
             else: st.info("Selecione um dossiê (.yml) para uma visualização rica.")
 
-# --- PÁGINA "CARREGAR DOSSIÊ" TOTALMENTE RECONSTRUÍDA ---
 elif selected_action == "Carregar Dossiê":
     st.header("📤 Assistente de Criação de Dossiês")
     st.info("Preencha os campos abaixo. O sistema irá gerar o arquivo YAML formatado corretamente para você.")
@@ -176,12 +176,8 @@ elif selected_action == "Carregar Dossiê":
                         ]
                     }
                     
-                    # Converte o dicionário para uma string YAML
-                    # sort_keys=False mantém a ordem que definimos
-                    # allow_unicode=True preserva emojis e caracteres especiais
                     yaml_string = yaml.dump(dossier_data, sort_keys=False, allow_unicode=True, indent=2)
 
-                    # Lógica para salvar o arquivo no GitHub
                     liga_fmt = liga.replace(' ', '_'); pais_fmt = pais.replace(' ', '_')
                     file_name = f"Dossie_{liga_fmt}_{pais_fmt}.yml"
                     path_parts = [pais.replace(" ", "_"), liga.replace(" ", "_"), temporada]
