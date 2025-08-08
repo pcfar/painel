@@ -1,3 +1,4 @@
 streamlit
 pygithub
 streamlit-option-menu
+PyYAML
