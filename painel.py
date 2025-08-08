@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v5.1: Correção de Erro de Execução
+Painel de Inteligência Tática - v5.2: Correção de DuplicateElementId
 """
 
 import streamlit as st
@@ -67,131 +67,6 @@ def check_password():
             else: st.error("😕 Senha incorreta.")
     return False
 def parse_path_to_form(path):
-    # Esta função está correta e não precisa de alterações
-    pass
-def display_repo_structure(repo, path="", search_term="", show_actions=False):
-    # Esta função está correta e não precisa de alterações
-    pass
-
-# --- CÓDIGO PRINCIPAL DA APLICAÇÃO ---
-if not check_password(): st.stop()
-apply_custom_styling()
-repo = get_github_repo()
-
-with st.sidebar:
-    st.info(f"Autenticado. {datetime.now(tz=datetime.now().astimezone().tzinfo).strftime('%d/%m/%Y %H:%M')}")
-    default_action = st.session_state.get("selected_action", "Leitor de Dossiês"); default_index = ["Leitor de Dossiês", "Carregar Dossiê", "Gerar com IA"].index(default_action)
-    selected_action = option_menu(menu_title="Menu Principal", options=["Leitor de Dossiês", "Carregar Dossiê", "Gerar com IA"], icons=["book-half", "cloud-arrow-up-fill", "cpu-fill"], menu_icon="collection-play", default_index=default_index)
-    st.session_state.selected_action = selected_action
-
-st.title("⚽ Sistema de Inteligência Tática")
-
-if selected_action == "Leitor de Dossiês":
-    st.header("📖 Leitor de Dossiês"); st.text("Navegue, filtre e visualize todos os dossiês salvos no repositório.")
-    if repo:
-        col1, col2 = st.columns([1, 2], gap="large")
-        with col1:
-            st.subheader("Navegador do Repositório"); search_term = st.text_input("🔎 Filtrar...", label_visibility="collapsed", placeholder="🔎 Filtrar por nome do arquivo..."); st.divider()
-            # A função display_repo_structure será chamada aqui
-            # (O código completo da função está omitido para brevidade, mas deve ser o da versão anterior)
-        with col2:
-            st.subheader("Visualizador de Conteúdo")
-            if st.session_state.get("viewing_file_content"):
-                st.markdown(f"#### {st.session_state.viewing_file_name}"); st.divider()
-                formatted_html = format_dossier_to_html(st.session_state.viewing_file_content)
-                st.markdown(formatted_html, unsafe_allow_html=True)
-            else: st.info("Selecione um arquivo no navegador à esquerda para visualizá-lo aqui.")
-
-elif selected_action == "Carregar Dossiê":
-    # A linha "exec()" foi removida daqui.
-    # O código abaixo é a implementação correta para esta página.
-    is_edit_mode = st.session_state.get('edit_mode', False)
-    st.header("✏️ Editor de Dossiê" if is_edit_mode else "📤 Carregar Novo Dossiê")
-    if repo:
-        col_nav, col_form = st.columns([1, 2], gap="large")
-        with col_nav:
-            st.subheader("Estrutura Atual"); st.info("Use esta visualização para se guiar.")
-            # A função display_repo_structure será chamada aqui
-            # (O código completo da função está omitido para brevidade, mas deve ser o da versão anterior)
-        with col_form:
-            st.subheader("Formulário de Dados")
-            # O código do formulário st.form(...) permanece aqui
-            # (Omitido para brevidade)
-
-elif selected_action == "Gerar com IA":
-    st.header("🧠 Geração de Dossiês com IA"); st.info("Em desenvolvimento.")
-    tab1, tab2, tab3, tab4 = st.tabs(["Dossiê Liga", "Dossiê Clube", "Pós-Jogo", "Pré-Jogo"])
-    with tab1: st.write("...")
-    with tab2: st.write("...")
-    with tab3: st.write("...")
-    with tab4: st.write("...")
-
-# Para garantir que você tenha o código 100% funcional, vou colar abaixo a versão completa novamente,
-# sem nenhuma omissão.
-
-# --- CÓDIGO 100% COMPLETO E CORRIGIDO ---
-
-# -*- coding: utf-8 -*-
-import streamlit as st
-from github import Github, UnknownObjectException
-from datetime import datetime
-import base64
-import re
-import os
-from streamlit_option_menu import option_menu
-import yaml
-
-st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
-
-def apply_custom_styling():
-    st.markdown("""
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
-            body, .main { font-family: 'Roboto', sans-serif; }
-            .dossier-viewer { line-height: 1.9; font-size: 1.1rem; color: #E2E8F0; }
-            .dossier-viewer h1 { color: #63B3ED; font-size: 2.2rem; border-bottom: 2px solid #4A5568; padding-bottom: 10px; margin-bottom: 2rem; }
-            .dossier-viewer h3 { color: #FFFFFF; font-size: 1.6rem; margin-top: 2.5rem; margin-bottom: 1.5rem; }
-            .dossier-viewer p { margin-bottom: 0.5rem; }
-            .dossier-viewer strong { color: #a5b4fc; font-weight: 700; }
-            .dossier-viewer ul { list-style-type: none; padding-left: 0; }
-            .dossier-viewer li { padding-left: 1.5em; text-indent: -1.5em; margin-bottom: 0.7rem; }
-            .dossier-viewer li::before { content: "•"; color: #63B3ED; font-size: 1.5em; line-height: 1; vertical-align: middle; margin-right: 10px; }
-            .form-card { background-color: #2D3748; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.2); border: 1px solid #4A5568; margin-bottom: 25px; }
-            [data-testid="stSidebar"] { border-right: 1px solid #4A5568; }
-            .nav-link { border-radius: 8px; margin: 0px 5px 5px 5px; }
-        </style>
-    """, unsafe_allow_html=True)
-
-def format_dossier_to_html(content: str) -> str:
-    html_output = ["<div class='dossier-viewer'>"]; lines = content.split('\n'); in_list = False
-    for line in lines:
-        line = line.strip()
-        if not line: continue
-        if not line.startswith('•') and in_list: html_output.append("</ul>"); in_list = False
-        if line.lower().startswith("dossiê tático:") or line.lower().startswith("dossiê técnico-tático:"): html_output.append(f"<h1>{line}</h1>")
-        elif re.match(r'^\d+\.\s', line): html_output.append(f"<h3>{line}</h3>")
-        elif line.startswith('•'):
-            if not in_list: html_output.append("<ul>"); in_list = True
-            html_output.append(f"<li>{line.replace('•', '').strip()}</li>")
-        elif ':' in line: parts = line.split(':', 1); html_output.append(f"<p><strong>{parts[0].strip()}:</strong>{parts[1].strip()}</p>")
-        else: html_output.append(f"<p>{line}</p>")
-    if in_list: html_output.append("</ul>")
-    html_output.append("</div>"); return "".join(html_output)
-
-@st.cache_resource
-def get_github_repo():
-    try: g = Github(st.secrets["GITHUB_TOKEN"]); repo_name = f"{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO_NAME']}"; return g.get_repo(repo_name)
-    except Exception as e: st.error(f"Falha na conexão com o GitHub: {e}"); return None
-def check_password():
-    if st.session_state.get("password_correct", False): return True
-    c1, c2, c3 = st.columns([1,2,1]);
-    with c2:
-        st.title("🔐 Painel de Inteligência"); password = st.text_input("Senha de Acesso", type="password", key="password_input")
-        if st.button("Acessar Painel"):
-            if password == st.secrets.get("APP_PASSWORD"): st.session_state["password_correct"] = True; st.rerun()
-            else: st.error("😕 Senha incorreta.")
-    return False
-def parse_path_to_form(path):
     try:
         parts = [p for p in path.split('/') if p]; file_name = parts[-1]
         for key in ['pais', 'liga', 'temporada', 'clube', 'rodada', 'tipo_dossie']:
@@ -230,6 +105,7 @@ def display_repo_structure(repo, path="", search_term="", show_actions=False):
             else: st.markdown(f"📄 `{content_file.name}`")
     except Exception as e: st.error(f"Erro ao listar arquivos em '{path}': {e}")
 
+# --- CÓDIGO PRINCIPAL DA APLICAÇÃO ---
 if not check_password(): st.stop()
 apply_custom_styling()
 repo = get_github_repo()
@@ -237,7 +113,16 @@ repo = get_github_repo()
 with st.sidebar:
     st.info(f"Autenticado. {datetime.now(tz=datetime.now().astimezone().tzinfo).strftime('%d/%m/%Y %H:%M')}")
     default_action = st.session_state.get("selected_action", "Leitor de Dossiês"); default_index = ["Leitor de Dossiês", "Carregar Dossiê", "Gerar com IA"].index(default_action)
-    selected_action = option_menu(menu_title="Menu Principal", options=["Leitor de Dossiês", "Carregar Dossiê", "Gerar com IA"], icons=["book-half", "cloud-arrow-up-fill", "cpu-fill"], menu_icon="collection-play", default_index=default_index)
+    
+    # Adicionando a 'key' para resolver o erro de ID duplicado
+    selected_action = option_menu(
+        menu_title="Menu Principal", 
+        options=["Leitor de Dossiês", "Carregar Dossiê", "Gerar com IA"], 
+        icons=["book-half", "cloud-arrow-up-fill", "cpu-fill"], 
+        menu_icon="collection-play", 
+        default_index=default_index,
+        key="main_menu"  # LINHA ADICIONADA
+    )
     st.session_state.selected_action = selected_action
 
 st.title("⚽ Sistema de Inteligência Tática")
