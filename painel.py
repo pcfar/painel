@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v16.0: Versão Estável e Definitiva
+Painel de Inteligência Tática - v16.1: Correção na Função Salvar
 """
 
 import streamlit as st
@@ -57,8 +57,7 @@ def check_password():
     with center_col:
         st.title("Painel de Inteligência"); st.write(" ")
         with st.container(border=True):
-            st.subheader("Login de Acesso")
-            password = st.text_input("Senha de Acesso", type="password", key="password_input", label_visibility="collapsed", placeholder="Digite sua senha")
+            st.subheader("Login de Acesso"); password = st.text_input("Senha de Acesso", type="password", key="password_input", label_visibility="collapsed", placeholder="Digite sua senha")
             if st.button("Acessar Painel", type="primary", use_container_width=True):
                 with st.spinner("Verificando..."):
                     if password == st.secrets.get("APP_PASSWORD"):
@@ -109,6 +108,26 @@ def display_repo_structure(repo, path=""):
     except Exception as e:
         st.error(f"Erro ao listar arquivos: {e}")
 
+# --- FUNÇÃO DE SALVAR CORRIGIDA ---
+def save_dossier(repo, file_name_template: str, format_dict: dict, path_parts: list, content: str, required_fields: list):
+    if not all(required_fields):
+        st.error("Todos os campos marcados com * são obrigatórios.")
+        return
+
+    # Cria o nome do arquivo usando apenas o dicionário fornecido
+    cleaned_format_dict = {k: v.replace(' ', '_') for k, v in format_dict.items()}
+    file_name = file_name_template.format(**cleaned_format_dict) + ".md"
+    
+    full_path = "/".join([p.replace(" ", "_") for p in path_parts]) + "/" + file_name
+    commit_message = f"Adiciona: {file_name}"
+    
+    with st.spinner("Salvando dossiê..."):
+        try:
+            repo.create_file(full_path, commit_message, content)
+            st.success(f"Dossiê '{full_path}' salvo com sucesso!")
+        except Exception as e:
+            st.error(f"Ocorreu um erro ao salvar: {e}")
+            st.info("Verifique se um arquivo com este nome já não existe.")
 
 # --- CÓDIGO PRINCIPAL DA APLICAÇÃO ---
 if not check_password(): st.stop()
@@ -164,23 +183,6 @@ elif selected_action == "Carregar Dossiê":
     
     help_text_md = "Guia Rápido de Formatação:\n- Título: # Título\n- Subtítulo: ## Subtítulo\n- Listas: - Item da lista\n- Destaque: **texto**"
 
-    def save_dossier(file_name_template: str, path_parts: list, content: str, required_fields: list):
-        if not all(required_fields):
-            st.error("Todos os campos marcados com * são obrigatórios.")
-            return
-
-        file_name = file_name_template.format(**{k: v.replace(' ', '_') for k, v in st.session_state.items()}) + ".md"
-        full_path = "/".join([p.replace(" ", "_") for p in path_parts]) + "/" + file_name
-        commit_message = f"Adiciona: {file_name}"
-        
-        with st.spinner("Salvando dossiê..."):
-            try:
-                repo.create_file(full_path, commit_message, content)
-                st.success(f"Dossiê '{full_path}' salvo com sucesso!")
-            except Exception as e:
-                st.error(f"Ocorreu um erro ao salvar: {e}")
-                st.info("Verifique se um arquivo com este nome já não existe.")
-
     if dossier_type == "D1 P1 - Análise da Liga":
         with st.form("d1_p1_form", clear_on_submit=True):
             st.subheader("Template: Análise da Liga")
@@ -190,8 +192,9 @@ elif selected_action == "Carregar Dossiê":
             temporada = c3.text_input("Temporada*")
             conteudo = st.text_area("Resumo (Conteúdo do Dossiê)*", height=300, help=help_text_md)
             if st.form_submit_button("Salvar Dossiê", type="primary"):
-                st.session_state.liga = liga; st.session_state.pais = pais
-                save_dossier("D1P1_Analise_Liga_{liga}_{pais}", [pais, liga, temporada], conteudo, [pais, liga, temporada, conteudo])
+                # Passa apenas as variáveis necessárias para a função
+                format_data = {"liga": liga, "pais": pais}
+                save_dossier(repo, "D1P1_Analise_Liga_{liga}_{pais}", format_data, [pais, liga, temporada], conteudo, [pais, liga, temporada, conteudo])
 
     elif dossier_type == "D1 P2 - Análise dos Clubes Dominantes da Liga":
         with st.form("d1_p2_form", clear_on_submit=True):
@@ -202,9 +205,9 @@ elif selected_action == "Carregar Dossiê":
             temporada = c3.text_input("Temporada*")
             conteudo = st.text_area("Resumo (Conteúdo da Análise)*", height=300, help=help_text_md)
             if st.form_submit_button("Salvar Dossiê", type="primary"):
-                st.session_state.liga = liga; st.session_state.pais = pais
-                save_dossier("D1P2_Clubes_Dominantes_{liga}_{pais}", [pais, liga, temporada], conteudo, [pais, liga, temporada, conteudo])
-
+                format_data = {"liga": liga, "pais": pais}
+                save_dossier(repo, "D1P2_Clubes_Dominantes_{liga}_{pais}", format_data, [pais, liga, temporada], conteudo, [pais, liga, temporada, conteudo])
+    
     elif dossier_type:
         st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
 
