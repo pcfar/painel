@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v12.6: Lógica de Salvar/Atualizar Robusta
+Painel de Inteligência Tática - v12.5: Destaque para Subtítulos de Itens
 """
 
 import streamlit as st
@@ -12,52 +12,94 @@ import os
 from streamlit_option_menu import option_menu
 import yaml
 
-# --- 1. CONFIGURAÇÃO E ESTILOS (sem alterações) ---
+# --- 1. CONFIGURAÇÃO E ESTILOS ---
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
+
 def apply_custom_styling():
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
             body, .main { font-family: 'Roboto', sans-serif; }
             .dossier-container { padding: 0 1rem; }
+            
             .comp-main-title { font-size: 1.8rem; font-weight: 900; color: #E2E8F0; margin-bottom: 2rem; }
             .comp-main-title span { vertical-align: middle; font-size: 2.5rem; margin-right: 15px; }
+
             .comp-section-title { font-size: 1.5rem; font-weight: 700; text-transform: uppercase; color: #FFFFFF; margin-top: 3rem; margin-bottom: 1.5rem; }
             .comp-section-title span { vertical-align: middle; font-size: 1.2rem; margin-right: 12px; }
+
             .comp-subtitle-icon { font-size: 1.2rem; font-weight: 700; color: #E2E8F0; margin-top: 2rem; margin-bottom: 1rem; }
             .comp-subtitle-icon span { vertical-align: middle; margin-right: 10px; }
+
+            /* --- NOVO ESTILO AQUI --- */
+            .comp-item-subtitle {
+                font-size: 1.1rem;
+                font-weight: 700;
+                color: #a5b4fc; /* Cor roxa de destaque */
+                margin-top: 1.5rem;
+                margin-bottom: 0.5rem;
+            }
+
             .comp-paragraph { font-size: 1.1rem; color: #A0AEC0; line-height: 1.9; margin-bottom: 1rem; white-space: pre-wrap; }
+            
             .comp-simple-list ul { list-style-type: none; padding-left: 1rem; margin-top: 1rem; }
             .comp-simple-list li { margin-bottom: 0.7rem; color: #A0AEC0; font-size: 1.1rem; }
-            .comp-simple-list li::before { content: "▪"; color: #63B3ED; margin-right: 12px; font-size: 1.2rem; }
+            .comp-simple-list li::before { content: "•"; color: #63B3ED; margin-right: 12px; font-size: 1.2rem; }
+            
             [data-testid="stSidebar"] { border-right: 1px solid #4A5568; }
         </style>
     """, unsafe_allow_html=True)
 
-# --- 2. RENDERIZADOR E FUNÇÕES AUXILIARES (sem alterações) ---
+# --- 2. RENDERIZADOR E FUNÇÕES AUXILIARES ---
 def render_dossier_from_blueprint(data: dict):
     st.markdown('<div class="dossier-container">', unsafe_allow_html=True)
     if 'metadata' in data: meta = data['metadata']; st.markdown(f'<h1 class="comp-main-title"><span>{meta.get("icone_principal", "📄")}</span> {meta.get("titulo_principal", "Dossiê")}</h1>', unsafe_allow_html=True)
     if 'componentes' in data:
         for comp in data['componentes']:
-            tipo = comp.get('tipo');
+            tipo = comp.get('tipo')
             if tipo == 'titulo_secao': st.markdown(f'<h2 class="comp-section-title"><span>{comp.get("icone", "■")}</span>{comp.get("texto", "")}</h2>', unsafe_allow_html=True)
             elif tipo == 'subtitulo_com_icone': st.markdown(f'<h3 class="comp-subtitle-icon"><span>{comp.get("icone", "•")}</span>{comp.get("texto", "")}</h3>', unsafe_allow_html=True)
+            # --- NOVA LÓGICA AQUI ---
+            elif tipo == 'sub_item_titulo': st.markdown(f'<p class="comp-item-subtitle">{comp.get("texto", "")}</p>', unsafe_allow_html=True)
             elif tipo == 'paragrafo': st.markdown(f'<p class="comp-paragraph">{comp.get("texto", "")}</p>', unsafe_allow_html=True)
             elif tipo == 'lista_simples': list_items_html = "<div class='comp-simple-list'><ul>" + "".join([f"<li>{item}</li>" for item in comp.get('itens', [])]) + "</ul></div>"; st.markdown(list_items_html, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
+
 def parse_text_to_components(text_content: str) -> list:
     components = []; current_list_items = []; icon_map = {"1": "1️⃣", "2": "2️⃣", "3": "3️⃣", "4": "4️⃣", "5": "5️⃣"}
     def flush_list():
         if current_list_items: components.append({'tipo': 'lista_simples', 'itens': current_list_items.copy()}); current_list_items.clear()
+    
     for line in text_content.split('\n'):
-        line = line.strip();
+        line = line.strip()
         if not line: continue
+
         match = re.match(r'^(\d+)\.\s(.+)', line)
-        if match: flush_list(); num, text = match.groups(); icon = icon_map.get(num, '•'); components.append({'tipo': 'subtitulo_com_icone', 'icone': icon, 'texto': text}); continue
-        if line.startswith('• ') or line.startswith('- '): current_list_items.append(line[2:].strip()); continue
-        flush_list(); components.append({'tipo': 'paragrafo', 'texto': line})
-    flush_list(); return components
+
+        # --- NOVA REGRA AQUI ---
+        if line.strip().endswith(':') and not match:
+            flush_list()
+            components.append({'tipo': 'sub_item_titulo', 'texto': line})
+            continue
+        
+        if match:
+            flush_list()
+            num, text = match.groups()
+            icon = icon_map.get(num, '•')
+            components.append({'tipo': 'subtitulo_com_icone', 'icone': icon, 'texto': text})
+            continue
+        
+        if line.startswith('• ') or line.startswith('- '):
+            if not current_list_items: flush_list()
+            current_list_items.append(line[2:].strip())
+            continue
+        
+        flush_list()
+        components.append({'tipo': 'paragrafo', 'texto': line})
+
+    flush_list()
+    return components
+
 @st.cache_resource
 def get_github_repo():
     try: g = Github(st.secrets["GITHUB_TOKEN"]); repo_name = f"{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO_NAME']}"; return g.get_repo(repo_name)
@@ -143,7 +185,8 @@ elif selected_action == "Carregar Dossiê":
             st.subheader("Informações de Arquivo")
             c1, c2, c3 = st.columns(3); pais = c1.text_input("País*", key="pais"); liga = c2.text_input("Liga*", key="liga"); temporada = c3.text_input("Temporada*", key="temporada")
             st.divider(); st.subheader("Conteúdo do Dossiê")
-            conteudo = st.text_area("Cole aqui a análise completa", height=400, key="conteudo", help="O sistema irá formatar automaticamente títulos (Ex: '1. Título') e listas (Ex: '• Item').")
+            conteudo = st.text_area("Cole aqui a análise completa", height=400, key="conteudo", help="Para destacar um subtítulo, termine a linha com ':'")
+            
             if st.form_submit_button("Gerar e Salvar Dossiê", type="primary", use_container_width=True):
                 if not all([pais, liga, temporada, conteudo]):
                     st.error("Todos os campos * são obrigatórios.")
@@ -156,30 +199,15 @@ elif selected_action == "Carregar Dossiê":
                     yaml_string = yaml.dump(dossier_data, sort_keys=False, allow_unicode=True, indent=2)
                     file_name = f"D1P1_Analise_Liga_{liga.replace(' ', '_')}_{pais.replace(' ', '_')}.yml"
                     path_parts = [pais, liga, temporada]; full_path = "/".join(p.replace(" ", "_") for p in path_parts) + "/" + file_name
-                    
-                    # --- MUDANÇA CENTRAL: LÓGICA DE SALVAR/ATUALIZAR ---
                     with st.spinner("Verificando e salvando no GitHub..."):
                         try:
-                            # Tenta obter o arquivo primeiro para ver se ele existe
                             existing_file = repo.get_contents(full_path)
-                            # Se bem-sucedido, o arquivo existe, então o atualizamos
-                            repo.update_file(
-                                existing_file.path,
-                                f"Atualiza dossiê: {file_name}",
-                                yaml_string,
-                                existing_file.sha
-                            )
+                            repo.update_file(existing_file.path, f"Atualiza dossiê: {file_name}", yaml_string, existing_file.sha)
                             st.success(f"Dossiê '{full_path}' ATUALIZADO com sucesso!")
                         except UnknownObjectException:
-                            # Se o arquivo não for encontrado (erro 404), ele não existe, então o criamos
-                            repo.create_file(
-                                full_path,
-                                f"Adiciona dossiê: {file_name}",
-                                yaml_string
-                            )
+                            repo.create_file(full_path, f"Adiciona dossiê: {file_name}", yaml_string)
                             st.success(f"Dossiê '{full_path}' CRIADO com sucesso!")
                         except Exception as e:
-                            # Captura quaisquer outros erros
                             st.error(f"Ocorreu um erro inesperado: {e}")
 
     elif dossier_type:
