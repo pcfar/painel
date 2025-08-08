@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v9.2: Formulários Simplificados e Intuitivos
+Painel de Inteligência Tática - v10.0: Foco na Simplicidade e Liberdade de Edição
 """
 
 import streamlit as st
@@ -12,43 +12,68 @@ import os
 from streamlit_option_menu import option_menu
 import yaml
 
-# --- 1. CONFIGURAÇÃO E ESTILOS (sem alterações) ---
+# --- 1. CONFIGURAÇÃO E ESTILOS ---
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
 def apply_custom_styling():
-    # O CSS da versão anterior é mantido, pois já está robusto.
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
             body, .main { font-family: 'Roboto', sans-serif; }
-            .dossier-container { padding: 0 1rem; }
-            .comp-main-title { font-size: 1.8rem; font-weight: 900; color: #E2E8F0; margin-bottom: 2rem; }
-            .comp-main-title span { vertical-align: middle; font-size: 2.5rem; margin-right: 15px; }
-            .comp-section-title { font-size: 1.5rem; font-weight: 700; text-transform: uppercase; color: #FFFFFF; margin-top: 3rem; margin-bottom: 1.5rem; }
-            .comp-section-title span { vertical-align: middle; font-size: 1.2rem; margin-right: 12px; }
-            .comp-subtitle-icon { font-size: 1.2rem; font-weight: 700; color: #E2E8F0; margin-top: 2rem; margin-bottom: 1rem; }
-            .comp-subtitle-icon span { vertical-align: middle; margin-right: 10px; }
-            .comp-paragraph { font-size: 1.1rem; color: #A0AEC0; line-height: 1.9; margin-bottom: 1rem; }
-            .comp-simple-list ul { list-style-type: none; padding-left: 1rem; margin-top: 1rem; }
-            .comp-simple-list li { margin-bottom: 0.7rem; color: #A0AEC0; font-size: 1.1rem; }
-            .comp-simple-list li::before { content: "•"; color: #63B3ED; margin-right: 12px; font-size: 1.2rem; }
+            
+            /* CSS para o renderizador de Markdown (format_dossier_to_html) */
+            .dossier-viewer { line-height: 1.9; font-size: 1.1rem; color: #E2E8F0; }
+            .dossier-viewer h1 { color: #63B3ED; font-size: 2.2rem; border-bottom: 2px solid #4A5568; padding-bottom: 10px; margin-bottom: 2rem; }
+            .dossier-viewer h3 { color: #FFFFFF; font-size: 1.6rem; margin-top: 2.5rem; margin-bottom: 1.5rem; }
+            .dossier-viewer p { margin-bottom: 0.5rem; }
+            .dossier-viewer strong { color: #a5b4fc; font-weight: 700; }
+            .dossier-viewer ul { list-style-type: none; padding-left: 0; }
+            .dossier-viewer li { padding-left: 1.5em; text-indent: -1.5em; margin-bottom: 0.7rem; }
+            .dossier-viewer li::before { content: "•"; color: #63B3ED; font-size: 1.5em; line-height: 1; vertical-align: middle; margin-right: 10px; }
+            
+            /* Estilos gerais do painel */
             [data-testid="stSidebar"] { border-right: 1px solid #4A5568; }
             .nav-link { border-radius: 8px; margin: 0px 5px 5px 5px; }
         </style>
     """, unsafe_allow_html=True)
 
-# --- 2. RENDERIZADOR E FUNÇÕES AUXILIARES (sem alterações) ---
+# --- 2. RENDERIZADORES E FUNÇÕES AUXILIARES ---
+def format_dossier_to_html(content: str) -> str:
+    """Converte o texto bruto (pseudo-markdown) de um dossiê em HTML estilizado."""
+    html_output = ["<div class'dossier-viewer'>"]
+    lines = content.split('\n')
+    in_list = False
+    for line in lines:
+        line = line.strip()
+        if not line: continue
+        if not line.startswith('•') and not line.startswith('- ') and in_list: html_output.append("</ul>"); in_list = False
+        
+        if line.lower().startswith("dossiê tático:") or line.lower().startswith("dossiê técnico-tático:"): html_output.append(f"<h1>{line}</h1>")
+        elif re.match(r'^\d+\.\s', line): html_output.append(f"<h3>{line}</h3>")
+        elif line.startswith('• ') or line.startswith('- '):
+            if not in_list: html_output.append("<ul>"); in_list = True
+            html_output.append(f"<li>{line[2:]}</li>") # Remove o marcador
+        elif ':' in line:
+            parts = line.split(':', 1)
+            html_output.append(f"<p><strong>{parts[0].strip()}:</strong>{parts[1].strip()}</p>")
+        else: html_output.append(f"<p>{line}</p>")
+    if in_list: html_output.append("</ul>")
+    html_output.append("</div>"); return "".join(html_output)
+
 def render_dossier_from_blueprint(data: dict):
+    # Esta função será mantida para compatibilidade com arquivos .yml antigos.
     st.markdown('<div class="dossier-container">', unsafe_allow_html=True)
     if 'metadata' in data: meta = data['metadata']; st.markdown(f'<h1 class="comp-main-title"><span>{meta.get("icone_principal", "[i]")}</span> {meta.get("titulo_principal", "Dossiê")}</h1>', unsafe_allow_html=True)
     if 'componentes' in data:
         for comp in data['componentes']:
-            tipo = comp.get('tipo')
+            tipo = comp.get('tipo');
             if tipo == 'titulo_secao': st.markdown(f'<h2 class="comp-section-title"><span>{comp.get("icone", "■")}</span>{comp.get("texto", "")}</h2>', unsafe_allow_html=True)
             elif tipo == 'subtitulo_com_icone': st.markdown(f'<h3 class="comp-subtitle-icon"><span>{comp.get("icone", "•")}</span>{comp.get("texto", "")}</h3>', unsafe_allow_html=True)
             elif tipo == 'paragrafo': st.markdown(f'<p class="comp-paragraph">{comp.get("texto", "")}</p>', unsafe_allow_html=True)
             elif tipo == 'lista_simples': list_items_html = "<div class='comp-simple-list'><ul>" + "".join([f"<li>{item}</li>" for item in comp.get('itens', [])]) + "</ul></div>"; st.markdown(list_items_html, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
+
+# (O restante das funções auxiliares como get_github_repo, check_password, etc., permanecem as mesmas)
 @st.cache_resource
 def get_github_repo():
     try: g = Github(st.secrets["GITHUB_TOKEN"]); repo_name = f"{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO_NAME']}"; return g.get_repo(repo_name)
@@ -64,7 +89,7 @@ def check_password():
     return False
 def display_repo_structure(repo, path="", search_term="", show_actions=False):
     try:
-        contents = repo.get_contents(path); dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name); files = sorted([f for f in contents if f.type == 'file' and f.name.endswith(".yml")], key=lambda x: x.name)
+        contents = repo.get_contents(path); dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name); files = sorted([f for f in contents if f.type == 'file' and (f.name.endswith(".yml") or f.name.endswith(".md"))], key=lambda x: x.name)
         for content_dir in dirs:
             with st.expander(f"[Pasta] {content_dir.name}"): display_repo_structure(repo, content_dir.path, search_term, show_actions)
         if search_term: files = [f for f in files if search_term.lower() in f.name.lower()]
@@ -110,29 +135,26 @@ if selected_action == "Leitor de Dossiês":
             if st.session_state.get("viewing_file_content"):
                 file_name = st.session_state.get("viewing_file_name", "")
                 st.markdown(f"#### {file_name}"); st.divider()
+                # ROTA DE RENDERIZAÇÃO
                 if file_name.endswith(".yml"):
                     try: dossier_data = yaml.safe_load(st.session_state.viewing_file_content); render_dossier_from_blueprint(dossier_data)
                     except yaml.YAMLError as e: st.error(f"Erro ao ler o arquivo YAML: {e}"); st.code(st.session_state.viewing_file_content)
-                else: st.warning("Formato antigo (.md)."); st.text(st.session_state.viewing_file_content)
-            else: st.info("Selecione um dossiê (.yml) para uma visualização rica.")
+                else: # Rota principal para arquivos .md
+                    formatted_html = format_dossier_to_html(st.session_state.viewing_file_content)
+                    st.markdown(formatted_html, unsafe_allow_html=True)
+            else: st.info("Selecione um arquivo para visualizar.")
 
-# --- PÁGINA "CARREGAR DOSSIÊ" COM FORMULÁRIOS INTELIGENTES E SIMPLIFICADOS ---
+# --- PÁGINA "CARREGAR DOSSIÊ" COM O MODELO SIMPLIFICADO ---
 elif selected_action == "Carregar Dossiê":
     st.header("Criar Novo Dossiê")
-    st.info("Selecione o tipo de dossiê para ver os campos específicos e preencha as informações.")
+    st.info("Selecione o tipo de dossiê, preencha as informações e cole o conteúdo no campo principal.")
 
-    dossier_type_options = [
-        "", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes da Liga",
-        "D2 P1 - Análise Comparativa de Planteis", "D2 P2 - Estudo Técnico e Tático dos Clubes",
-        "D3 - Análise Tática (Pós Rodada)", "D4 - Briefing Semanal (Pré Rodada)"
-    ]
+    dossier_type_options = ["", "Análise de Liga", "Análise de Clube", "Briefing Pré-Jogo"]
     dossier_type = st.selectbox("**Qual tipo de dossiê você quer criar?**", dossier_type_options, key="dossier_type_selector")
 
-    # --- MUDANÇA AQUI: NOVO FORMULÁRIO SIMPLIFICADO PARA "ANÁLISE DE LIGA" ---
-    if dossier_type == "D1 P1 - Análise da Liga":
-        st.subheader("Template: Análise da Liga")
+    if dossier_type == "Análise de Liga":
+        st.subheader("Template: Análise de Liga")
         with st.form("liga_form_simplified"):
-            
             st.subheader("Informações de Arquivo")
             c1, c2, c3 = st.columns(3)
             pais = c1.text_input("País*", placeholder="Ex: Inglaterra")
@@ -141,53 +163,32 @@ elif selected_action == "Carregar Dossiê":
             st.divider()
 
             st.subheader("Conteúdo do Dossiê")
-            contexto = st.text_area("Contexto Geral da Liga", placeholder="Descreva aqui as características gerais da competição...")
-            
-            formato = st.text_area(
-                "Formato da Competição",
-                placeholder="Ex:\n20 clubes disputando turno e returno\n3 são rebaixados diretamente",
-                help="Digite cada ponto em uma nova linha. Cada linha se tornará um item na lista do dossiê final."
-            )
-            
-            vagas = st.text_area(
-                "Vagas Continentais",
-                placeholder="Ex:\nTop 4: Vaga direta para a UEFA Champions League",
-                help="Digite cada ponto em uma nova linha. Cada linha se tornará um item na lista."
+            conteudo = st.text_area(
+                "Cole aqui o resumo completo do seu dossiê",
+                height=400,
+                help="Guia Rápido de Formatação:\n- Título Principal: Comece com 'Dossiê Técnico-Tático:'\n- Seções: Comece com '1. Nome da Seção', '2. Outra Seção'\n- Listas: Comece cada item com '• ' ou '- '\n- Destaques: Use 'Palavra-chave: Descrição'"
             )
 
-            tendencias = st.text_area("Tendências Táticas", placeholder="Descreva os estilos de jogo, formações e tendências táticas predominantes na liga.")
+            if st.form_submit_button("Salvar Dossiê de Liga", type="primary", use_container_width=True):
+                if not all([pais, liga, temporada, conteudo]):
+                    st.error("Todos os campos marcados com * são obrigatórios.")
+                else:
+                    # Lógica de salvamento para arquivo .md
+                    liga_fmt = liga.replace(' ', '_'); pais_fmt = pais.replace(' ', '_');
+                    file_name = f"Dossie_{liga_fmt}_{pais_fmt}.md" # Salva como .md
+                    path_parts = [pais.replace(" ", "_"), liga.replace(" ", "_"), temporada];
+                    full_path = "/".join(path_parts) + "/" + file_name
+                    commit_message = f"Adiciona Dossiê de Liga: {file_name}"
 
-            if st.form_submit_button("Gerar e Salvar Dossiê de Liga", type="primary", use_container_width=True):
-                # Lógica para construir o YAML a partir dos campos
-                dossier_data = {
-                    'metadata': {'titulo_principal': f"DOSSIÊ TÉCNICO: {liga.upper()}", 'icone_principal': "🏆"},
-                    'componentes': [
-                        {'tipo': 'titulo_secao', 'icone': '🌍', 'texto': f'{liga} — Análise Estrutural {temporada}'},
-                        {'tipo': 'subtitulo_com_icone', 'icone': '📖', 'texto': 'Contexto Geral'},
-                        {'tipo': 'paragrafo', 'texto': contexto},
-                        {'tipo': 'subtitulo_com_icone', 'icone': '📐', 'texto': 'Formato da Competição'},
-                        {'tipo': 'lista_simples', 'itens': [item.strip() for item in formato.split('\n') if item.strip()]},
-                        {'tipo': 'subtitulo_com_icone', 'icone': '✈️', 'texto': 'Vagas Continentais'},
-                        {'tipo': 'lista_simples', 'itens': [item.strip() for item in vagas.split('\n') if item.strip()]},
-                        {'tipo': 'subtitulo_com_icone', 'icone': '📈', 'texto': 'Tendências Táticas'},
-                        {'tipo': 'paragrafo', 'texto': tendencias},
-                    ]
-                }
-                yaml_string = yaml.dump(dossier_data, sort_keys=False, allow_unicode=True, indent=2)
-                
-                liga_fmt = liga.replace(' ', '_'); pais_fmt = pais.replace(' ', '_'); file_name = f"D1P1_Analise_Liga_{liga_fmt}_{pais_fmt}.yml"
-                path_parts = [pais.replace(" ", "_"), liga.replace(" ", "_"), temporada]; full_path = "/".join(path_parts) + "/" + file_name
-                commit_message = f"Adiciona Dossiê de Liga: {file_name}"
-                with st.spinner("Gerando e salvando..."):
-                    try:
-                        repo.create_file(full_path, commit_message, yaml_string)
-                        st.success(f"Dossiê '{full_path}' salvo com sucesso!")
-                        st.code(yaml_string, language="yaml")
-                    except Exception as e: st.error(f"Ocorreu um erro: {e}")
-
-    # Outros tipos de dossiê permanecem como placeholders por enquanto
-    elif dossier_type and dossier_type != "D1 P1 - Análise da Liga":
-        st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
+                    with st.spinner("Salvando dossiê..."):
+                        try:
+                            repo.create_file(full_path, commit_message, conteudo)
+                            st.success(f"Dossiê '{full_path}' salvo com sucesso!")
+                        except Exception as e:
+                            st.error(f"Ocorreu um erro ao salvar: {e}")
+    
+    elif dossier_type:
+        st.warning(f"O template simplificado para '{dossier_type}' ainda está em desenvolvimento.")
 
 elif selected_action == "Gerar com IA":
     st.header("Gerar com IA"); st.info("Em desenvolvimento.")
