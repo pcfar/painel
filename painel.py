@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v12.0: Versão Definitiva e Estável (Formulários Inteligentes)
+Painel de Inteligência Tática - v12.1: Versão Definitiva com Leitor Robusto
 """
 
 import streamlit as st
@@ -11,10 +11,11 @@ import os
 from streamlit_option_menu import option_menu
 import yaml
 
-# --- 1. CONFIGURAÇÃO E ESTILOS FINAIS ---
+# --- 1. CONFIGURAÇÃO E ESTILOS (sem alterações) ---
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
 def apply_custom_styling():
+    # O CSS da v12.0 é mantido, pois é a nossa referência de design.
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
@@ -35,20 +36,18 @@ def apply_custom_styling():
         </style>
     """, unsafe_allow_html=True)
 
-# --- 2. RENDERIZADOR E FUNÇÕES AUXILIARES ---
+# --- 2. RENDERIZADOR E FUNÇÕES AUXILIARES (sem alterações) ---
 def render_dossier_from_blueprint(data: dict):
-    # (Esta função permanece a mesma da v6.2, pois é o nosso alvo de renderização)
     st.markdown('<div class="dossier-container">', unsafe_allow_html=True)
     if 'metadata' in data: meta = data['metadata']; st.markdown(f'<h1 class="comp-main-title"><span>{meta.get("icone_principal", "📄")}</span> {meta.get("titulo_principal", "Dossiê")}</h1>', unsafe_allow_html=True)
     if 'componentes' in data:
         for comp in data['componentes']:
-            tipo = comp.get('tipo')
+            tipo = comp.get('tipo');
             if tipo == 'titulo_secao': st.markdown(f'<h2 class="comp-section-title"><span>{comp.get("icone", "■")}</span>{comp.get("texto", "")}</h2>', unsafe_allow_html=True)
             elif tipo == 'subtitulo_com_icone': st.markdown(f'<h3 class="comp-subtitle-icon"><span>{comp.get("icone", "•")}</span>{comp.get("texto", "")}</h3>', unsafe_allow_html=True)
             elif tipo == 'paragrafo': st.markdown(f'<p class="comp-paragraph">{comp.get("texto", "")}</p>', unsafe_allow_html=True)
             elif tipo == 'lista_simples': list_items_html = "<div class='comp-simple-list'><ul>" + "".join([f"<li>{item}</li>" for item in comp.get('itens', [])]) + "</ul></div>"; st.markdown(list_items_html, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
-
 @st.cache_resource
 def get_github_repo():
     try: g = Github(st.secrets["GITHUB_TOKEN"]); repo_name = f"{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO_NAME']}"; return g.get_repo(repo_name)
@@ -57,7 +56,7 @@ def check_password():
     if st.session_state.get("password_correct", False): return True
     _, center_col, _ = st.columns([1, 1, 1])
     with center_col:
-        st.title("Painel de Inteligência"); st.write(" ")
+        st.title("Painel de Inteligência"); st.write(" ");
         with st.container(border=True):
             st.subheader("Login de Acesso"); password = st.text_input("Senha de Acesso", type="password", key="password_input", label_visibility="collapsed", placeholder="Digite sua senha")
             if st.button("Acessar Painel", type="primary", use_container_width=True):
@@ -67,9 +66,7 @@ def check_password():
     return False
 def display_repo_structure(repo, path="", search_term="", show_actions=False):
     try:
-        contents = repo.get_contents(path); dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name)
-        # SÓ PROCURA POR ARQUIVOS .YML
-        files = sorted([f for f in contents if f.type == 'file' and f.name.endswith(".yml")], key=lambda x: x.name)
+        contents = repo.get_contents(path); dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name); files = sorted([f for f in contents if f.type == 'file' and f.name.endswith(".yml")], key=lambda x: x.name)
         for content_dir in dirs:
             with st.expander(f"📁 {content_dir.name}"): display_repo_structure(repo, content_dir.path, search_term, show_actions)
         if search_term: files = [f for f in files if search_term.lower() in f.name.lower()]
@@ -117,20 +114,37 @@ if selected_action == "Leitor de Dossiês":
             if st.session_state.get("viewing_file_content"):
                 file_name = st.session_state.get("viewing_file_name", "")
                 st.markdown(f"#### {file_name}"); st.divider()
-                if file_name.endswith(".yml"):
-                    try: dossier_data = yaml.safe_load(st.session_state.viewing_file_content); render_dossier_from_blueprint(dossier_data)
-                    except yaml.YAMLError as e: st.error(f"Erro ao ler o arquivo YAML: {e}"); st.code(st.session_state.viewing_file_content)
-                else: st.error("O sistema agora só suporta arquivos .yml criados pelo painel.")
-            else: st.info("Selecione um dossiê para visualizar.")
+                
+                # --- MUDANÇA CENTRAL: O LEITOR INTELIGENTE E ROBUSTO ---
+                try:
+                    # Tenta ler o conteúdo como YAML
+                    dossier_data = yaml.safe_load(st.session_state.viewing_file_content)
+                    # Se for bem-sucedido e for um dicionário, renderiza com o modelo novo
+                    if isinstance(dossier_data, dict):
+                        render_dossier_from_blueprint(dossier_data)
+                    else:
+                        # Se o YAML for válido mas não for a estrutura esperada (ex: um arquivo só com texto)
+                        st.warning("⚠️ Formato Inesperado")
+                        st.info("O arquivo parece ser um YAML válido, mas não segue a estrutura de componentes do painel. Exibindo como texto.")
+                        st.code(st.session_state.viewing_file_content, language="yaml")
+                except yaml.YAMLError:
+                    # Se falhar a leitura do YAML (nosso caso do arquivo da Turquia)
+                    st.error("⚠️ Formato de Arquivo Inválido ou Corrompido")
+                    st.info("Este arquivo não pôde ser lido como um dossiê do novo sistema. Provavelmente foi criado com uma versão antiga do painel.")
+                    st.write("**Ação Recomendada:**")
+                    st.write("1. Exclua este arquivo antigo usando o botão (🗑️) no navegador de arquivos.")
+                    st.write("2. Crie o dossiê novamente usando o formulário inteligente na aba 'Carregar Dossiê'.")
+                    st.code(st.session_state.viewing_file_content, language="text") # Mostra o conteúdo bruto
+            else:
+                st.info("Selecione um dossiê para visualizar.")
 
 elif selected_action == "Carregar Dossiê":
+    # O código para "Carregar Dossiê" da v12.0 é mantido, pois é a solução robusta para a criação.
     st.header("Criar Novo Dossiê")
     st.info("Selecione o tipo de dossiê para ver os campos específicos e preencha as informações.")
-
     dossier_type_options = ["", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes", "D2 P1 - Análise Comparativa de Planteis", "D2 P2 - Estudo Técnico e Tático dos Clubes", "D3 - Análise Tática (Pós Rodada)", "D4 - Briefing Semanal (Pré Rodada)"]
     dossier_type = st.selectbox("**Qual tipo de dossiê você quer criar?**", dossier_type_options, key="dossier_type_selector")
 
-    # Template 1: Dossiê de Liga
     if dossier_type == "D1 P1 - Análise da Liga":
         st.subheader("Template: Análise da Liga")
         with st.form("liga_form"):
@@ -157,10 +171,8 @@ elif selected_action == "Carregar Dossiê":
                 with st.spinner("Salvando..."):
                     try: repo.create_file(full_path, f"Adiciona: {file_name}", yaml_string); st.success(f"Salvo com sucesso: {full_path}")
                     except Exception as e: st.error(f"Erro ao salvar: {e}")
-
-    # Demais templates seguem um padrão similar...
     elif dossier_type:
-        st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento, mas seguirá o mesmo modelo de formulário simplificado.")
+        st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
 
 elif selected_action == "Gerar com IA":
     st.header("Gerar com IA"); st.info("Em desenvolvimento.")
