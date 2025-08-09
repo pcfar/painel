@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v18.1: Adicionado Template D4 (Briefing Pré Rodada)
+Painel de Inteligência Tática - v18.0: Versão Completa com Todos os Dossiês
 """
 
 import streamlit as st
@@ -169,12 +169,26 @@ elif selected_action == "Carregar Dossiê":
             if st.form_submit_button("Salvar Dossiê", type="primary"):
                 save_dossier(repo, "D1P1_Analise_Liga_{liga}_{pais}", [pais, liga, temporada], conteudo, {"liga": liga, "pais": pais, "temporada": temporada, "conteudo": conteudo})
     
+    elif dossier_type == "D1 P2 - Análise dos Clubes Dominantes da Liga":
+        with st.form("d1_p2_form", clear_on_submit=True):
+            st.subheader("Template: Análise dos Clubes Dominantes"); c1, c2, c3 = st.columns(3); pais = c1.text_input("País*"); liga = c2.text_input("Liga*"); temporada = c3.text_input("Temporada*")
+            conteudo = st.text_area("Resumo (Conteúdo da Análise)*", height=300, help=help_text_md)
+            if st.form_submit_button("Salvar Dossiê", type="primary"):
+                save_dossier(repo, "D1P2_Clubes_Dominantes_{liga}_{pais}", [pais, liga, temporada], conteudo, {"liga": liga, "pais": pais, "temporada": temporada, "conteudo": conteudo})
+
     elif dossier_type == "D2 P1 - Análise Comparativa de Planteis":
         with st.form("d2_p1_form", clear_on_submit=True):
             st.subheader("Template: Análise Comparativa de Planteis"); c1, c2, c3, c4 = st.columns(4); pais = c1.text_input("País*"); liga = c2.text_input("Liga*"); temporada = c3.text_input("Temporada*"); clube = c4.text_input("Clube*")
             conteudo = st.text_area("Resumo (Conteúdo da Análise)*", height=300, help=help_text_md)
             if st.form_submit_button("Salvar Dossiê", type="primary"):
                 save_dossier(repo, "D2P1_Planteis_{clube}_{temporada}", [pais, liga, temporada, clube], conteudo, {"clube": clube, "temporada": temporada, "conteudo": conteudo, "pais": pais, "liga": liga})
+
+    elif dossier_type == "D2 P2 - Estudo Técnico e Tático dos Clubes":
+        with st.form("d2_p2_form", clear_on_submit=True):
+            st.subheader("Template: Estudo Técnico e Tático dos Clubes"); c1, c2, c3, c4 = st.columns(4); pais = c1.text_input("País*"); liga = c2.text_input("Liga*"); temporada = c3.text_input("Temporada*"); clube = c4.text_input("Clube*")
+            conteudo = st.text_area("Resumo (Conteúdo do Estudo)*", height=300, help=help_text_md)
+            if st.form_submit_button("Salvar Dossiê", type="primary"):
+                save_dossier(repo, "D2P2_Estudo_Tatico_{clube}_{temporada}", [pais, liga, temporada, clube], conteudo, {"clube": clube, "temporada": temporada, "conteudo": conteudo, "pais": pais, "liga": liga})
 
     elif dossier_type == "D3 - Análise Tática (Pós Rodada)":
         with st.form("d3_form", clear_on_submit=True):
@@ -185,7 +199,6 @@ elif selected_action == "Carregar Dossiê":
             if st.form_submit_button("Salvar Dossiê", type="primary"):
                 save_dossier(repo, "D3_PosRodada_{time_casa}_vs_{time_visitante}_R{rodada}", [pais, liga, temporada, "Rodadas", f"R{rodada}"], conteudo, {"pais": pais, "liga": liga, "temporada": temporada, "rodada": rodada, "time_casa": time_casa, "time_visitante": time_visitante, "conteudo": conteudo})
     
-    # --- NOVO TEMPLATE D4 (PRÉ RODADA) ---
     elif dossier_type == "D4 - Briefing Semanal (Pré Rodada)":
         with st.form("d4_form", clear_on_submit=True):
             st.subheader("Template: Briefing Pré Rodada")
@@ -193,7 +206,7 @@ elif selected_action == "Carregar Dossiê":
             st.divider(); st.write("**Informações da Partida**"); c1, c2, c3 = st.columns(3); rodada = c1.text_input("Rodada*", placeholder="Ex: 16"); nosso_clube = c2.text_input("Nosso Clube*"); adversario = c3.text_input("Próximo Adversário*")
             st.divider(); conteudo = st.text_area("Resumo (Conteúdo do Briefing)*", height=300, help=help_text_md)
             if st.form_submit_button("Salvar Dossiê", type="primary"):
-                save_dossier(repo, "D4_Briefing_{nosso_clube}_vs_{adversario}_R{rodada}", [pais, liga, temporada, "Rodadas", f"R{rodada}"], conteudo, {"pais": pais, "liga": liga, "temporada": temporada, "rodada": rodada, "nosso_clube": nosso_clube, "adversario": adversario, "conteudo": conteudo})
+                save_dossier(repo, "D4_Briefing_{nosso_clube}_vs_{adversario}_R{rodada}", [pais, liga, temporada, nosso_clube, "Rodadas", f"R{rodada}"], conteudo, {"pais": pais, "liga": liga, "temporada": temporada, "rodada": rodada, "nosso_clube": nosso_clube, "adversario": adversario, "conteudo": conteudo})
 
     elif dossier_type:
         st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
