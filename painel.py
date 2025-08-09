@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v18.0: Versão Estável com Responsividade
+Painel de Inteligência Tática - v18.1: Versão com Estilização Aprimorada dos Dossiês
 """
 
 import streamlit as st
@@ -11,7 +11,7 @@ import os
 from streamlit_option_menu import option_menu
 import markdown2
 
-# --- 1. CONFIGURAÇÃO E ESTILOS FINAIS ---
+# --- 1. CONFIGURAÇÃO E ESTILOS FINAIS (COM OS NOVOS TEMAS) ---
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
 def apply_custom_styling():
@@ -34,38 +34,49 @@ def apply_custom_styling():
             .dossier-viewer th, .dossier-viewer td { padding: 1rem; text-align: left; font-size: 1rem; color: #F3F4F6; border-bottom: 1px solid #4A5568;}
             .dossier-viewer td { color: #CBD5E0; }
             .dossier-viewer tr:nth-child(even) { background-color: rgba(74, 85, 104, 0.5); }
-            .theme-d1 h1 { border-bottom: 3px solid #3182CE; }
-            .theme-d1 h2 { color: #38BDF8; border-left: 4px solid #38BDF8; }
-            .theme-d1 h3, .theme-d1 strong { color: #FACC15; }
-            .theme-d1 li::before { content: "▪"; color: #63B3ED; margin-right: 12px; font-size: 1.2rem; }
-            .theme-d1 table th { background-color: #3182CE; }
-            .theme-d2 h1 { border-bottom: 3px solid #10B981; }
-            .theme-d2 h2 { color: #34D399; border-left: 4px solid #34D399; }
-            .theme-d2 h3, .theme-d2 strong { color: #A3E4D3; }
-            .theme-d2 li::before { content: "›"; color: #34D399; margin-right: 12px; font-size: 1.5rem; font-weight: 700; }
-            .theme-d2 table th { background-color: #10B981; }
-            .theme-d3 h1 { border-bottom: 3px solid #DC2626; }
-            .theme-d3 h2 { color: #F87171; border-left: 4px solid #F87171; }
-            .theme-d3 h3, .theme-d3 strong { color: #F97316; }
-            .theme-d3 li::before { content: "»"; color: #F87171; margin-right: 12px; font-size: 1.5rem; font-weight: 700; }
-            .theme-d3 table th { background-color: #DC2626; }
-            .theme-d4 h1 { border-bottom: 3px solid #F59E0B; }
-            .theme-d4 h2 { color: #FBBF24; border-left: 4px solid #FBBF24; }
-            .theme-d4 h3, .theme-d4 strong { color: #9CA3AF; }
-            .theme-d4 li::before { content: "•"; color: #FBBF24; margin-right: 12px; font-size: 1.2rem; }
-            .theme-d4 table th { background-color: #F59E0B; }
+            .dossier-viewer blockquote { border-left: 4px solid #6B7280; background-color: rgba(74, 85, 104, 0.2); padding: 0.5rem 1.5rem; margin: 1.5rem 0; border-radius: 4px; }
 
-            /* --- MEDIA QUERY SEGURA PARA RESPONSIVIDADE --- */
-            @media (max-width: 768px) {
-                div[data-testid="stHorizontalBlock"] {
-                    flex-wrap: wrap;
-                }
-                div[data-testid="stHorizontalBlock"] > div {
-                    width: 100% !important;
-                    flex: 1 1 100% !important;
-                    margin-bottom: 1rem;
-                }
-            }
+            /* TEMA D1-P1 (Azul Estratégico): Análise da Liga */
+            .theme-d1p1 h1 { border-bottom: 3px solid #2563EB; }
+            .theme-d1p1 h2 { color: #3B82F6; border-left: 4px solid #3B82F6; }
+            .theme-d1p1 h3, .theme-d1p1 strong { color: #60A5FA; }
+            .theme-d1p1 li::before { content: "■"; color: #3B82F6; margin-right: 12px; font-size: 1rem; line-height: 1; }
+            .theme-d1p1 table th { background-color: #2563EB; }
+
+            /* TEMA D1-P2 (Azul Destaque): Clubes Dominantes */
+            .theme-d1p2 h1 { border-bottom: 3px solid #0EA5E9; }
+            .theme-d1p2 h2 { color: #38BDF8; border-left: 4px solid #38BDF8; }
+            .theme-d1p2 h3, .theme-d1p2 strong { color: #7DD3FC; }
+            .theme-d1p2 li::before { content: "●"; color: #38BDF8; margin-right: 12px; font-size: 1rem; line-height: 1; }
+            .theme-d1p2 table th { background-color: #0EA5E9; }
+
+            /* TEMA D2-P1 (Verde Analítico): Análise de Planteis */
+            .theme-d2p1 h1 { border-bottom: 3px solid #059669; }
+            .theme-d2p1 h2 { color: #10B981; border-left: 4px solid #10B981; }
+            .theme-d2p1 h3, .theme-d2p1 strong { color: #34D399; }
+            .theme-d2p1 li::before { content: "›"; color: #10B981; margin-right: 12px; font-size: 1.5rem; font-weight: 700; line-height: 1; }
+            .theme-d2p1 table th { background-color: #059669; }
+
+            /* TEMA D2-P2 (Verde Tático): Estudo Técnico/Tático */
+            .theme-d2p2 h1 { border-bottom: 3px solid #16A34A; }
+            .theme-d2p2 h2 { color: #22C55E; border-left: 4px solid #22C55E; }
+            .theme-d2p2 h3, .theme-d2p2 strong { color: #4ADE80; }
+            .theme-d2p2 li::before { content: "»"; color: #22C55E; margin-right: 12px; font-size: 1.5rem; font-weight: 700; line-height: 1; }
+            .theme-d2p2 table th { background-color: #16A34A; }
+            
+            /* TEMA D3 (Vermelho Intenso): Análise Pós Rodada */
+            .theme-d3 h1 { border-bottom: 3px solid #DC2626; }
+            .theme-d3 h2 { color: #EF4444; border-left: 4px solid #EF4444; }
+            .theme-d3 h3, .theme-d3 strong { color: #F87171; }
+            .theme-d3 li::before { content: "‣"; color: #EF4444; margin-right: 12px; font-size: 1.5rem; font-weight: 700; line-height: 1; }
+            .theme-d3 table th { background-color: #DC2626; }
+
+            /* TEMA D4 (Âmbar/Ouro Alerta): Briefing Pré Rodada */
+            .theme-d4 h1 { border-bottom: 3px solid #D97706; }
+            .theme-d4 h2 { color: #F59E0B; border-left: 4px solid #F59E0B; }
+            .theme-d4 h3, .theme-d4 strong { color: #FBBF24; }
+            .theme-d4 li::before { content: "•"; color: #F59E0B; margin-right: 12px; font-size: 1.2rem; line-height: 1; }
+            .theme-d4 table th { background-color: #D97706; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -105,7 +116,7 @@ def display_repo_structure(repo, path=""):
             with col3:
                 if st.button("🗑️", key=f"delete_{content_file.path}", help="Excluir Dossiê"): st.session_state['file_to_delete'] = {'path': content_file.path, 'sha': content_file.sha}; st.rerun()
             if st.session_state.get('file_to_delete', {}).get('path') == content_file.path:
-                st.warning(f"Excluir `{content_file.path}`?"); btn_c1, btn_c2 = st.columns(2)
+                st.warning(f"Excluir {content_file.path}?"); btn_c1, btn_c2 = st.columns(2)
                 if btn_c1.button("Sim, excluir!", key=f"confirm_del_{content_file.path}", type="primary"):
                     file_info = st.session_state.pop('file_to_delete'); repo.delete_file(file_info['path'], f"Exclui {file_info['path']}", file_info['sha'])
                     if st.session_state.get('viewing_file_name') == os.path.basename(file_info['path']): st.session_state.pop('viewing_file_content', None); st.session_state.pop('viewing_file_name', None)
@@ -150,10 +161,16 @@ if selected_action == "Leitor de Dossiês":
             if st.session_state.get("viewing_file_content"):
                 file_name = st.session_state.get("viewing_file_name", "")
                 st.markdown(f"#### {file_name}"); st.divider()
-                theme_class = "theme-d1"
-                if any(file_name.startswith(p) for p in ["D2P1_", "D2P2_"]): theme_class = "theme-d2"
+                
+                # --- LÓGICA DE SELEÇÃO DE TEMA ATUALIZADA ---
+                theme_class = "theme-d1p1" # Um default seguro
+                if file_name.startswith("D1P1_"): theme_class = "theme-d1p1"
+                elif file_name.startswith("D1P2_"): theme_class = "theme-d1p2"
+                elif file_name.startswith("D2P1_"): theme_class = "theme-d2p1"
+                elif file_name.startswith("D2P2_"): theme_class = "theme-d2p2"
                 elif file_name.startswith("D3_"): theme_class = "theme-d3"
-                elif file_name.startswith("D4_") or file_name.startswith("R"): theme_class = "theme-d4"
+                elif file_name.startswith("D4_"): theme_class = "theme-d4"
+                
                 sanitized_content = sanitize_text(st.session_state.viewing_file_content)
                 html_content = markdown2.markdown(sanitized_content, extras=['tables', 'fenced-code-blocks', 'blockquote'])
                 st.markdown(f"<div class='dossier-viewer {theme_class}'>{html_content}</div>", unsafe_allow_html=True)
@@ -211,7 +228,7 @@ elif selected_action == "Carregar Dossiê":
             st.divider(); conteudo = st.text_area("Resumo (Conteúdo do Briefing)*", height=300, help=help_text_md)
             if st.form_submit_button("Salvar Dossiê", type="primary"):
                 save_dossier(repo, "D4_Briefing_{nosso_clube}_vs_{adversario}_R{rodada}", [pais, liga, temporada, nosso_clube, "Rodadas", f"R{rodada}"], conteudo, {"pais": pais, "liga": liga, "temporada": temporada, "rodada": rodada, "nosso_clube": nosso_clube, "adversario": adversario, "conteudo": conteudo})
-    
+
     elif dossier_type:
         st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
 
