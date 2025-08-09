@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v19.1: Versão com Correção de Indentação
+Painel de Inteligência Tática - v19.0: Padrão Visual "Dark Pro" Unificado
 """
 
 import streamlit as st
@@ -11,94 +11,58 @@ import os
 from streamlit_option_menu import option_menu
 import markdown2
 
-# --- 1. CONFIGURAÇÃO E ESTILOS FINAIS (COM TODOS OS NOVOS TEMAS) ---
+# --- 1. CONFIGURAÇÃO E ESTILOS FINAIS ---
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
 def apply_custom_styling():
+    """Aplica o novo design "Dark Pro" como padrão para todo o painel."""
     st.markdown("""
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
-            body, .main { font-family: 'Roboto', sans-serif; }
+            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+            /* --- ESTILO BASE DO PAINEL --- */
+            html, body, [class*="css"]  {
+                font-family: 'Roboto', sans-serif;
+                background-color: #0F172A;
+                color: #E2E8F0;
+            }
             [data-testid="stSidebar"] { border-right: 1px solid #4A5568; }
 
-            /* --- ESTILOS GERAIS DO VISUALIZADOR (HIERARQUIA DE FONTE APLICADA) --- */
-            .dossier-viewer { line-height: 1.7; font-size: 1.1rem; color: #F3F4F6; }
-            .dossier-viewer h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; padding: 1rem; border-radius: 8px; margin-bottom: 2.5rem; }
-            .dossier-viewer h2 { font-size: 1.8rem; font-weight: 700; margin-top: 3rem; margin-bottom: 1.5rem; padding: 0.75rem 1rem; }
-            .dossier-viewer h3 { font-size: 1.5rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; }
-            .dossier-viewer h4 { font-size: 1.2rem; font-weight: 500; color: #CBD5E0; margin-top: 2rem; margin-bottom: 0.5rem; }
-            .dossier-viewer p { color: #F3F4F6; margin-bottom: 1rem; }
-            .dossier-viewer li { padding-left: 1.8em; text-indent: -1.8em; margin-bottom: 1rem; }
-            .dossier-viewer ul { list-style-type: none; padding-left: 0; }
-            .dossier-viewer hr { border: none; border-top: 2px solid #4A5568; margin: 3rem 0; }
-            .dossier-viewer table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background-color: #2D3748; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); }
-            .dossier-viewer th, .dossier-viewer td { padding: 1rem; text-align: left; font-size: 1rem; color: #F3F4F6; border-bottom: 1px solid #4A5568;}
-            .dossier-viewer td { color: #CBD5E0; }
-            .dossier-viewer tr:nth-child(even) { background-color: rgba(74, 85, 104, 0.5); }
-            .dossier-viewer blockquote { border-left-width: 5px; background-color: rgba(74, 85, 104, 0.2); padding: 1rem 1.5rem; margin: 1.5rem 0; border-radius: 4px; }
-
-            /* --- TEMA D1P1 (Análise da Liga): Azul de Alto Impacto --- */
-            .theme-d1p1 h1 { background-color: #1E40AF; }
-            .theme-d1p1 h2 { background-color: rgba(59, 130, 246, 0.15); color: #E0E0E0; border-left: 5px solid #3B82F6; text-transform: uppercase; letter-spacing: 1.5px; }
-            .theme-d1p1 h2::before { content: "📊"; margin-right: 12px; }
-            .theme-d1p1 h3, .theme-d1p1 strong { color: #60A5FA; }
-            .theme-d1p1 h3 { border-bottom: 2px solid rgba(96, 165, 250, 0.3); padding-bottom: 0.5rem; }
-            .theme-d1p1 li::before { content: "■"; color: #60A5FA; margin-right: 12px; font-size: 1.1rem; }
-            .theme-d1p1 table th { background-color: #1D4ED8; }
-            .theme-d1p1 blockquote { border-left-color: #60A5FA; }
-
-            /* --- TEMA D1P2 (Clubes Dominantes): Azul & Dourado --- */
-            .theme-d1p2 h1 { border-bottom: 4px solid #F59E0B; background-color: transparent; }
-            .theme-d1p2 h2 { border-left: 5px solid #3B82F6; border-bottom: 2px solid rgba(245, 158, 11, 0.5); color: #E0E0E0; background-color: transparent; }
-            .theme-d1p2 h2::before { content: "🏆"; margin-right: 12px; }
-            .theme-d1p2 h3, .theme-d1p2 strong { color: #FBBF24; }
-            .theme-d1p2 li::before { content: "●"; color: #FBBF24; margin-right: 12px; font-size: 1.1rem; }
-            .theme-d1p2 table th { background-color: #1D4ED8; }
-            .theme-d1p2 blockquote { border-left-color: #FBBF24; }
-
-            /* --- TEMA D2P1 (Análise de Planteis): Análise Verde com Ícones --- */
-            .theme-d2p1 h1 { background-color: #047857; }
-            .theme-d2p1 h2 { background-color: rgba(16, 185, 129, 0.15); color: #A7F3D0; border-left: 5px solid #10B981; }
-            .theme-d2p1 h2::before { content: "👥"; margin-right: 12px; }
-            .theme-d2p1 h3, .theme-d2p1 strong { color: #34D399; }
-            .theme-d2p1 li::before { content: "→"; color: #34D399; margin-right: 12px; font-weight: 700; }
-            .theme-d2p1 table th { background-color: #059669; }
-            .theme-d2p1 blockquote { border-left-color: #34D399; }
-            
-            /* --- TEMA D2P2 (Estudo Tático): A Prancheta do Analista --- */
-            .theme-d2p2 h1 { background-color: #15803D; }
-            .theme-d2p2 h2 { border-bottom: 3px dashed rgba(34, 211, 238, 0.6); color: #67E8F9; background-color: transparent; padding-left: 0; }
-            .theme-d2p2 h2::before { content: "📋"; margin-right: 12px; }
-            .theme-d2p2 h3 { background-color: rgba(20, 184, 166, 0.2); padding: 0.5rem 1rem; border-radius: 4px; color: #99F6E4; }
-            .theme-d2p2 strong { color: #2DD4BF; }
-            .theme-d2p2 li::before { content: "☛"; color: #2DD4BF; margin-right: 12px; font-size: 1.3rem; }
-            .theme-d2p2 table th { background-color: #16A34A; }
-            .theme-d2p2 blockquote { background-color: rgba(34, 211, 238, 0.1); border-left-color: #2DD4BF; }
-
-            /* --- TEMA D3 (Pós-Rodada): O Calor do Jogo --- */
-            .theme-d3 h1 { background-color: #B91C1C; }
-            .theme-d3 h2 { color: #F87171; border-left: 5px solid #EF4444; background-color: rgba(239, 68, 68, 0.1); text-transform: uppercase; }
-            .theme-d3 h2::before { content: "⏱️"; margin-right: 12px; }
-            .theme-d3 h3, .theme-d3 strong { color: #FB923C; }
-            .theme-d3 li::before { content: "▶"; color: #F87171; margin-right: 12px; }
-            .theme-d3 table th { background-color: #DC2626; }
-            .theme-d3 blockquote { border-left-color: #F87171; }
-
-            /* --- TEMA D4 (Pré-Rodada): O Briefing da Missão --- */
-            .theme-d4 h1 { background-color: #B45309; }
-            .theme-d4 h2 { color: #FCD34D; border-left: 5px solid #F59E0B; background-color: rgba(245, 158, 11, 0.1); text-transform: uppercase; }
-            .theme-d4 h2::before { content: "🎯"; margin-right: 12px; }
-            .theme-d4 h3, .theme-d4 strong { color: #FBBF24; }
-            .theme-d4 h4 { color: #FDE68A; font-weight: bold; }
-            .theme-d4 li::before { content: "•"; color: #FBBF24; margin-right: 12px; font-size: 1.2rem; }
-            .theme-d4 table th { background-color: #D97706; }
-            .theme-d4 blockquote { border-left-color: #FBBF24; }
+            /* --- ESTILO UNIFICADO "DARK PRO" PARA O VISUALIZADOR --- */
+            .dossier-viewer { line-height: 1.8; font-size: 1.1rem; }
+            .dossier-viewer h1 {
+                font-size: 2.3rem; font-weight: 700; color: #FACC15; /* Amarelo/Dourado */
+                margin-bottom: 2rem; border-bottom: 2px solid #4A5568; padding-bottom: 1rem;
+            }
+            .dossier-viewer h2 {
+                font-size: 1.6rem; color: #38BDF8; /* Azul Claro */
+                margin-top: 2.5rem; margin-bottom: 1.5rem;
+            }
+            .dossier-viewer h3 {
+                font-size: 1.2rem; font-weight: 700; color: #FACC15; /* Amarelo/Dourado */
+                margin-top: 2rem; margin-bottom: 0.5rem;
+            }
+            .dossier-viewer p { color: #94A3B8; } /* Cinza Azulado para texto comum */
+            .dossier-viewer strong { color: #E2E8F0; } /* Destaque em branco */
+            .dossier-viewer ul { list-style-position: inside; padding-left: 10px; margin-top: 1rem; }
+            .dossier-viewer li { margin-bottom: 0.5rem; line-height: 1.6; color: #94A3B8; }
+            .dossier-viewer hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 2rem 0; }
+            .dossier-viewer table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; font-size: 1rem; }
+            .dossier-viewer th, .dossier-viewer td { border: 1px solid #4A5568; padding: 12px; text-align: left; }
+            .dossier-viewer th { background-color: #1E293B; color: #94A3B8; }
+            .dossier-viewer blockquote { 
+                border-left: 4px solid #FACC15; 
+                background-color: rgba(250, 204, 21, 0.05);
+                padding: 0.5rem 1.5rem; margin: 1.5rem 0;
+                border-radius: 4px; color: #FDE68A;
+            }
         </style>
     """, unsafe_allow_html=True)
 
 # --- 2. FUNÇÕES AUXILIARES ---
 def sanitize_text(text: str) -> str:
     return text.replace('\u00A0', ' ').replace('\u2011', '-')
+
 @st.cache_resource
 def get_github_repo():
     try:
@@ -107,32 +71,29 @@ def get_github_repo():
     except Exception as e:
         st.error(f"Falha na conexão com o GitHub: {e}")
         return None
+
 def check_password():
-    if st.session_state.get("password_correct", False):
-        return True
+    if st.session_state.get("password_correct", False): return True
     _, center_col, _ = st.columns([1, 1, 1])
     with center_col:
-        st.title("Painel de Inteligência")
-        st.write(" ")
+        st.title("Painel de Inteligência"); st.write(" ")
         with st.container(border=True):
-            st.subheader("Login de Acesso")
-            password = st.text_input("Senha de Acesso", type="password", key="password_input", label_visibility="collapsed", placeholder="Digite sua senha")
+            st.subheader("Login de Acesso"); password = st.text_input("Senha de Acesso", type="password", key="password_input", label_visibility="collapsed", placeholder="Digite sua senha")
             if st.button("Acessar Painel", type="primary", use_container_width=True):
                 with st.spinner("Verificando..."):
                     if password == st.secrets.get("APP_PASSWORD"):
-                        st.session_state["password_correct"] = True
-                        st.rerun()
+                        st.session_state["password_correct"] = True; st.rerun()
                     else:
                         st.error("Senha incorreta.")
     return False
+
 def display_repo_structure(repo, path=""):
     try:
         contents = repo.get_contents(path)
         dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name)
         files = sorted([f for f in contents if f.type == 'file' and f.name.endswith(".md")], key=lambda x: x.name)
         search_term = st.session_state.get("search_term", "")
-        if search_term:
-            files = [f for f in files if search_term.lower() in f.name.lower()]
+        if search_term: files = [f for f in files if search_term.lower() in f.name.lower()]
         for content_dir in dirs:
             with st.expander(f"📁 {content_dir.name}"):
                 display_repo_structure(repo, content_dir.path)
@@ -150,7 +111,7 @@ def display_repo_structure(repo, path=""):
                     st.session_state['file_to_delete'] = {'path': content_file.path, 'sha': content_file.sha}
                     st.rerun()
             if st.session_state.get('file_to_delete', {}).get('path') == content_file.path:
-                st.warning(f"Excluir {content_file.path}?")
+                st.warning(f"Excluir `{content_file.path}`?")
                 btn_c1, btn_c2 = st.columns(2)
                 if btn_c1.button("Sim, excluir!", key=f"confirm_del_{content_file.path}", type="primary"):
                     file_info = st.session_state.pop('file_to_delete')
@@ -165,6 +126,7 @@ def display_repo_structure(repo, path=""):
                     st.rerun()
     except Exception as e:
         st.error(f"Erro ao listar arquivos: {e}")
+
 def save_dossier(repo, file_name_template: str, path_parts: list, content: str, required_fields: dict):
     if not all(required_fields.values()):
         st.error("Todos os campos marcados com * são obrigatórios.")
@@ -183,8 +145,7 @@ def save_dossier(repo, file_name_template: str, path_parts: list, content: str, 
             st.info("Verifique se um arquivo com este nome já não existe.")
 
 # --- CÓDIGO PRINCIPAL DA APLICAÇÃO ---
-if not check_password():
-    st.stop()
+if not check_password(): st.stop()
 apply_custom_styling()
 repo = get_github_repo()
 
@@ -212,25 +173,9 @@ if selected_action == "Leitor de Dossiês":
                 file_name = st.session_state.get("viewing_file_name", "")
                 st.markdown(f"#### {file_name}")
                 st.divider()
-                
-                # --- LÓGICA DE SELEÇÃO DE TEMA ATUALIZADA ---
-                theme_class = "theme-d1p1" # Um default seguro
-                if file_name.startswith("D1P1_"):
-                    theme_class = "theme-d1p1"
-                elif file_name.startswith("D1P2_"):
-                    theme_class = "theme-d1p2"
-                elif file_name.startswith("D2P1_"):
-                    theme_class = "theme-d2p1"
-                elif file_name.startswith("D2P2_"):
-                    theme_class = "theme-d2p2"
-                elif file_name.startswith("D3_") or file_name.startswith("R"):
-                    theme_class = "theme-d3"
-                elif file_name.startswith("D4_"):
-                    theme_class = "theme-d4"
-                
                 sanitized_content = sanitize_text(st.session_state.viewing_file_content)
                 html_content = markdown2.markdown(sanitized_content, extras=['tables', 'fenced-code-blocks', 'blockquote'])
-                st.markdown(f"<div class='dossier-viewer {theme_class}'>{html_content}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='dossier-viewer'>{html_content}</div>", unsafe_allow_html=True)
             else:
                 st.info("Selecione um arquivo para visualizar.")
 
@@ -239,93 +184,19 @@ elif selected_action == "Carregar Dossiê":
     st.info("Selecione o tipo de dossiê, preencha as informações e o conteúdo em Markdown.")
     dossier_type_options = ["", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes da Liga", "D2 P1 - Análise Comparativa de Planteis", "D2 P2 - Estudo Técnico e Tático dos Clubes", "D3 - Análise Tática (Pós Rodada)", "D4 - Briefing Semanal (Pré Rodada)"]
     dossier_type = st.selectbox("**Qual tipo de dossiê você quer criar?**", dossier_type_options, key="dossier_type_selector")
-    help_text_md = "Guia Rápido:\n- Título: # Título\n- Subtítulo: ## Subtítulo\n- Destaque: **texto**"
+    help_text_md = "Guia Rápido de Formatação:\n- Título: # Título\n- Subtítulo: ## Subtítulo\n- Destaque: **texto**"
     
     if dossier_type == "D1 P1 - Análise da Liga":
         with st.form("d1_p1_form", clear_on_submit=True):
             st.subheader("Template: Análise da Liga")
-            c1, c2, c3 = st.columns(3)
-            pais = c1.text_input("País*")
-            liga = c2.text_input("Liga*")
-            temporada = c3.text_input("Temporada*")
+            c1, c2, c3 = st.columns(3); pais = c1.text_input("País*"); liga = c2.text_input("Liga*"); temporada = c3.text_input("Temporada*")
             conteudo = st.text_area("Resumo (Conteúdo do Dossiê)*", height=300, help=help_text_md)
             if st.form_submit_button("Salvar Dossiê", type="primary"):
                 save_dossier(repo, "D1P1_Analise_Liga_{liga}_{pais}", [pais, liga, temporada], conteudo, {"liga": liga, "pais": pais, "temporada": temporada, "conteudo": conteudo})
     
-    elif dossier_type == "D1 P2 - Análise dos Clubes Dominantes da Liga":
-        with st.form("d1_p2_form", clear_on_submit=True):
-            st.subheader("Template: Análise dos Clubes Dominantes")
-            c1, c2, c3 = st.columns(3)
-            pais = c1.text_input("País*")
-            liga = c2.text_input("Liga*")
-            temporada = c3.text_input("Temporada*")
-            conteudo = st.text_area("Resumo (Conteúdo da Análise)*", height=300, help=help_text_md)
-            if st.form_submit_button("Salvar Dossiê", type="primary"):
-                save_dossier(repo, "D1P2_Clubes_Dominantes_{liga}_{pais}", [pais, liga, temporada], conteudo, {"liga": liga, "pais": pais, "temporada": temporada, "conteudo": conteudo})
-
-    elif dossier_type == "D2 P1 - Análise Comparativa de Planteis":
-        with st.form("d2_p1_form", clear_on_submit=True):
-            st.subheader("Template: Análise Comparativa de Planteis")
-            c1, c2, c3, c4 = st.columns(4)
-            pais = c1.text_input("País*")
-            liga = c2.text_input("Liga*")
-            temporada = c3.text_input("Temporada*")
-            clube = c4.text_input("Clube*")
-            conteudo = st.text_area("Resumo (Conteúdo da Análise)*", height=300, help=help_text_md)
-            if st.form_submit_button("Salvar Dossiê", type="primary"):
-                save_dossier(repo, "D2P1_Planteis_{clube}_{temporada}", [pais, liga, temporada, clube], conteudo, {"clube": clube, "temporada": temporada, "conteudo": conteudo, "pais": pais, "liga": liga})
-
-    elif dossier_type == "D2 P2 - Estudo Técnico e Tático dos Clubes":
-        with st.form("d2_p2_form", clear_on_submit=True):
-            st.subheader("Template: Estudo Técnico e Tático dos Clubes")
-            c1, c2, c3, c4 = st.columns(4)
-            pais = c1.text_input("País*")
-            liga = c2.text_input("Liga*")
-            temporada = c3.text_input("Temporada*")
-            clube = c4.text_input("Clube*")
-            conteudo = st.text_area("Resumo (Conteúdo do Estudo)*", height=300, help=help_text_md)
-            if st.form_submit_button("Salvar Dossiê", type="primary"):
-                save_dossier(repo, "D2P2_Estudo_Tatico_{clube}_{temporada}", [pais, liga, temporada, clube], conteudo, {"clube": clube, "temporada": temporada, "conteudo": conteudo, "pais": pais, "liga": liga})
-
-    elif dossier_type == "D3 - Análise Tática (Pós Rodada)":
-        with st.form("d3_form", clear_on_submit=True):
-            st.subheader("Template: Análise Pós Rodada")
-            c1, c2, c3 = st.columns(3)
-            pais = c1.text_input("País*")
-            liga = c2.text_input("Liga*")
-            temporada = c3.text_input("Temporada*")
-            st.divider()
-            st.write("**Informações da Partida**")
-            c1, c2, c3 = st.columns(3)
-            rodada = c1.text_input("Rodada*", placeholder="Ex: 15")
-            time_casa = c2.text_input("Time da Casa*")
-            time_visitante = c3.text_input("Time Visitante*")
-            st.divider()
-            conteudo = st.text_area("Resumo (Conteúdo da Análise)*", height=300, help=help_text_md)
-            if st.form_submit_button("Salvar Dossiê", type="primary"):
-                save_dossier(repo, "D3_PosRodada_{time_casa}_vs_{time_visitante}_R{rodada}", [pais, liga, temporada, "Rodadas", f"R{rodada}"], conteudo, {"pais": pais, "liga": liga, "temporada": temporada, "rodada": rodada, "time_casa": time_casa, "time_visitante": time_visitante, "conteudo": conteudo})
-    
-    elif dossier_type == "D4 - Briefing Semanal (Pré Rodada)":
-        with st.form("d4_form", clear_on_submit=True):
-            st.subheader("Template: Briefing Pré Rodada")
-            c1, c2, c3 = st.columns(3)
-            pais = c1.text_input("País*")
-            liga = c2.text_input("Liga*")
-            temporada = c3.text_input("Temporada*")
-            st.divider()
-            st.write("**Informações da Partida**")
-            c1, c2, c3 = st.columns(3)
-            rodada = c1.text_input("Rodada*", placeholder="Ex: 16")
-            nosso_clube = c2.text_input("Nosso Clube*")
-            adversario = c3.text_input("Próximo Adversário*")
-            st.divider()
-            conteudo = st.text_area("Resumo (Conteúdo do Briefing)*", height=300, help=help_text_md)
-            if st.form_submit_button("Salvar Dossiê", type="primary"):
-                save_dossier(repo, "D4_Briefing_{nosso_clube}_vs_{adversario}_R{rodada}", [pais, liga, temporada, nosso_clube, "Rodadas", f"R{rodada}"], conteudo, {"pais": pais, "liga": liga, "temporada": temporada, "rodada": rodada, "nosso_clube": nosso_clube, "adversario": adversario, "conteudo": conteudo})
-
+    # Adicione aqui os outros formulários conforme são desenvolvidos...
     elif dossier_type:
         st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
 
 elif selected_action == "Gerar com IA":
-    st.header("Gerar com IA")
-    st.info("Em desenvolvimento.")
+    st.header("Gerar com IA"); st.info("Em desenvolvimento.")
