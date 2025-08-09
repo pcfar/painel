@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v19.2: Versão com Correção Final de Salvamento
+Painel de Inteligência Tática - v20.0: Versão Otimizada com Cache de Dossiês
 """
 
 import streamlit as st
@@ -11,7 +11,7 @@ import os
 from streamlit_option_menu import option_menu
 import markdown2
 
-# --- 1. CONFIGURAÇÃO E ESTILOS FINAIS (COM TODOS OS NOVOS TEMAS) ---
+# --- 1. CONFIGURAÇÃO E ESTILOS FINAIS ---
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
 def apply_custom_styling():
@@ -99,6 +99,7 @@ def apply_custom_styling():
 # --- 2. FUNÇÕES AUXILIARES ---
 def sanitize_text(text: str) -> str:
     return text.replace('\u00A0', ' ').replace('\u2011', '-')
+
 @st.cache_resource
 def get_github_repo():
     try:
@@ -107,6 +108,19 @@ def get_github_repo():
     except Exception as e:
         st.error(f"Falha na conexão com o GitHub: {e}")
         return None
+
+# NOVA FUNÇÃO COM CACHE PARA OTIMIZAR O CARREGAMENTO
+@st.cache_data(ttl=3600)  # Cache por 1 hora
+def get_file_content(_repo, file_path):
+    """Busca e armazena em cache o conteúdo de um arquivo do GitHub."""
+    try:
+        content_obj = _repo.get_contents(file_path)
+        decoded_content = content_obj.decoded_content.decode("utf-8")
+        return decoded_content
+    except Exception as e:
+        st.error(f"Erro ao buscar o conteúdo do arquivo {file_path}: {e}")
+        return None
+
 def check_password():
     if st.session_state.get("password_correct", False):
         return True
@@ -125,8 +139,10 @@ def check_password():
                     else:
                         st.error("Senha incorreta.")
     return False
+
 def display_repo_structure(repo, path=""):
     try:
+        # Nota: A listagem de arquivos ainda faz uma chamada de API, mas é mais leve.
         contents = repo.get_contents(path)
         dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name)
         files = sorted([f for f in contents if f.type == 'file' and f.name.endswith(".md")], key=lambda x: x.name)
@@ -139,9 +155,12 @@ def display_repo_structure(repo, path=""):
         for content_file in files:
             col1, col2, col3 = st.columns([0.7, 0.15, 0.15])
             with col1:
+                # O botão apenas define o arquivo a ser visto.
                 if st.button(f"📄 {content_file.name}", key=f"view_{content_file.path}", use_container_width=True):
-                    file_content_raw = repo.get_contents(content_file.path).decoded_content.decode("utf-8")
-                    st.session_state.update(viewing_file_content=file_content_raw, viewing_file_name=content_file.name)
+                    # A chamada da função de cache acontece aqui!
+                    file_content = get_file_content(repo, content_file.path)
+                    if file_content:
+                        st.session_state.update(viewing_file_content=file_content, viewing_file_name=content_file.name)
             with col2:
                 if st.button("✏️", key=f"edit_{content_file.path}", help="Editar Dossiê"):
                     st.warning("Função de edição em desenvolvimento.")
@@ -155,6 +174,7 @@ def display_repo_structure(repo, path=""):
                 if btn_c1.button("Sim, excluir!", key=f"confirm_del_{content_file.path}", type="primary"):
                     file_info = st.session_state.pop('file_to_delete')
                     repo.delete_file(file_info['path'], f"Exclui {file_info['path']}", file_info['sha'])
+                    # Limpa o cache para o arquivo excluído, se necessário (aqui apenas limpamos a sessão)
                     if st.session_state.get('viewing_file_name') == os.path.basename(file_info['path']):
                         st.session_state.pop('viewing_file_content', None)
                         st.session_state.pop('viewing_file_name', None)
@@ -165,6 +185,7 @@ def display_repo_structure(repo, path=""):
                     st.rerun()
     except Exception as e:
         st.error(f"Erro ao listar arquivos: {e}")
+
 def save_dossier(repo, file_name_template: str, path_parts: list, content: str, required_fields: dict):
     if not all(required_fields.values()):
         st.error("Todos os campos marcados com * são obrigatórios.")
@@ -178,6 +199,8 @@ def save_dossier(repo, file_name_template: str, path_parts: list, content: str, 
         try:
             repo.create_file(full_path, commit_message, content)
             st.success(f"Dossiê '{full_path}' salvo com sucesso!")
+            # Limpa o cache da função que lista os arquivos para refletir a nova adição
+            # (Neste caso, o Streamlit gerencia isso bem ao redesenhar a página)
         except Exception as e:
             st.error(f"Ocorreu um erro ao salvar: {e}")
             st.info("Verifique se um arquivo com este nome já não existe.")
@@ -185,6 +208,7 @@ def save_dossier(repo, file_name_template: str, path_parts: list, content: str, 
 # --- CÓDIGO PRINCIPAL DA APLICAÇÃO ---
 if not check_password():
     st.stop()
+
 apply_custom_styling()
 repo = get_github_repo()
 
@@ -213,8 +237,7 @@ if selected_action == "Leitor de Dossiês":
                 st.markdown(f"#### {file_name}")
                 st.divider()
                 
-                # --- LÓGICA DE SELEÇÃO DE TEMA ATUALIZADA ---
-                theme_class = "theme-d1p1" # Um default seguro
+                theme_class = "theme-d1p1"
                 if file_name.startswith("D1P1_"):
                     theme_class = "theme-d1p1"
                 elif file_name.startswith("D1P2_"):
@@ -303,7 +326,6 @@ elif selected_action == "Carregar Dossiê":
             st.divider()
             conteudo = st.text_area("Resumo (Conteúdo da Análise)*", height=300, help=help_text_md)
             if st.form_submit_button("Salvar Dossiê", type="primary"):
-                # LINHA CORRIGIDA PARA D3
                 save_dossier(repo, "D3_PosRodada_{time_casa}_vs_{time_visitante}", [pais, liga, temporada, "Rodadas", f"R{rodada}"], conteudo, {"pais": pais, "liga": liga, "temporada": temporada, "rodada": rodada, "time_casa": time_casa, "time_visitante": time_visitante, "conteudo": conteudo})
     
     elif dossier_type == "D4 - Briefing Semanal (Pré Rodada)":
@@ -322,7 +344,6 @@ elif selected_action == "Carregar Dossiê":
             st.divider()
             conteudo = st.text_area("Resumo (Conteúdo do Briefing)*", height=300, help=help_text_md)
             if st.form_submit_button("Salvar Dossiê", type="primary"):
-                # LINHA CORRIGIDA PARA D4
                 save_dossier(repo, "D4_Briefing_{nosso_clube}_vs_{adversario}", [pais, liga, temporada, nosso_clube, "Rodadas", f"R{rodada}"], conteudo, {"pais": pais, "liga": liga, "temporada": temporada, "rodada": rodada, "nosso_clube": nosso_clube, "adversario": adversario, "conteudo": conteudo})
 
     elif dossier_type:
