@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v17.2: Correção Final de Temas Dinâmicos
+Painel de Inteligência Tática - v17.3: Adicionado Tema D2P2 (Vermelho)
 """
 
 import streamlit as st
@@ -49,14 +49,14 @@ def apply_custom_styling():
             .dossier-viewer.theme-d2p1 li::before { content: "›"; color: #34D399; margin-right: 12px; font-size: 1.5rem; font-weight: 700; }
             .dossier-viewer.theme-d2p1 table th { background-color: #10B981; }
             
-            /* --- TEMA D2P2 (TÁTICO - ROXO/DOURADO) --- */
-            .dossier-viewer.theme-d2p2 h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #9B59B6; padding-bottom: 0.5rem; margin-bottom: 2rem; }
-            .dossier-viewer.theme-d2p2 h2 { font-size: 1.7rem; font-weight: 700; color: #C084FC; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #C084FC; }
-            .dossier-viewer.theme-d2p2 h3 { font-size: 1.4rem; font-weight: 700; color: #FB923C; margin-top: 2.5rem; margin-bottom: 1rem; }
-            .dossier-viewer.theme-d2p2 strong { color: #FB923C; font-weight: 700; }
+            /* --- NOVO TEMA D2P2 (TÁTICO - VERMELHO) --- */
+            .dossier-viewer.theme-d2p2 h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #DC2626; padding-bottom: 0.5rem; margin-bottom: 2rem; }
+            .dossier-viewer.theme-d2p2 h2 { font-size: 1.7rem; font-weight: 700; color: #F87171; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #F87171; }
+            .dossier-viewer.theme-d2p2 h3 { font-size: 1.4rem; font-weight: 700; color: #F97316; margin-top: 2.5rem; margin-bottom: 1rem; }
+            .dossier-viewer.theme-d2p2 strong { color: #F97316; font-weight: 700; }
             .dossier-viewer.theme-d2p2 ul { list-style-type: none; padding-left: 0; }
-            .dossier-viewer.theme-d2p2 li::before { content: "»"; color: #C084FC; margin-right: 12px; font-size: 1.5rem; font-weight: 700; }
-            .dossier-viewer.theme-d2p2 table th { background-color: #9B59B6; }
+            .dossier-viewer.theme-d2p2 li::before { content: "»"; color: #F87171; margin-right: 12px; font-size: 1.5rem; font-weight: 700; }
+            .dossier-viewer.theme-d2p2 table th { background-color: #DC2626; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -151,7 +151,6 @@ if selected_action == "Leitor de Dossiês":
                 file_name = st.session_state.get("viewing_file_name", "")
                 st.markdown(f"#### {file_name}"); st.divider()
                 
-                # --- LÓGICA DE TEMA DINÂMICO ATUALIZADA ---
                 theme_class = "theme-d1" # Tema padrão
                 if file_name.startswith("D2P1_"):
                     theme_class = "theme-d2p1"
