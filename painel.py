@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v17.3: Adicionado Tema D2P2 (Vermelho)
+Painel de Inteligência Tática - v17.4: Unificação e Correção dos Temas CSS
 """
 
 import streamlit as st
@@ -21,46 +21,46 @@ def apply_custom_styling():
             body, .main { font-family: 'Roboto', sans-serif; }
             [data-testid="stSidebar"] { border-right: 1px solid #4A5568; }
 
-            /* --- ESTILOS GERAIS DO VISUALIZADOR --- */
+            /* --- ESTILOS GERAIS E ESTRUTURAIS DO VISUALIZADOR --- */
             .dossier-viewer { line-height: 1.7; font-size: 1.1rem; color: #F3F4F6; }
             .dossier-viewer p { color: #F3F4F6; }
-            .dossier-viewer li { color: #F3F4F6; padding-left: 1.5em; text-indent: -1.5em; margin-bottom: 1rem; }
+            .dossier-viewer h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; padding-bottom: 0.5rem; margin-bottom: 2rem; }
+            .dossier-viewer h2 { font-size: 1.7rem; font-weight: 700; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; }
+            .dossier-viewer h3 { font-size: 1.4rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; }
+            .dossier-viewer ul { list-style-type: none; padding-left: 0; }
+            .dossier-viewer li { padding-left: 1.5em; text-indent: -1.5em; margin-bottom: 1rem; }
             .dossier-viewer hr { border: none; border-top: 2px solid #4A5568; margin: 3rem 0; }
             .dossier-viewer table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background-color: #2D3748; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); }
             .dossier-viewer th, .dossier-viewer td { padding: 1rem; text-align: left; font-size: 1rem; color: #F3F4F6; border-bottom: 1px solid #4A5568;}
             .dossier-viewer td { color: #CBD5E0; }
             .dossier-viewer tr:nth-child(even) { background-color: rgba(74, 85, 104, 0.5); }
 
-            /* --- TEMA D1 (LIGA) --- */
-            .dossier-viewer.theme-d1 h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #3182CE; padding-bottom: 0.5rem; margin-bottom: 2rem; }
-            .dossier-viewer.theme-d1 h2 { font-size: 1.7rem; font-weight: 700; color: #38BDF8; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #38BDF8; }
-            .dossier-viewer.theme-d1 h3 { font-size: 1.4rem; font-weight: 700; color: #FACC15; margin-top: 2.5rem; margin-bottom: 1rem; }
-            .dossier-viewer.theme-d1 strong { color: #FACC15; font-weight: 700; }
-            .dossier-viewer.theme-d1 ul { list-style-type: none; padding-left: 0; }
+            /* --- VARIAÇÕES DE COR POR TEMA --- */
+            /* TEMA D1 (LIGA) - Azul/Amarelo */
+            .dossier-viewer.theme-d1 h1 { border-bottom: 3px solid #3182CE; }
+            .dossier-viewer.theme-d1 h2 { color: #38BDF8; border-left: 4px solid #38BDF8; }
+            .dossier-viewer.theme-d1 h3, .dossier-viewer.theme-d1 strong { color: #FACC15; }
             .dossier-viewer.theme-d1 li::before { content: "▪"; color: #63B3ED; margin-right: 12px; font-size: 1.2rem; }
             .dossier-viewer.theme-d1 table th { background-color: #3182CE; }
 
-            /* --- TEMA D2P1 (PLANTEL) --- */
-            .dossier-viewer.theme-d2p1 h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #10B981; padding-bottom: 0.5rem; margin-bottom: 2rem; }
-            .dossier-viewer.theme-d2p1 h2 { font-size: 1.7rem; font-weight: 700; color: #34D399; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #34D399; }
-            .dossier-viewer.theme-d2p1 h3 { font-size: 1.4rem; font-weight: 700; color: #A3E4D3; margin-top: 2.5rem; margin-bottom: 1rem; }
-            .dossier-viewer.theme-d2p1 strong { color: #A3E4D3; font-weight: 700; }
-            .dossier-viewer.theme-d2p1 ul { list-style-type: none; padding-left: 0; }
+            /* TEMA D2P1 (PLANTEL) - Verde */
+            .dossier-viewer.theme-d2p1 h1 { border-bottom: 3px solid #10B981; }
+            .dossier-viewer.theme-d2p1 h2 { color: #34D399; border-left: 4px solid #34D399; }
+            .dossier-viewer.theme-d2p1 h3, .dossier-viewer.theme-d2p1 strong { color: #A3E4D3; }
             .dossier-viewer.theme-d2p1 li::before { content: "›"; color: #34D399; margin-right: 12px; font-size: 1.5rem; font-weight: 700; }
             .dossier-viewer.theme-d2p1 table th { background-color: #10B981; }
             
-            /* --- NOVO TEMA D2P2 (TÁTICO - VERMELHO) --- */
-            .dossier-viewer.theme-d2p2 h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #DC2626; padding-bottom: 0.5rem; margin-bottom: 2rem; }
-            .dossier-viewer.theme-d2p2 h2 { font-size: 1.7rem; font-weight: 700; color: #F87171; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #F87171; }
-            .dossier-viewer.theme-d2p2 h3 { font-size: 1.4rem; font-weight: 700; color: #F97316; margin-top: 2.5rem; margin-bottom: 1rem; }
-            .dossier-viewer.theme-d2p2 strong { color: #F97316; font-weight: 700; }
-            .dossier-viewer.theme-d2p2 ul { list-style-type: none; padding-left: 0; }
+            /* TEMA D2P2 (TÁTICO) - Vermelho/Laranja */
+            .dossier-viewer.theme-d2p2 h1 { border-bottom: 3px solid #DC2626; }
+            .dossier-viewer.theme-d2p2 h2 { color: #F87171; border-left: 4px solid #F87171; }
+            .dossier-viewer.theme-d2p2 h3, .dossier-viewer.theme-d2p2 strong { color: #F97316; }
             .dossier-viewer.theme-d2p2 li::before { content: "»"; color: #F87171; margin-right: 12px; font-size: 1.5rem; font-weight: 700; }
             .dossier-viewer.theme-d2p2 table th { background-color: #DC2626; }
         </style>
     """, unsafe_allow_html=True)
 
-# --- 2. FUNÇÕES AUXILIARES ---
+# --- 2. FUNÇÕES AUXILIARES E CÓDIGO PRINCIPAL (SEM ALTERAÇÕES) ---
+# O restante do código Python permanece o mesmo da versão anterior, pois a lógica está correta.
 def sanitize_text(text: str) -> str:
     return text.replace('\u00A0', ' ').replace('\u2011', '-')
 @st.cache_resource
@@ -108,7 +108,6 @@ def display_repo_structure(repo, path=""):
                     st.success(f"Arquivo '{file_info['path']}' excluído."); st.rerun()
                 if btn_c2.button("Cancelar", key=f"cancel_del_{content_file.path}"): st.session_state.pop('file_to_delete'); st.rerun()
     except Exception as e: st.error(f"Erro ao listar arquivos: {e}")
-
 def save_dossier(repo, file_name_template: str, path_parts: list, content: str, required_fields: dict):
     if not all(required_fields.values()): st.error("Todos os campos marcados com * são obrigatórios."); return
     format_dict = {k: v.replace(' ', '_') for k, v in required_fields.items() if k in ['liga', 'pais', 'clube', 'temporada']}
@@ -124,7 +123,6 @@ def save_dossier(repo, file_name_template: str, path_parts: list, content: str, 
             st.error(f"Ocorreu um erro ao salvar: {e}")
             st.info("Verifique se um arquivo com este nome já não existe.")
 
-# --- CÓDIGO PRINCIPAL DA APLICAÇÃO ---
 if not check_password(): st.stop()
 apply_custom_styling()
 repo = get_github_repo()
@@ -152,10 +150,9 @@ if selected_action == "Leitor de Dossiês":
                 st.markdown(f"#### {file_name}"); st.divider()
                 
                 theme_class = "theme-d1" # Tema padrão
-                if file_name.startswith("D2P1_"):
-                    theme_class = "theme-d2p1"
-                elif file_name.startswith("D2P2_"):
-                    theme_class = "theme-d2p2" # Novo tema
+                if file_name.startswith("D1P2_"): theme_class = "theme-d1" # D1P2 usa o mesmo tema do D1P1
+                if file_name.startswith("D2P1_"): theme_class = "theme-d2p1"
+                elif file_name.startswith("D2P2_"): theme_class = "theme-d2p2"
                 
                 sanitized_content = sanitize_text(st.session_state.viewing_file_content)
                 html_content = markdown2.markdown(sanitized_content, extras=['tables', 'fenced-code-blocks', 'blockquote'])
