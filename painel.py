@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v18.1: Versão com Estilização Aprimorada dos Dossiês
+Painel de Inteligência Tática - v19.0: Versão Final com Estilização Completa dos Dossiês
 """
 
 import streamlit as st
@@ -11,7 +11,7 @@ import os
 from streamlit_option_menu import option_menu
 import markdown2
 
-# --- 1. CONFIGURAÇÃO E ESTILOS FINAIS (COM OS NOVOS TEMAS) ---
+# --- 1. CONFIGURAÇÃO E ESTILOS FINAIS (COM TODOS OS NOVOS TEMAS) ---
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
 def apply_custom_styling():
@@ -21,62 +21,78 @@ def apply_custom_styling():
             body, .main { font-family: 'Roboto', sans-serif; }
             [data-testid="stSidebar"] { border-right: 1px solid #4A5568; }
 
-            /* --- ESTILOS GERAIS DO VISUALIZADOR --- */
+            /* --- ESTILOS GERAIS DO VISUALIZADOR (HIERARQUIA DE FONTE APLICADA) --- */
             .dossier-viewer { line-height: 1.7; font-size: 1.1rem; color: #F3F4F6; }
-            .dossier-viewer h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; padding-bottom: 0.5rem; margin-bottom: 2rem; }
-            .dossier-viewer h2 { font-size: 1.7rem; font-weight: 700; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; }
-            .dossier-viewer h3 { font-size: 1.4rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; }
-            .dossier-viewer p { color: #F3F4F6; }
-            .dossier-viewer li { padding-left: 1.5em; text-indent: -1.5em; margin-bottom: 1rem; }
+            .dossier-viewer h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; padding: 1rem; border-radius: 8px; margin-bottom: 2.5rem; }
+            .dossier-viewer h2 { font-size: 1.8rem; font-weight: 700; margin-top: 3rem; margin-bottom: 1.5rem; padding: 0.75rem 1rem; }
+            .dossier-viewer h3 { font-size: 1.5rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; }
+            .dossier-viewer h4 { font-size: 1.2rem; font-weight: 500; color: #CBD5E0; margin-top: 2rem; margin-bottom: 0.5rem; }
+            .dossier-viewer p { color: #F3F4F6; margin-bottom: 1rem; }
+            .dossier-viewer li { padding-left: 1.8em; text-indent: -1.8em; margin-bottom: 1rem; }
             .dossier-viewer ul { list-style-type: none; padding-left: 0; }
             .dossier-viewer hr { border: none; border-top: 2px solid #4A5568; margin: 3rem 0; }
             .dossier-viewer table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background-color: #2D3748; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); }
             .dossier-viewer th, .dossier-viewer td { padding: 1rem; text-align: left; font-size: 1rem; color: #F3F4F6; border-bottom: 1px solid #4A5568;}
             .dossier-viewer td { color: #CBD5E0; }
             .dossier-viewer tr:nth-child(even) { background-color: rgba(74, 85, 104, 0.5); }
-            .dossier-viewer blockquote { border-left: 4px solid #6B7280; background-color: rgba(74, 85, 104, 0.2); padding: 0.5rem 1.5rem; margin: 1.5rem 0; border-radius: 4px; }
+            .dossier-viewer blockquote { border-left-width: 5px; background-color: rgba(74, 85, 104, 0.2); padding: 1rem 1.5rem; margin: 1.5rem 0; border-radius: 4px; }
 
-            /* TEMA D1-P1 (Azul Estratégico): Análise da Liga */
-            .theme-d1p1 h1 { border-bottom: 3px solid #2563EB; }
-            .theme-d1p1 h2 { color: #3B82F6; border-left: 4px solid #3B82F6; }
+            /* --- TEMA D1P1 (Análise da Liga): Azul de Alto Impacto --- */
+            .theme-d1p1 h1 { background-color: #1E40AF; }
+            .theme-d1p1 h2 { background-color: rgba(59, 130, 246, 0.15); color: #E0E0E0; border-left: 5px solid #3B82F6; text-transform: uppercase; letter-spacing: 1.5px; }
+            .theme-d1p1 h2::before { content: "📊"; margin-right: 12px; }
             .theme-d1p1 h3, .theme-d1p1 strong { color: #60A5FA; }
-            .theme-d1p1 li::before { content: "■"; color: #3B82F6; margin-right: 12px; font-size: 1rem; line-height: 1; }
-            .theme-d1p1 table th { background-color: #2563EB; }
+            .theme-d1p1 h3 { border-bottom: 2px solid rgba(96, 165, 250, 0.3); padding-bottom: 0.5rem; }
+            .theme-d1p1 li::before { content: "■"; color: #60A5FA; margin-right: 12px; font-size: 1.1rem; }
+            .theme-d1p1 table th { background-color: #1D4ED8; }
+            .theme-d1p1 blockquote { border-left-color: #60A5FA; }
 
-            /* TEMA D1-P2 (Azul Destaque): Clubes Dominantes */
-            .theme-d1p2 h1 { border-bottom: 3px solid #0EA5E9; }
-            .theme-d1p2 h2 { color: #38BDF8; border-left: 4px solid #38BDF8; }
-            .theme-d1p2 h3, .theme-d1p2 strong { color: #7DD3FC; }
-            .theme-d1p2 li::before { content: "●"; color: #38BDF8; margin-right: 12px; font-size: 1rem; line-height: 1; }
-            .theme-d1p2 table th { background-color: #0EA5E9; }
+            /* --- TEMA D1P2 (Clubes Dominantes): Azul & Dourado --- */
+            .theme-d1p2 h1 { border-bottom: 4px solid #F59E0B; background-color: transparent; }
+            .theme-d1p2 h2 { border-left: 5px solid #3B82F6; border-bottom: 2px solid rgba(245, 158, 11, 0.5); color: #E0E0E0; background-color: transparent; }
+            .theme-d1p2 h2::before { content: "🏆"; margin-right: 12px; }
+            .theme-d1p2 h3, .theme-d1p2 strong { color: #FBBF24; }
+            .theme-d1p2 li::before { content: "●"; color: #FBBF24; margin-right: 12px; font-size: 1.1rem; }
+            .theme-d1p2 table th { background-color: #1D4ED8; }
+            .theme-d1p2 blockquote { border-left-color: #FBBF24; }
 
-            /* TEMA D2-P1 (Verde Analítico): Análise de Planteis */
-            .theme-d2p1 h1 { border-bottom: 3px solid #059669; }
-            .theme-d2p1 h2 { color: #10B981; border-left: 4px solid #10B981; }
+            /* --- TEMA D2P1 (Análise de Planteis): Análise Verde com Ícones --- */
+            .theme-d2p1 h1 { background-color: #047857; }
+            .theme-d2p1 h2 { background-color: rgba(16, 185, 129, 0.15); color: #A7F3D0; border-left: 5px solid #10B981; }
+            .theme-d2p1 h2::before { content: "👥"; margin-right: 12px; }
             .theme-d2p1 h3, .theme-d2p1 strong { color: #34D399; }
-            .theme-d2p1 li::before { content: "›"; color: #10B981; margin-right: 12px; font-size: 1.5rem; font-weight: 700; line-height: 1; }
+            .theme-d2p1 li::before { content: "→"; color: #34D399; margin-right: 12px; font-weight: 700; }
             .theme-d2p1 table th { background-color: #059669; }
-
-            /* TEMA D2-P2 (Verde Tático): Estudo Técnico/Tático */
-            .theme-d2p2 h1 { border-bottom: 3px solid #16A34A; }
-            .theme-d2p2 h2 { color: #22C55E; border-left: 4px solid #22C55E; }
-            .theme-d2p2 h3, .theme-d2p2 strong { color: #4ADE80; }
-            .theme-d2p2 li::before { content: "»"; color: #22C55E; margin-right: 12px; font-size: 1.5rem; font-weight: 700; line-height: 1; }
-            .theme-d2p2 table th { background-color: #16A34A; }
+            .theme-d2p1 blockquote { border-left-color: #34D399; }
             
-            /* TEMA D3 (Vermelho Intenso): Análise Pós Rodada */
-            .theme-d3 h1 { border-bottom: 3px solid #DC2626; }
-            .theme-d3 h2 { color: #EF4444; border-left: 4px solid #EF4444; }
-            .theme-d3 h3, .theme-d3 strong { color: #F87171; }
-            .theme-d3 li::before { content: "‣"; color: #EF4444; margin-right: 12px; font-size: 1.5rem; font-weight: 700; line-height: 1; }
-            .theme-d3 table th { background-color: #DC2626; }
+            /* --- TEMA D2P2 (Estudo Tático): A Prancheta do Analista --- */
+            .theme-d2p2 h1 { background-color: #15803D; }
+            .theme-d2p2 h2 { border-bottom: 3px dashed rgba(34, 211, 238, 0.6); color: #67E8F9; background-color: transparent; padding-left: 0; }
+            .theme-d2p2 h2::before { content: "📋"; margin-right: 12px; }
+            .theme-d2p2 h3 { background-color: rgba(20, 184, 166, 0.2); padding: 0.5rem 1rem; border-radius: 4px; color: #99F6E4; }
+            .theme-d2p2 strong { color: #2DD4BF; }
+            .theme-d2p2 li::before { content: "☛"; color: #2DD4BF; margin-right: 12px; font-size: 1.3rem; }
+            .theme-d2p2 table th { background-color: #16A34A; }
+            .theme-d2p2 blockquote { background-color: rgba(34, 211, 238, 0.1); border-left-color: #2DD4BF; }
 
-            /* TEMA D4 (Âmbar/Ouro Alerta): Briefing Pré Rodada */
-            .theme-d4 h1 { border-bottom: 3px solid #D97706; }
-            .theme-d4 h2 { color: #F59E0B; border-left: 4px solid #F59E0B; }
+            /* --- TEMA D3 (Pós-Rodada): O Calor do Jogo --- */
+            .theme-d3 h1 { background-color: #B91C1C; }
+            .theme-d3 h2 { color: #F87171; border-left: 5px solid #EF4444; background-color: rgba(239, 68, 68, 0.1); text-transform: uppercase; }
+            .theme-d3 h2::before { content: "⏱️"; margin-right: 12px; }
+            .theme-d3 h3, .theme-d3 strong { color: #FB923C; }
+            .theme-d3 li::before { content: "▶"; color: #F87171; margin-right: 12px; }
+            .theme-d3 table th { background-color: #DC2626; }
+            .theme-d3 blockquote { border-left-color: #F87171; }
+
+            /* --- TEMA D4 (Pré-Rodada): O Briefing da Missão --- */
+            .theme-d4 h1 { background-color: #B45309; }
+            .theme-d4 h2 { color: #FCD34D; border-left: 5px solid #F59E0B; background-color: rgba(245, 158, 11, 0.1); text-transform: uppercase; }
+            .theme-d4 h2::before { content: "🎯"; margin-right: 12px; }
             .theme-d4 h3, .theme-d4 strong { color: #FBBF24; }
-            .theme-d4 li::before { content: "•"; color: #F59E0B; margin-right: 12px; font-size: 1.2rem; line-height: 1; }
+            .theme-d4 h4 { color: #FDE68A; font-weight: bold; }
+            .theme-d4 li::before { content: "•"; color: #FBBF24; margin-right: 12px; font-size: 1.2rem; }
             .theme-d4 table th { background-color: #D97706; }
+            .theme-d4 blockquote { border-left-color: #FBBF24; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -168,7 +184,7 @@ if selected_action == "Leitor de Dossiês":
                 elif file_name.startswith("D1P2_"): theme_class = "theme-d1p2"
                 elif file_name.startswith("D2P1_"): theme_class = "theme-d2p1"
                 elif file_name.startswith("D2P2_"): theme_class = "theme-d2p2"
-                elif file_name.startswith("D3_"): theme_class = "theme-d3"
+                elif file_name.startswith("D3_") or file_name.startswith("R"): theme_class = "theme-d3"
                 elif file_name.startswith("D4_"): theme_class = "theme-d4"
                 
                 sanitized_content = sanitize_text(st.session_state.viewing_file_content)
