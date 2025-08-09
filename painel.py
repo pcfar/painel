@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v16.9.3: Alinhamento e Estilo D2P1
+Painel de Inteligência Tática - v16.9.4: Tabela Verde D2P1
 """
 
 import streamlit as st
@@ -24,10 +24,11 @@ def apply_custom_styling():
             /* --- ESTILOS GERAIS DO VISUALIZADOR --- */
             .dossier-viewer { line-height: 1.7; font-size: 1.1rem; color: #F3F4F6; }
             .dossier-viewer p { color: #F3F4F6; }
+            .dossier-viewer li { color: #F3F4F6; padding-left: 1.5em; text-indent: -1.5em; margin-bottom: 1rem; }
             .dossier-viewer hr { border: none; border-top: 2px solid #4A5568; margin: 3rem 0; }
             .dossier-viewer table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background-color: #2D3748; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); }
             .dossier-viewer th, .dossier-viewer td { padding: 1rem; text-align: left; font-size: 1rem; color: #F3F4F6; border-bottom: 1px solid #4A5568;}
-            .dossier-viewer th { background-color: #3B82F6; font-weight: 700; }
+            .dossier-viewer td { color: #CBD5E0; }
             .dossier-viewer tr:nth-child(even) { background-color: rgba(74, 85, 104, 0.5); }
 
             /* --- TEMA PADRÃO / TEMA D1 (LIGA) --- */
@@ -38,22 +39,22 @@ def apply_custom_styling():
             .dossier-viewer.theme-d1 ul { list-style-type: none; padding-left: 0; }
             .dossier-viewer.theme-d1 li { padding-left: 1.5em; text-indent: -1.5em; margin-bottom: 1rem; }
             .dossier-viewer.theme-d1 li::before { content: "▪"; color: #63B3ED; margin-right: 12px; font-size: 1.2rem; }
+            .dossier-viewer.theme-d1 table th { background-color: #3182CE; } /* Tabela D1 com tom azul */
 
             /* --- TEMA D2 (PLANTEL/CLUBE) --- */
             .dossier-viewer.theme-d2 h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #10B981; padding-bottom: 0.5rem; margin-bottom: 2rem; }
-            .dossier-viewer.theme-d2 h2 { text-align: center; font-size: 1.7rem; font-weight: 700; color: #34D399; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #34D399; }
+            .dossier-viewer.theme-d2 h2 { font-size: 1.7rem; font-weight: 700; color: #34D399; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #34D399; }
             .dossier-viewer.theme-d2 h3 { font-size: 1.4rem; font-weight: 700; color: #A3E4D3; margin-top: 2.5rem; margin-bottom: 1rem; }
             .dossier-viewer.theme-d2 strong { color: #A3E4D3; font-weight: 700; }
             .dossier-viewer.theme-d2 ul { list-style-type: none; padding-left: 0; }
-            /* Ajuste de alinhamento e marcadores para o Tema D2 */
             .dossier-viewer.theme-d2 li { position: relative; padding-left: 2em; }
             .dossier-viewer.theme-d2 li::before { content: "›"; color: #34D399; position: absolute; left: 0; top: 0.1em; font-size: 1.5rem; font-weight: 700; }
-            /* Remove o marcador duplicado de parágrafos que são intertítulos */
-            .dossier-viewer.theme-d2 p + ul > li::before { content: "›"; } /* Garante que listas após parágrafos tenham marcador */
+            .dossier-viewer.theme-d2 p + ul > li::before { content: "›"; }
             .dossier-viewer.theme-d2 h3 + ul > li::before { content: "›"; }
-            .dossier-viewer.theme-d2 h3::before { content: ""; } /* Garante que H3 não tenha marcador */
-            .dossier-viewer.theme-d2 p:has(> strong)::before { content: ""; } /* Garante que intertítulos não tenham marcador */
-
+            .dossier-viewer.theme-d2 h3::before { content: ""; }
+            .dossier-viewer.theme-d2 p:has(> strong)::before { content: ""; }
+            /* --- MUDANÇA AQUI --- */
+            .dossier-viewer.theme-d2 table th { background-color: #10B981; } /* Tabela D2 com tom verde */
         </style>
     """, unsafe_allow_html=True)
 
