@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v16.8.1: Adicionado Template D2 P1
+Painel de Inteligência Tática - v16.9: Estilos por Tipo de Dossiê e Correção de Hierarquia
 """
 
 import streamlit as st
@@ -15,69 +15,35 @@ import markdown2
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
 def apply_custom_styling():
-    """CSS de alta fidelidade com os refinamentos finais de estilo."""
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
             body, .main { font-family: 'Roboto', sans-serif; }
-            
-            .dossier-viewer { 
-                line-height: 1.7; 
-                font-size: 1.1rem; 
-                color: #F3F4F6;
-            }
-            .dossier-viewer h1 { 
-                font-size: 2.2rem; font-weight: 900; color: #FFFFFF; 
-                border-bottom: 3px solid #3182CE; padding-bottom: 0.5rem; margin-bottom: 2rem; 
-            }
-            .dossier-viewer h2 { 
-                font-size: 1.7rem; font-weight: 700; color: #38BDF8;
-                margin-top: 3rem; margin-bottom: 1.5rem; 
-                padding-left: 1rem;
-                border-left: 4px solid #38BDF8;
-            }
-            .dossier-viewer h3 { 
-                font-size: 1.4rem; font-weight: 700; color: #FACC15;
-                margin-top: 2.5rem; margin-bottom: 1rem; 
-            }
-            .dossier-viewer p { 
-                margin-bottom: 1rem; 
-                color: #F3F4F6;
-                padding-left: 0; 
-                text-indent: 0;
-            }
-            .dossier-viewer strong { 
-                color: #FACC15; 
-                font-weight: 700;
-                text-shadow: none;
-            }
-            
-            .dossier-viewer ul { 
-                list-style-type: none; 
-                padding-left: 0; 
-                margin-top: 1rem; 
-            }
-            .dossier-viewer li { 
-                color: #F3F4F6;
-                margin-bottom: 1rem;
-                position: relative;
-                padding-left: 2em;
-            }
-            .dossier-viewer li::before { 
-                content: "▪"; 
-                color: #63B3ED; 
-                position: absolute;
-                left: 0;
-                top: 0.1em;
-                font-size: 1.2rem;
-            }
+            [data-testid="stSidebar"] { border-right: 1px solid #4A5568; }
 
+            /* --- ESTILOS GERAIS DO VISUALIZADOR --- */
+            .dossier-viewer { line-height: 1.7; font-size: 1.1rem; color: #F3F4F6; }
+            .dossier-viewer p { color: #F3F4F6; }
+            .dossier-viewer li { color: #F3F4F6; padding-left: 1.5em; text-indent: -1.5em; margin-bottom: 1rem; }
             .dossier-viewer hr { border: none; border-top: 2px solid #4A5568; margin: 3rem 0; }
             .dossier-viewer table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background-color: #2D3748; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); }
             .dossier-viewer th, .dossier-viewer td { padding: 1rem; text-align: left; font-size: 1rem; color: #F3F4F6; border-bottom: 1px solid #4A5568;}
             .dossier-viewer th { background-color: #3B82F6; font-weight: 700; }
             .dossier-viewer tr:nth-child(even) { background-color: rgba(74, 85, 104, 0.5); }
-            [data-testid="stSidebar"] { border-right: 1px solid #4A5568; }
+
+            /* --- TEMA PADRÃO / TEMA D1P1 (LIGA) --- */
+            .dossier-viewer.theme-d1p1 h1 { font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #3182CE; padding-bottom: 0.5rem; margin-bottom: 2rem; }
+            .dossier-viewer.theme-d1p1 h2 { font-size: 1.7rem; font-weight: 700; color: #38BDF8; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #38BDF8; }
+            .dossier-viewer.theme-d1p1 h3 { font-size: 1.4rem; font-weight: 700; color: #FACC15; margin-top: 2.5rem; margin-bottom: 1rem; }
+            .dossier-viewer.theme-d1p1 strong { color: #FACC15; font-weight: 700; }
+            .dossier-viewer.theme-d1p1 li::before { content: "▪"; color: #63B3ED; margin-right: 12px; font-size: 1.2rem; }
+
+            /* --- NOVO TEMA D2P1 (PLANTEL) --- */
+            .dossier-viewer.theme-d2p1 h1 { font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #10B981; padding-bottom: 0.5rem; margin-bottom: 2rem; }
+            .dossier-viewer.theme-d2p1 h2 { font-size: 1.7rem; font-weight: 700; color: #34D399; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #34D399; }
+            .dossier-viewer.theme-d2p1 h3 { font-size: 1.4rem; font-weight: 700; color: #FBBF24; margin-top: 2.5rem; margin-bottom: 1rem; }
+            .dossier-viewer.theme-d2p1 strong { color: #FBBF24; font-weight: 700; }
+            .dossier-viewer.theme-d2p1 li::before { content: "›"; color: #34D399; margin-right: 12px; font-size: 1.5rem; font-weight: 700; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -130,20 +96,6 @@ def display_repo_structure(repo, path=""):
                 if btn_c2.button("Cancelar", key=f"cancel_del_{content_file.path}"): st.session_state.pop('file_to_delete'); st.rerun()
     except Exception as e: st.error(f"Erro ao listar arquivos: {e}")
 
-def save_dossier(repo, file_name_template: str, path_parts: list, content: str, required_fields: dict):
-    if not all(required_fields.values()): st.error("Todos os campos marcados com * são obrigatórios."); return
-    format_dict = {k: v for k, v in required_fields.items() if k in ['liga', 'pais', 'clube', 'temporada']}
-    file_name = file_name_template.format(**{k: v.replace(' ', '_') for k, v in format_dict.items()}) + ".md"
-    full_path = "/".join([p.replace(" ", "_") for p in path_parts]) + "/" + file_name
-    commit_message = f"Adiciona: {file_name}"
-    with st.spinner("Salvando dossiê..."):
-        try:
-            repo.create_file(full_path, commit_message, content)
-            st.success(f"Dossiê '{full_path}' salvo com sucesso!")
-        except Exception as e:
-            st.error(f"Ocorreu um erro ao salvar: {e}")
-            st.info("Verifique se um arquivo com este nome já não existe.")
-
 if not check_password(): st.stop()
 apply_custom_styling()
 repo = get_github_repo()
@@ -169,48 +121,63 @@ if selected_action == "Leitor de Dossiês":
             if st.session_state.get("viewing_file_content"):
                 file_name = st.session_state.get("viewing_file_name", "")
                 st.markdown(f"#### {file_name}"); st.divider()
+                
+                # --- LÓGICA DE TEMA DINÂMICO ---
+                theme_class = "theme-d1p1" # Tema padrão
+                if file_name.startswith("D2P1_"):
+                    theme_class = "theme-d2p1"
+                
                 sanitized_content = sanitize_text(st.session_state.viewing_file_content)
-                html_content = markdown2.markdown(sanitized_content, extras=['tables', 'fenced-code-blocks', 'blockquote', 'pyshell', 'break-on-newline'])
-                st.markdown(f"<div class='dossier-viewer'>{html_content}</div>", unsafe_allow_html=True)
+                html_content = markdown2.markdown(sanitized_content, extras=['tables', 'fenced-code-blocks', 'blockquote'])
+                st.markdown(f"<div class='dossier-viewer {theme_class}'>{html_content}</div>", unsafe_allow_html=True)
             else: st.info("Selecione um arquivo para visualizar.")
+
 elif selected_action == "Carregar Dossiê":
-    st.header("Criar Novo Dossiê"); st.info("Selecione o tipo de dossiê, preencha as informações e o conteúdo em Markdown.")
-    dossier_type_options = ["", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes da Liga", "D2 P1 - Análise Comparativa de Planteis", "D2 P2 - Estudo Técnico e Tático dos Clubes", "D3 - Análise Tática (Pós Rodada)", "D4 - Briefing Semanal (Pré Rodada)"]
+    st.header("Criar Novo Dossiê")
+    st.info("Selecione o tipo de dossiê, preencha os campos e o conteúdo em Markdown.")
+    dossier_type_options = ["", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes da Liga", "D2 P1 - Análise Comparativa de Planteis"]
     dossier_type = st.selectbox("**Qual tipo de dossiê você quer criar?**", dossier_type_options, key="dossier_type_selector")
-    help_text_md = "Guia Rápido:\n- Título: # Título\n- Subtítulo: ## Subtítulo\n- Intertítulo: ### Título\n- Listas: - Item da lista\n- Destaque: **texto**"
+    help_text_md = "Guia Rápido:\n- Título: # Título\n- Subtítulo: ## Subtítulo\n- Destaque: **texto**"
     
+    def save_dossier(repo, file_name_template: str, path_parts: list, content: str, required_fields: dict):
+        if not all(required_fields.values()): st.error("Todos os campos marcados com * são obrigatórios."); return
+        format_dict = {k: v.replace(' ', '_') for k, v in required_fields.items() if k in ['liga', 'pais', 'clube', 'temporada']}
+        file_name = file_name_template.format(**format_dict) + ".md"
+        full_path = "/".join([p.replace(" ", "_") for p in path_parts]) + "/" + file_name
+        commit_message = f"Adiciona: {file_name}"
+        with st.spinner("Salvando dossiê..."):
+            try:
+                repo.create_file(full_path, commit_message, content)
+                st.success(f"Dossiê '{full_path}' salvo com sucesso!")
+            except Exception as e:
+                st.error(f"Ocorreu um erro ao salvar: {e}")
+                st.info("Verifique se um arquivo com este nome já não existe.")
+
     if dossier_type == "D1 P1 - Análise da Liga":
         with st.form("d1_p1_form", clear_on_submit=True):
-            st.subheader("Template: Análise da Liga")
-            c1, c2, c3 = st.columns(3); pais = c1.text_input("País*"); liga = c2.text_input("Liga*"); temporada = c3.text_input("Temporada*")
+            st.subheader("Template: Análise da Liga"); c1, c2, c3 = st.columns(3); pais = c1.text_input("País*"); liga = c2.text_input("Liga*"); temporada = c3.text_input("Temporada*")
             conteudo = st.text_area("Resumo (Conteúdo do Dossiê)*", height=300, help=help_text_md)
             if st.form_submit_button("Salvar Dossiê", type="primary"):
                 save_dossier(repo, "D1P1_Analise_Liga_{liga}_{pais}", [pais, liga, temporada], conteudo, {"liga": liga, "pais": pais, "temporada": temporada, "conteudo": conteudo})
     
     elif dossier_type == "D1 P2 - Análise dos Clubes Dominantes da Liga":
         with st.form("d1_p2_form", clear_on_submit=True):
-            st.subheader("Template: Análise dos Clubes Dominantes")
-            c1, c2, c3 = st.columns(3); pais = c1.text_input("País*"); liga = c2.text_input("Liga*"); temporada = c3.text_input("Temporada*")
+            st.subheader("Template: Análise dos Clubes Dominantes"); c1, c2, c3 = st.columns(3); pais = c1.text_input("País*"); liga = c2.text_input("Liga*"); temporada = c3.text_input("Temporada*")
             conteudo = st.text_area("Resumo (Conteúdo da Análise)*", height=300, help=help_text_md)
             if st.form_submit_button("Salvar Dossiê", type="primary"):
                 save_dossier(repo, "D1P2_Clubes_Dominantes_{liga}_{pais}", [pais, liga, temporada], conteudo, {"liga": liga, "pais": pais, "temporada": temporada, "conteudo": conteudo})
 
-    # --- NOVO TEMPLATE ADICIONADO AQUI ---
     elif dossier_type == "D2 P1 - Análise Comparativa de Planteis":
         with st.form("d2_p1_form", clear_on_submit=True):
-            st.subheader("Template: Análise Comparativa de Planteis")
-            c1, c2, c3 = st.columns(3)
-            pais = c1.text_input("País*")
-            liga = c2.text_input("Liga*")
-            temporada = c3.text_input("Temporada*")
-            clube = st.text_input("Clube Analisado*")
-            
+            st.subheader("Template: Análise Comparativa de Planteis"); c1, c2, c3 = st.columns(3); pais = c1.text_input("País*"); liga = c2.text_input("Liga*"); temporada = c3.text_input("Temporada*"); clube = st.text_input("Clube Analisado*")
             help_text_fbref = "Para estatísticas detalhadas de jogadores, a melhor fonte é o FBref.com."
             conteudo = st.text_area("Resumo (Conteúdo da Análise)*", height=300, help=f"{help_text_md}\n\n{help_text_fbref}")
             if st.form_submit_button("Salvar Dossiê", type="primary"):
+                # --- CORREÇÃO DE HIERARQUIA AQUI ---
                 save_dossier(repo, "D2P1_Planteis_{clube}_{temporada}", [pais, liga, temporada, clube], conteudo, {"clube": clube, "temporada": temporada, "pais": pais, "liga": liga, "conteudo": conteudo})
 
-    elif dossier_type: st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
+    elif dossier_type:
+        st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
 
 elif selected_action == "Gerar com IA":
     st.header("Gerar com IA"); st.info("Em desenvolvimento.")
