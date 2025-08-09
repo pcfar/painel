@@ -117,9 +117,9 @@ def display_repo_structure(repo, path=""):
                 if btn_c1.button("Sim, excluir!", key=f"confirm_del_{content_file.path}", type="primary"):
                     file_info = st.session_state.pop('file_to_delete')
                     repo.delete_file(file_info['path'], f"Exclui {file_info['path']}", file_info['sha'])
-                    if st.session_state.get('viewing_file_name') == os.path.basename(file_info['path']):
-                                                st.session_state.pop('viewing_file_content', None)
-                        st.session_state.pop('viewing_file_name', None)
+                if st.session_state.get('viewing_file_name') == os.path.basename(file_info['path']):
+                    st.session_state.pop('viewing_file_content', None)
+                    st.session_state.pop('viewing_file_name', None)
                     st.success(f"Arquivo '{file_info['path']}' excluído.")
                     st.rerun()
                 if btn_c2.button("Cancelar", key=f"cancel_del_{content_file.path}"):
