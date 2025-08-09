@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v17.0: Adicionado Template D2 P2
+Painel de Inteligência Tática - v17.1: Adicionado Tema D2P2 (Roxo/Dourado)
 """
 
 import streamlit as st
@@ -15,31 +15,45 @@ import markdown2
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
 def apply_custom_styling():
-    # CSS permanece estável
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
             body, .main { font-family: 'Roboto', sans-serif; }
             [data-testid="stSidebar"] { border-right: 1px solid #4A5568; }
+
+            /* --- ESTILOS GERAIS DO VISUALIZADOR --- */
             .dossier-viewer { line-height: 1.7; font-size: 1.1rem; color: #F3F4F6; }
             .dossier-viewer p { color: #F3F4F6; }
             .dossier-viewer li { color: #F3F4F6; padding-left: 1.5em; text-indent: -1.5em; margin-bottom: 1rem; }
             .dossier-viewer hr { border: none; border-top: 2px solid #4A5568; margin: 3rem 0; }
             .dossier-viewer table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background-color: #2D3748; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); }
             .dossier-viewer th, .dossier-viewer td { padding: 1rem; text-align: left; font-size: 1rem; color: #F3F4F6; border-bottom: 1px solid #4A5568;}
+            .dossier-viewer td { color: #CBD5E0; }
             .dossier-viewer tr:nth-child(even) { background-color: rgba(74, 85, 104, 0.5); }
-            .theme-d1 h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #3182CE; padding-bottom: 0.5rem; margin-bottom: 2rem; }
-            .theme-d1 h2 { font-size: 1.7rem; font-weight: 700; color: #38BDF8; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #38BDF8; }
-            .theme-d1 h3 { font-size: 1.4rem; font-weight: 700; color: #FACC15; margin-top: 2.5rem; margin-bottom: 1rem; }
-            .theme-d1 strong { color: #FACC15; font-weight: 700; }
-            .theme-d1 li::before { content: "▪"; color: #63B3ED; margin-right: 12px; font-size: 1.2rem; }
-            .theme-d1 table th { background-color: #3182CE; }
-            .theme-d2 h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #10B981; padding-bottom: 0.5rem; margin-bottom: 2rem; }
-            .theme-d2 h2 { font-size: 1.7rem; font-weight: 700; color: #34D399; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #34D399; }
-            .theme-d2 h3 { font-size: 1.4rem; font-weight: 700; color: #A3E4D3; margin-top: 2.5rem; margin-bottom: 1rem; }
-            .theme-d2 strong { color: #A3E4D3; font-weight: 700; }
-            .theme-d2 li::before { content: "›"; color: #34D399; margin-right: 12px; font-size: 1.5rem; font-weight: 700; }
-            .theme-d2 table th { background-color: #10B981; }
+
+            /* --- TEMA D1 (LIGA) --- */
+            .dossier-viewer.theme-d1 h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #3182CE; padding-bottom: 0.5rem; margin-bottom: 2rem; }
+            .dossier-viewer.theme-d1 h2 { font-size: 1.7rem; font-weight: 700; color: #38BDF8; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #38BDF8; }
+            .dossier-viewer.theme-d1 h3 { font-size: 1.4rem; font-weight: 700; color: #FACC15; margin-top: 2.5rem; margin-bottom: 1rem; }
+            .dossier-viewer.theme-d1 strong { color: #FACC15; font-weight: 700; }
+            .dossier-viewer.theme-d1 li::before { content: "▪"; color: #63B3ED; margin-right: 12px; font-size: 1.2rem; }
+            .dossier-viewer.theme-d1 table th { background-color: #3182CE; }
+
+            /* --- TEMA D2P1 (PLANTEL) --- */
+            .dossier-viewer.theme-d2p1 h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #10B981; padding-bottom: 0.5rem; margin-bottom: 2rem; }
+            .dossier-viewer.theme-d2p1 h2 { font-size: 1.7rem; font-weight: 700; color: #34D399; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #34D399; }
+            .dossier-viewer.theme-d2p1 h3 { font-size: 1.4rem; font-weight: 700; color: #A3E4D3; margin-top: 2.5rem; margin-bottom: 1rem; }
+            .dossier-viewer.theme-d2p1 strong { color: #A3E4D3; font-weight: 700; }
+            .dossier-viewer.theme-d2p1 li::before { content: "›"; color: #34D399; margin-right: 12px; font-size: 1.5rem; font-weight: 700; }
+            .dossier-viewer.theme-d2p1 table th { background-color: #10B981; }
+
+            /* --- NOVO TEMA D2P2 (TÁTICO) --- */
+            .dossier-viewer.theme-d2p2 h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #9B59B6; padding-bottom: 0.5rem; margin-bottom: 2rem; }
+            .dossier-viewer.theme-d2p2 h2 { font-size: 1.7rem; font-weight: 700; color: #C084FC; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #C084FC; }
+            .dossier-viewer.theme-d2p2 h3 { font-size: 1.4rem; font-weight: 700; color: #FB923C; margin-top: 2.5rem; margin-bottom: 1rem; }
+            .dossier-viewer.theme-d2p2 strong { color: #FB923C; font-weight: 700; }
+            .dossier-viewer.theme-d2p2 li::before { content: "»"; color: #C084FC; margin-right: 12px; font-size: 1.5rem; font-weight: 700; }
+            .dossier-viewer.theme-d2p2 table th { background-color: #9B59B6; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -133,16 +147,22 @@ if selected_action == "Leitor de Dossiês":
             if st.session_state.get("viewing_file_content"):
                 file_name = st.session_state.get("viewing_file_name", "")
                 st.markdown(f"#### {file_name}"); st.divider()
-                theme_class = "theme-d1" # Tema padrão
-                if file_name.startswith("D2P1_") or file_name.startswith("D2P2_"):
-                    theme_class = "theme-d2"
+                
+                # --- LÓGICA DE TEMA DINÂMICO ATUALIZADA ---
+                theme_class = "theme-d1" # Tema padrão para D1P1 e D1P2
+                if file_name.startswith("D2P1_"):
+                    theme_class = "theme-d2p1"
+                elif file_name.startswith("D2P2_"):
+                    theme_class = "theme-d2p2" # Novo tema
+                
                 sanitized_content = sanitize_text(st.session_state.viewing_file_content)
                 html_content = markdown2.markdown(sanitized_content, extras=['tables', 'fenced-code-blocks', 'blockquote'])
                 st.markdown(f"<div class='dossier-viewer {theme_class}'>{html_content}</div>", unsafe_allow_html=True)
             else: st.info("Selecione um arquivo para visualizar.")
 
 elif selected_action == "Carregar Dossiê":
-    st.header("Criar Novo Dossiê"); st.info("Selecione o tipo de dossiê, preencha as informações e o conteúdo em Markdown.")
+    st.header("Criar Novo Dossiê")
+    st.info("Selecione o tipo de dossiê, preencha os campos e o conteúdo em Markdown.")
     dossier_type_options = ["", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes da Liga", "D2 P1 - Análise Comparativa de Planteis", "D2 P2 - Estudo Técnico e Tático dos Clubes"]
     dossier_type = st.selectbox("**Qual tipo de dossiê você quer criar?**", dossier_type_options, key="dossier_type_selector")
     help_text_md = "Guia Rápido:\n- Título: # Título\n- Subtítulo: ## Subtítulo\n- Destaque: **texto**"
@@ -169,15 +189,10 @@ elif selected_action == "Carregar Dossiê":
             if st.form_submit_button("Salvar Dossiê", type="primary"):
                 save_dossier(repo, "D2P1_Planteis_{clube}_{temporada}", [pais, liga, temporada, clube], conteudo, {"clube": clube, "temporada": temporada, "pais": pais, "liga": liga, "conteudo": conteudo})
 
-    # --- NOVO TEMPLATE ADICIONADO AQUI ---
     elif dossier_type == "D2 P2 - Estudo Técnico e Tático dos Clubes":
         with st.form("d2_p2_form", clear_on_submit=True):
             st.subheader("Template: Estudo Técnico e Tático dos Clubes")
-            c1, c2, c3 = st.columns(3)
-            pais = c1.text_input("País*")
-            liga = c2.text_input("Liga*")
-            temporada = c3.text_input("Temporada*")
-            clube = st.text_input("Clube Analisado*")
+            c1, c2, c3 = st.columns(3); pais = c1.text_input("País*"); liga = c2.text_input("Liga*"); temporada = c3.text_input("Temporada*"); clube = st.text_input("Clube Analisado*")
             conteudo = st.text_area("Resumo (Conteúdo do Estudo)*", height=300, help=help_text_md)
             if st.form_submit_button("Salvar Dossiê", type="primary"):
                 save_dossier(repo, "D2P2_Estudo_Tatico_{clube}_{temporada}", [pais, liga, temporada, clube], conteudo, {"clube": clube, "temporada": temporada, "pais": pais, "liga": liga, "conteudo": conteudo})
