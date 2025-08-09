@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v19.1: Versão com Correção de Indentação
+Painel de Inteligência Tática - v19.2: Versão com Correção Final de Salvamento
 """
 
 import streamlit as st
@@ -303,7 +303,8 @@ elif selected_action == "Carregar Dossiê":
             st.divider()
             conteudo = st.text_area("Resumo (Conteúdo da Análise)*", height=300, help=help_text_md)
             if st.form_submit_button("Salvar Dossiê", type="primary"):
-                save_dossier(repo, "D3_PosRodada_{time_casa}_vs_{time_visitante}_R{rodada}", [pais, liga, temporada, "Rodadas", f"R{rodada}"], conteudo, {"pais": pais, "liga": liga, "temporada": temporada, "rodada": rodada, "time_casa": time_casa, "time_visitante": time_visitante, "conteudo": conteudo})
+                # LINHA CORRIGIDA PARA D3
+                save_dossier(repo, "D3_PosRodada_{time_casa}_vs_{time_visitante}", [pais, liga, temporada, "Rodadas", f"R{rodada}"], conteudo, {"pais": pais, "liga": liga, "temporada": temporada, "rodada": rodada, "time_casa": time_casa, "time_visitante": time_visitante, "conteudo": conteudo})
     
     elif dossier_type == "D4 - Briefing Semanal (Pré Rodada)":
         with st.form("d4_form", clear_on_submit=True):
@@ -321,7 +322,8 @@ elif selected_action == "Carregar Dossiê":
             st.divider()
             conteudo = st.text_area("Resumo (Conteúdo do Briefing)*", height=300, help=help_text_md)
             if st.form_submit_button("Salvar Dossiê", type="primary"):
-                save_dossier(repo, "D4_Briefing_{nosso_clube}_vs_{adversario}_R{rodada}", [pais, liga, temporada, nosso_clube, "Rodadas", f"R{rodada}"], conteudo, {"pais": pais, "liga": liga, "temporada": temporada, "rodada": rodada, "nosso_clube": nosso_clube, "adversario": adversario, "conteudo": conteudo})
+                # LINHA CORRIGIDA PARA D4
+                save_dossier(repo, "D4_Briefing_{nosso_clube}_vs_{adversario}", [pais, liga, temporada, nosso_clube, "Rodadas", f"R{rodada}"], conteudo, {"pais": pais, "liga": liga, "temporada": temporada, "rodada": rodada, "nosso_clube": nosso_clube, "adversario": adversario, "conteudo": conteudo})
 
     elif dossier_type:
         st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
