@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v16.9.4: Tabela Verde D2P1
+Painel de Inteligência Tática - v17.0: Adicionado Template D2 P2
 """
 
 import streamlit as st
@@ -15,46 +15,31 @@ import markdown2
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
 def apply_custom_styling():
+    # CSS permanece estável
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
             body, .main { font-family: 'Roboto', sans-serif; }
             [data-testid="stSidebar"] { border-right: 1px solid #4A5568; }
-
-            /* --- ESTILOS GERAIS DO VISUALIZADOR --- */
             .dossier-viewer { line-height: 1.7; font-size: 1.1rem; color: #F3F4F6; }
             .dossier-viewer p { color: #F3F4F6; }
             .dossier-viewer li { color: #F3F4F6; padding-left: 1.5em; text-indent: -1.5em; margin-bottom: 1rem; }
             .dossier-viewer hr { border: none; border-top: 2px solid #4A5568; margin: 3rem 0; }
             .dossier-viewer table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background-color: #2D3748; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); }
             .dossier-viewer th, .dossier-viewer td { padding: 1rem; text-align: left; font-size: 1rem; color: #F3F4F6; border-bottom: 1px solid #4A5568;}
-            .dossier-viewer td { color: #CBD5E0; }
             .dossier-viewer tr:nth-child(even) { background-color: rgba(74, 85, 104, 0.5); }
-
-            /* --- TEMA PADRÃO / TEMA D1 (LIGA) --- */
-            .dossier-viewer.theme-d1 h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #3182CE; padding-bottom: 0.5rem; margin-bottom: 2rem; }
-            .dossier-viewer.theme-d1 h2 { font-size: 1.7rem; font-weight: 700; color: #38BDF8; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #38BDF8; }
-            .dossier-viewer.theme-d1 h3 { font-size: 1.4rem; font-weight: 700; color: #FACC15; margin-top: 2.5rem; margin-bottom: 1rem; }
-            .dossier-viewer.theme-d1 strong { color: #FACC15; font-weight: 700; }
-            .dossier-viewer.theme-d1 ul { list-style-type: none; padding-left: 0; }
-            .dossier-viewer.theme-d1 li { padding-left: 1.5em; text-indent: -1.5em; margin-bottom: 1rem; }
-            .dossier-viewer.theme-d1 li::before { content: "▪"; color: #63B3ED; margin-right: 12px; font-size: 1.2rem; }
-            .dossier-viewer.theme-d1 table th { background-color: #3182CE; } /* Tabela D1 com tom azul */
-
-            /* --- TEMA D2 (PLANTEL/CLUBE) --- */
-            .dossier-viewer.theme-d2 h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #10B981; padding-bottom: 0.5rem; margin-bottom: 2rem; }
-            .dossier-viewer.theme-d2 h2 { font-size: 1.7rem; font-weight: 700; color: #34D399; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #34D399; }
-            .dossier-viewer.theme-d2 h3 { font-size: 1.4rem; font-weight: 700; color: #A3E4D3; margin-top: 2.5rem; margin-bottom: 1rem; }
-            .dossier-viewer.theme-d2 strong { color: #A3E4D3; font-weight: 700; }
-            .dossier-viewer.theme-d2 ul { list-style-type: none; padding-left: 0; }
-            .dossier-viewer.theme-d2 li { position: relative; padding-left: 2em; }
-            .dossier-viewer.theme-d2 li::before { content: "›"; color: #34D399; position: absolute; left: 0; top: 0.1em; font-size: 1.5rem; font-weight: 700; }
-            .dossier-viewer.theme-d2 p + ul > li::before { content: "›"; }
-            .dossier-viewer.theme-d2 h3 + ul > li::before { content: "›"; }
-            .dossier-viewer.theme-d2 h3::before { content: ""; }
-            .dossier-viewer.theme-d2 p:has(> strong)::before { content: ""; }
-            /* --- MUDANÇA AQUI --- */
-            .dossier-viewer.theme-d2 table th { background-color: #10B981; } /* Tabela D2 com tom verde */
+            .theme-d1 h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #3182CE; padding-bottom: 0.5rem; margin-bottom: 2rem; }
+            .theme-d1 h2 { font-size: 1.7rem; font-weight: 700; color: #38BDF8; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #38BDF8; }
+            .theme-d1 h3 { font-size: 1.4rem; font-weight: 700; color: #FACC15; margin-top: 2.5rem; margin-bottom: 1rem; }
+            .theme-d1 strong { color: #FACC15; font-weight: 700; }
+            .theme-d1 li::before { content: "▪"; color: #63B3ED; margin-right: 12px; font-size: 1.2rem; }
+            .theme-d1 table th { background-color: #3182CE; }
+            .theme-d2 h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #10B981; padding-bottom: 0.5rem; margin-bottom: 2rem; }
+            .theme-d2 h2 { font-size: 1.7rem; font-weight: 700; color: #34D399; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #34D399; }
+            .theme-d2 h3 { font-size: 1.4rem; font-weight: 700; color: #A3E4D3; margin-top: 2.5rem; margin-bottom: 1rem; }
+            .theme-d2 strong { color: #A3E4D3; font-weight: 700; }
+            .theme-d2 li::before { content: "›"; color: #34D399; margin-right: 12px; font-size: 1.5rem; font-weight: 700; }
+            .theme-d2 table th { background-color: #10B981; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -149,7 +134,7 @@ if selected_action == "Leitor de Dossiês":
                 file_name = st.session_state.get("viewing_file_name", "")
                 st.markdown(f"#### {file_name}"); st.divider()
                 theme_class = "theme-d1" # Tema padrão
-                if file_name.startswith("D2P1_"):
+                if file_name.startswith("D2P1_") or file_name.startswith("D2P2_"):
                     theme_class = "theme-d2"
                 sanitized_content = sanitize_text(st.session_state.viewing_file_content)
                 html_content = markdown2.markdown(sanitized_content, extras=['tables', 'fenced-code-blocks', 'blockquote'])
@@ -157,24 +142,25 @@ if selected_action == "Leitor de Dossiês":
             else: st.info("Selecione um arquivo para visualizar.")
 
 elif selected_action == "Carregar Dossiê":
-    st.header("Criar Novo Dossiê")
-    st.info("Selecione o tipo de dossiê, preencha os campos e o conteúdo em Markdown.")
-    dossier_type_options = ["", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes da Liga", "D2 P1 - Análise Comparativa de Planteis"]
+    st.header("Criar Novo Dossiê"); st.info("Selecione o tipo de dossiê, preencha as informações e o conteúdo em Markdown.")
+    dossier_type_options = ["", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes da Liga", "D2 P1 - Análise Comparativa de Planteis", "D2 P2 - Estudo Técnico e Tático dos Clubes"]
     dossier_type = st.selectbox("**Qual tipo de dossiê você quer criar?**", dossier_type_options, key="dossier_type_selector")
     help_text_md = "Guia Rápido:\n- Título: # Título\n- Subtítulo: ## Subtítulo\n- Destaque: **texto**"
-
+    
     if dossier_type == "D1 P1 - Análise da Liga":
         with st.form("d1_p1_form", clear_on_submit=True):
             st.subheader("Template: Análise da Liga"); c1, c2, c3 = st.columns(3); pais = c1.text_input("País*"); liga = c2.text_input("Liga*"); temporada = c3.text_input("Temporada*")
             conteudo = st.text_area("Resumo (Conteúdo do Dossiê)*", height=300, help=help_text_md)
             if st.form_submit_button("Salvar Dossiê", type="primary"):
                 save_dossier(repo, "D1P1_Analise_Liga_{liga}_{pais}", [pais, liga, temporada], conteudo, {"liga": liga, "pais": pais, "temporada": temporada, "conteudo": conteudo})
+    
     elif dossier_type == "D1 P2 - Análise dos Clubes Dominantes da Liga":
         with st.form("d1_p2_form", clear_on_submit=True):
             st.subheader("Template: Análise dos Clubes Dominantes"); c1, c2, c3 = st.columns(3); pais = c1.text_input("País*"); liga = c2.text_input("Liga*"); temporada = c3.text_input("Temporada*")
             conteudo = st.text_area("Resumo (Conteúdo da Análise)*", height=300, help=help_text_md)
             if st.form_submit_button("Salvar Dossiê", type="primary"):
                 save_dossier(repo, "D1P2_Clubes_Dominantes_{liga}_{pais}", [pais, liga, temporada], conteudo, {"liga": liga, "pais": pais, "temporada": temporada, "conteudo": conteudo})
+
     elif dossier_type == "D2 P1 - Análise Comparativa de Planteis":
         with st.form("d2_p1_form", clear_on_submit=True):
             st.subheader("Template: Análise Comparativa de Planteis"); c1, c2, c3 = st.columns(3); pais = c1.text_input("País*"); liga = c2.text_input("Liga*"); temporada = c3.text_input("Temporada*"); clube = st.text_input("Clube Analisado*")
@@ -182,6 +168,20 @@ elif selected_action == "Carregar Dossiê":
             conteudo = st.text_area("Resumo (Conteúdo da Análise)*", height=300, help=f"{help_text_md}\n\n{help_text_fbref}")
             if st.form_submit_button("Salvar Dossiê", type="primary"):
                 save_dossier(repo, "D2P1_Planteis_{clube}_{temporada}", [pais, liga, temporada, clube], conteudo, {"clube": clube, "temporada": temporada, "pais": pais, "liga": liga, "conteudo": conteudo})
+
+    # --- NOVO TEMPLATE ADICIONADO AQUI ---
+    elif dossier_type == "D2 P2 - Estudo Técnico e Tático dos Clubes":
+        with st.form("d2_p2_form", clear_on_submit=True):
+            st.subheader("Template: Estudo Técnico e Tático dos Clubes")
+            c1, c2, c3 = st.columns(3)
+            pais = c1.text_input("País*")
+            liga = c2.text_input("Liga*")
+            temporada = c3.text_input("Temporada*")
+            clube = st.text_input("Clube Analisado*")
+            conteudo = st.text_area("Resumo (Conteúdo do Estudo)*", height=300, help=help_text_md)
+            if st.form_submit_button("Salvar Dossiê", type="primary"):
+                save_dossier(repo, "D2P2_Estudo_Tatico_{clube}_{temporada}", [pais, liga, temporada, clube], conteudo, {"clube": clube, "temporada": temporada, "pais": pais, "liga": liga, "conteudo": conteudo})
+    
     elif dossier_type:
         st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
 
