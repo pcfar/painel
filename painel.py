@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v17.2: Correção Final de Temas Dinâmicos
+Painel de Inteligência Tática - v17.1: Adicionado Tema D2P2 (Roxo/Dourado)
 """
 
 import streamlit as st
@@ -49,7 +49,7 @@ def apply_custom_styling():
             .dossier-viewer.theme-d2p1 li::before { content: "›"; color: #34D399; margin-right: 12px; font-size: 1.5rem; font-weight: 700; }
             .dossier-viewer.theme-d2p1 table th { background-color: #10B981; }
             
-            /* --- TEMA D2P2 (TÁTICO) --- */
+            /* --- NOVO TEMA D2P2 (TÁTICO) --- */
             .dossier-viewer.theme-d2p2 h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; border-bottom: 3px solid #9B59B6; padding-bottom: 0.5rem; margin-bottom: 2rem; }
             .dossier-viewer.theme-d2p2 h2 { font-size: 1.7rem; font-weight: 700; color: #C084FC; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; border-left: 4px solid #C084FC; }
             .dossier-viewer.theme-d2p2 h3 { font-size: 1.4rem; font-weight: 700; color: #FB923C; margin-top: 2.5rem; margin-bottom: 1rem; }
@@ -151,12 +151,11 @@ if selected_action == "Leitor de Dossiês":
                 file_name = st.session_state.get("viewing_file_name", "")
                 st.markdown(f"#### {file_name}"); st.divider()
                 
-                # --- LÓGICA DE TEMA DINÂMICO ATUALIZADA ---
-                theme_class = "theme-d1" # Tema padrão para D1P1 e D1P2
+                theme_class = "theme-d1" # Tema padrão
                 if file_name.startswith("D2P1_"):
                     theme_class = "theme-d2p1"
                 elif file_name.startswith("D2P2_"):
-                    theme_class = "theme-d2p2" # Novo tema
+                    theme_class = "theme-d2p2"
                 
                 sanitized_content = sanitize_text(st.session_state.viewing_file_content)
                 html_content = markdown2.markdown(sanitized_content, extras=['tables', 'fenced-code-blocks', 'blockquote'])
@@ -195,7 +194,7 @@ elif selected_action == "Carregar Dossiê":
     elif dossier_type == "D2 P2 - Estudo Técnico e Tático dos Clubes":
         with st.form("d2_p2_form", clear_on_submit=True):
             st.subheader("Template: Estudo Técnico e Tático dos Clubes")
-            c1, c2, c3 = st.columns(3); pais = c1.text_input("País*"); liga = c2.text_input("Liga*"); temporada = c3.text_input("Temporada*"); clube = st.text_input("Clube Analisado*")
+            c1, c2, c3 = st.columns(3); pais = c1.text_input("País*"); liga = c2.text_input("Liga*"); temporada = c3.text_input("Temporada*"); clube = c2.text_input("Clube Analisado*")
             conteudo = st.text_area("Resumo (Conteúdo do Estudo)*", height=300, help=help_text_md)
             if st.form_submit_button("Salvar Dossiê", type="primary"):
                 save_dossier(repo, "D2P2_Estudo_Tatico_{clube}_{temporada}", [pais, liga, temporada, clube], conteudo, {"clube": clube, "temporada": temporada, "pais": pais, "liga": liga, "conteudo": conteudo})
