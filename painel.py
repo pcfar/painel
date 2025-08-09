@@ -14,6 +14,16 @@ import markdown2
 # --- 1. CONFIGURAÇÃO E FUNÇÕES AUXILIARES ---
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
+# Mantém a estilização original do painel
+def apply_custom_styling():
+    st.markdown("""
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
+            body, .main { font-family: 'Roboto', sans-serif; }
+            [data-testid="stSidebar"] { border-right: 1px solid #4A5568; }
+        </style>
+    """, unsafe_allow_html=True)
+
 @st.cache_resource
 def get_github_repo():
     try:
@@ -45,7 +55,7 @@ def display_repo_structure(repo, path=""):
     try:
         contents = repo.get_contents(path)
         dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name)
-        files = sorted([f for f in contents if f.type == 'file' and f.name.endswith(".md")], key=lambda x: x.name)
+        files = sorted([f for f in contents if f.name.endswith(".md")], key=lambda x: x.name)
         
         search_term = st.session_state.get("search_term", "")
         if search_term:
@@ -109,144 +119,65 @@ def save_dossier(repo, file_name_template: str, path_parts: list, content: str, 
 # --- NOVO MODELO VISUAL PARA D1P1 ---
 D1P1_VISUAL_MODEL = """
 <style>
-    body {
+    /* Estilos específicos para este template, não afetam o resto do painel */
+    .dossier-wrapper-light-theme {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         background-color: #f8f9fa;
         color: #333;
         margin: 0;
         padding: 0;
     }
-    .dossier-wrapper header {
+    .dossier-wrapper-light-theme header {
         background: linear-gradient(90deg, #004080, #0073e6);
         color: white;
         padding: 20px;
         text-align: center;
         border-bottom: 4px solid #003366;
     }
-    .dossier-wrapper header h1 {
-        margin: 0;
-        font-size: 28px;
-    }
-    .dossier-wrapper header p {
-        margin: 5px 0 0;
-        font-size: 16px;
-        opacity: 0.9;
-    }
-    .dossier-wrapper main {
-        max-width: 900px;
-        margin: 30px auto;
-        padding: 20px;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0px 4px 15px rgba(0,0,0,0.1);
-    }
-    .dossier-wrapper h2 {
-        border-left: 6px solid #0073e6;
-        padding-left: 10px;
-        margin-top: 30px;
-        color: #004080;
-    }
-    .dossier-wrapper table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 15px;
-    }
-    .dossier-wrapper table th, .dossier-wrapper table td {
-        padding: 10px;
-        border-bottom: 1px solid #ddd;
-        text-align: left;
-    }
-    .dossier-wrapper table th {
-        background-color: #f1f5f9;
-        color: #004080;
-        font-weight: bold;
-    }
-    .dossier-wrapper table tr:hover {
-        background-color: #f9fafb;
-    }
-    .dossier-wrapper .highlight {
-        background-color: #e6f0ff;
-        font-weight: bold;
-    }
-    .dossier-wrapper footer {
-        text-align: center;
-        font-size: 14px;
-        padding: 20px;
-        color: #777;
-    }
+    .dossier-wrapper-light-theme header h1 { margin: 0; font-size: 28px; }
+    .dossier-wrapper-light-theme header p { margin: 5px 0 0; font-size: 16px; opacity: 0.9; }
+    .dossier-wrapper-light-theme main { max-width: 900px; margin: 30px auto; padding: 20px; background: white; border-radius: 12px; box-shadow: 0px 4px 15px rgba(0,0,0,0.1); }
+    .dossier-wrapper-light-theme h2 { border-left: 6px solid #0073e6; padding-left: 10px; margin-top: 30px; color: #004080; }
+    .dossier-wrapper-light-theme table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    .dossier-wrapper-light-theme table th, .dossier-wrapper-light-theme table td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
+    .dossier-wrapper-light-theme table th { background-color: #f1f5f9; color: #004080; font-weight: bold; }
+    .dossier-wrapper-light-theme table tr:hover { background-color: #f9fafb; }
+    .dossier-wrapper-light-theme .highlight { background-color: #e6f0ff; font-weight: bold; }
+    .dossier-wrapper-light-theme footer { text-align: center; font-size: 14px; padding: 20px; color: #777; }
 </style>
 
-<div class="dossier-wrapper">
+<div class="dossier-wrapper-light-theme">
     <header>
         <h1>📊 Dossiê de Liga – Superliga da Dinamarca</h1>
         <p>Um mergulho quantitativo na competitividade da elite do futebol dinamarquês (última década)</p>
     </header>
-
     <main>
         <h2>Placar de Dominância (Últimas 10 Temporadas)</h2>
         <table>
-            <tr>
-                <th>Posição</th>
-                <th>Equipe</th>
-                <th>Pontuação Total</th>
-            </tr>
-            <tr class="highlight">
-                <td>1</td>
-                <td>FC Copenhagen</td>
-                <td>256</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>FC Midtjylland</td>
-                <td>198</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td>Brøndby IF</td>
-                <td>165</td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td>AGF Aarhus</td>
-                <td>122</td>
-            </tr>
-            <tr>
-                <td>5</td>
-                <td>Randers FC</td>
-                <td>95</td>
-            </tr>
+            <tr><th>Posição</th><th>Equipe</th><th>Pontuação Total</th></tr>
+            <tr class="highlight"><td>1</td><td>FC Copenhagen</td><td>256</td></tr>
+            <tr><td>2</td><td>FC Midtjylland</td><td>198</td></tr>
+            <tr><td>3</td><td>Brøndby IF</td><td>165</td></tr>
+            <tr><td>4</td><td>AGF Aarhus</td><td>122</td></tr>
+            <tr><td>5</td><td>Randers FC</td><td>95</td></tr>
         </table>
-
         <h2>Análise Resumida</h2>
-        <p>
-            O <strong>FC Copenhagen</strong> consolidou-se como a força dominante na Dinamarca, liderando com ampla vantagem sobre seus concorrentes. 
-            A disputa pelo segundo lugar é mais equilibrada, com o <em>Midtjylland</em> mantendo constância, enquanto o <em>Brøndby</em> alterna boas temporadas.
-        </p>
+        <p>O <strong>FC Copenhagen</strong> consolidou-se como a força dominante na Dinamarca, liderando com ampla vantagem sobre seus concorrentes. A disputa pelo segundo lugar é mais equilibrada, com o <em>Midtjylland</em> mantendo constância, enquanto o <em>Brøndby</em> alterna boas temporadas.</p>
     </main>
-
-    <footer>
-        Painel de Inteligência – Dados de fontes oficiais | Última atualização: Agosto/2025
-    </footer>
+    <footer>Painel de Inteligência – Dados de fontes oficiais | Última atualização: Agosto/2025</footer>
 </div>
 """
 
 # --- CÓDIGO PRINCIPAL DA APLICAÇÃO ---
 if not check_password(): st.stop()
-# apply_custom_styling() # Desabilitado temporariamente para o teste do novo modelo
+apply_custom_styling()
 repo = get_github_repo()
 
 with st.sidebar:
     st.info(f"Autenticado. {datetime.now(tz=datetime.now().astimezone().tzinfo).strftime('%d/%m/%Y %H:%M')}")
     default_action = st.session_state.get("selected_action", "Leitor de Dossiês")
     default_index = ["Leitor de Dossiês", "Carregar Dossiê", "Gerar com IA"].index(default_action)
-    selected_action = option_menu(
-        menu_title="Menu Principal",
-        options=["Leitor de Dossiês", "Carregar Dossiê", "Gerar com IA"],
-        icons=["book-half", "cloud-arrow-up-fill", "cpu-fill"],
-        menu_icon="collection-play",
-        default_index=default_index,
-        key="main_menu"
-    )
+    selected_action = option_menu(menu_title="Menu Principal", options=["Leitor de Dossiês", "Carregar Dossiê", "Gerar com IA"], icons=["book-half", "cloud-arrow-up-fill", "cpu-fill"], menu_icon="collection-play", default_index=default_index, key="main_menu")
     st.session_state.selected_action = selected_action
 
 st.title("Sistema de Inteligência Tática")
@@ -269,17 +200,18 @@ if selected_action == "Leitor de Dossiês":
 
                 # --- LÓGICA DE TESTE DO NOVO MODELO ---
                 if file_name.startswith("D1P1_"):
+                    # Renderiza o novo modelo visual que você forneceu
                     st.markdown(D1P1_VISUAL_MODEL, unsafe_allow_html=True)
                 else:
-                    st.info("Este tipo de dossiê ainda usa o renderizador padrão.")
-                    # Aqui entraria a lógica de renderização antiga se necessário
+                    # Para outros arquivos, mostra um aviso
+                    st.info(f"Visualizador padrão para {file_name}.")
+                    st.text(st.session_state.get("viewing_file_content", ""))
             else:
                 st.info("Selecione um dossiê para visualizar.")
 
 elif selected_action == "Carregar Dossiê":
     st.header("Criar Novo Dossiê")
     st.info("Selecione o tipo de dossiê, preencha as informações e o conteúdo em Markdown.")
-    
     dossier_type_options = ["", "D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes da Liga", "D2 P1 - Análise Comparativa de Planteis", "D2 P2 - Estudo Técnico e Tático dos Clubes", "D3 - Análise Tática (Pós Rodada)", "D4 - Briefing Semanal (Pré Rodada)"]
     dossier_type = st.selectbox("**Qual tipo de dossiê você quer criar?**", dossier_type_options, key="dossier_type_selector")
     help_text_md = "Guia Rápido de Formatação:\n- Título: # Título\n- Subtítulo: ## Subtítulo\n- Destaque: **texto**"
