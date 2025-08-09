@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v17.8: Nova Estrutura de Pastas para Rodadas
+Painel de Inteligência Tática - v17.9: Nova Estrutura de Pastas para Rodadas
 """
 
 import streamlit as st
@@ -15,24 +15,24 @@ import markdown2
 st.set_page_config(page_title="Sistema de Inteligência Tática", page_icon="⚽", layout="wide")
 
 def apply_custom_styling():
-    # O CSS permanece estável
+    # CSS permanece estável
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
             body, .main { font-family: 'Roboto', sans-serif; }
             [data-testid="stSidebar"] { border-right: 1px solid #4A5568; }
             .dossier-viewer { line-height: 1.7; font-size: 1.1rem; color: #F3F4F6; }
+            .dossier-viewer h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; padding-bottom: 0.5rem; margin-bottom: 2rem; }
+            .dossier-viewer h2 { font-size: 1.7rem; font-weight: 700; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; }
+            .dossier-viewer h3 { font-size: 1.4rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; }
             .dossier-viewer p { color: #F3F4F6; }
             .dossier-viewer li { padding-left: 1.5em; text-indent: -1.5em; margin-bottom: 1rem; }
+            .dossier-viewer ul { list-style-type: none; padding-left: 0; }
             .dossier-viewer hr { border: none; border-top: 2px solid #4A5568; margin: 3rem 0; }
             .dossier-viewer table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background-color: #2D3748; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); }
             .dossier-viewer th, .dossier-viewer td { padding: 1rem; text-align: left; font-size: 1rem; color: #F3F4F6; border-bottom: 1px solid #4A5568;}
             .dossier-viewer td { color: #CBD5E0; }
             .dossier-viewer tr:nth-child(even) { background-color: rgba(74, 85, 104, 0.5); }
-            .theme-d1 h1, .theme-d2 h1, .theme-d3 h1 { text-align: center; font-size: 2.2rem; font-weight: 900; color: #FFFFFF; padding-bottom: 0.5rem; margin-bottom: 2rem; }
-            .theme-d1 h2, .theme-d2 h2, .theme-d3 h2 { font-size: 1.7rem; font-weight: 700; margin-top: 3rem; margin-bottom: 1.5rem; padding-left: 1rem; }
-            .theme-d1 h3, .theme-d2 h3, .theme-d3 h3 { font-size: 1.4rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; }
-            .theme-d1 ul, .theme-d2 ul, .theme-d3 ul { list-style-type: none; padding-left: 0; }
             .theme-d1 h1 { border-bottom: 3px solid #3182CE; }
             .theme-d1 h2 { color: #38BDF8; border-left: 4px solid #38BDF8; }
             .theme-d1 h3, .theme-d1 strong { color: #FACC15; }
@@ -94,7 +94,6 @@ def display_repo_structure(repo, path=""):
                     st.success(f"Arquivo '{file_info['path']}' excluído."); st.rerun()
                 if btn_c2.button("Cancelar", key=f"cancel_del_{content_file.path}"): st.session_state.pop('file_to_delete'); st.rerun()
     except Exception as e: st.error(f"Erro ao listar arquivos: {e}")
-
 def save_dossier(repo, file_name_template: str, path_parts: list, content: str, required_fields: dict):
     if not all(required_fields.values()): st.error("Todos os campos marcados com * são obrigatórios."); return
     format_dict = {k: v.replace(' ', '_').replace('/', '-') for k, v in required_fields.items()}
@@ -135,7 +134,7 @@ if selected_action == "Leitor de Dossiês":
                 st.markdown(f"#### {file_name}"); st.divider()
                 theme_class = "theme-d1"
                 if any(file_name.startswith(p) for p in ["D2P1_", "D2P2_"]): theme_class = "theme-d2"
-                elif file_name.startswith("D3_"): theme_class = "theme-d3"
+                elif any(file_name.startswith(p) for p in ["D3_", "R"]): theme_class = "theme-d3"
                 sanitized_content = sanitize_text(st.session_state.viewing_file_content)
                 html_content = markdown2.markdown(sanitized_content, extras=['tables', 'fenced-code-blocks', 'blockquote'])
                 st.markdown(f"<div class='dossier-viewer {theme_class}'>{html_content}</div>", unsafe_allow_html=True)
@@ -148,41 +147,35 @@ elif selected_action == "Carregar Dossiê":
     dossier_type = st.selectbox("**Qual tipo de dossiê você quer criar?**", dossier_type_options, key="dossier_type_selector")
     help_text_md = "Guia Rápido:\n- Título: # Título\n- Subtítulo: ## Subtítulo\n- Destaque: **texto**"
     
-    # Formulários D1 e D2
-    if dossier_type in ["D1 P1 - Análise da Liga", "D1 P2 - Análise dos Clubes Dominantes da Liga", "D2 P1 - Análise Comparativa de Planteis", "D2 P2 - Estudo Técnico e Tático dos Clubes"]:
-        st.warning("Estes templates já foram implementados.")
-
-    # --- TEMPLATE D3 (PÓS RODADA) ATUALIZADO ---
-    elif dossier_type == "D3 - Análise Tática (Pós Rodada)":
+    if dossier_type == "D3 - Análise Tática (Pós Rodada)":
         with st.form("d3_form", clear_on_submit=True):
             st.subheader("Template: Análise Pós Rodada")
-            
-            st.write("**Informações da Partida**")
-            # Adicionado campo País para manter a hierarquia
-            pais = st.text_input("País*")
             c1, c2, c3 = st.columns(3)
-            liga = c1.text_input("Liga*")
-            temporada = c2.text_input("Temporada*")
-            rodada = c3.text_input("Rodada*")
+            pais = c1.text_input("País*")
+            liga = c2.text_input("Liga*")
+            temporada = c3.text_input("Temporada*")
             
-            c1, c2 = st.columns(2)
-            time_casa = c1.text_input("Time da Casa*")
-            time_visitante = c2.text_input("Time Visitante*")
+            st.divider()
+            st.write("**Informações da Partida**")
+            c1, c2, c3 = st.columns(3)
+            rodada = c1.text_input("Rodada*", placeholder="Ex: 15")
+            time_casa = c2.text_input("Time da Casa*")
+            time_visitante = c3.text_input("Time Visitante*")
             
             st.divider()
             conteudo = st.text_area("Resumo (Conteúdo da Análise)*", height=300, help=help_text_md)
             
             if st.form_submit_button("Salvar Dossiê", type="primary"):
                 save_dossier(
-                    repo, 
-                    "D3_PosRodada_{time_casa}_vs_{time_visitante}_R{rodada}", 
-                    [pais, liga, temporada, "Rodadas", f"Rodada_{rodada}"], # Nova estrutura de pasta
+                    repo, "R{rodada}_{time_casa}_vs_{time_visitante}", 
+                    [pais, liga, temporada, "Rodadas", f"R{rodada}"], 
                     conteudo, 
                     {"pais": pais, "liga": liga, "temporada": temporada, "rodada": rodada, "time_casa": time_casa, "time_visitante": time_visitante, "conteudo": conteudo}
                 )
-
+    
     elif dossier_type:
         st.warning(f"O template para '{dossier_type}' ainda está em desenvolvimento.")
+        # Mantenha os outros formulários aqui se desejar, ou construa-os conforme necessário.
 
 elif selected_action == "Gerar com IA":
     st.header("Gerar com IA"); st.info("Em desenvolvimento.")
