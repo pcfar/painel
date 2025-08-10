@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Painel de Inteligência Tática - v20.0: Versão Otimizada com Cache de Dossiês
+Painel de Inteligência Tática - v21.0: Versão com Otimização Completa de Cache
 """
 
 import streamlit as st
@@ -109,8 +109,20 @@ def get_github_repo():
         st.error(f"Falha na conexão com o GitHub: {e}")
         return None
 
-# NOVA FUNÇÃO COM CACHE PARA OTIMIZAR O CARREGAMENTO
-@st.cache_data(ttl=3600)  # Cache por 1 hora
+# NOVA FUNÇÃO DE CACHE PARA LISTAGEM DE ARQUIVOS
+@st.cache_data(ttl=600)  # Cache da lista de arquivos por 10 minutos
+def list_repo_contents(_repo, path=""):
+    """Busca e armazena em cache a lista de arquivos e diretórios de um caminho."""
+    try:
+        contents = _repo.get_contents(path)
+        dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name)
+        files = sorted([f for f in contents if f.type == 'file' and f.name.endswith(".md")], key=lambda x: x.name)
+        return dirs, files
+    except Exception as e:
+        st.error(f"Erro ao listar o conteúdo do repositório: {e}")
+        return [], []
+
+@st.cache_data(ttl=3600)  # Cache do conteúdo do arquivo por 1 hora
 def get_file_content(_repo, file_path):
     """Busca e armazena em cache o conteúdo de um arquivo do GitHub."""
     try:
@@ -142,10 +154,9 @@ def check_password():
 
 def display_repo_structure(repo, path=""):
     try:
-        # Nota: A listagem de arquivos ainda faz uma chamada de API, mas é mais leve.
-        contents = repo.get_contents(path)
-        dirs = sorted([c for c in contents if c.type == 'dir'], key=lambda x: x.name)
-        files = sorted([f for f in contents if f.type == 'file' and f.name.endswith(".md")], key=lambda x: x.name)
+        # ALTERAÇÃO: Usa a função com cache para listar arquivos e diretórios
+        dirs, files = list_repo_contents(repo, path)
+        
         search_term = st.session_state.get("search_term", "")
         if search_term:
             files = [f for f in files if search_term.lower() in f.name.lower()]
@@ -155,9 +166,7 @@ def display_repo_structure(repo, path=""):
         for content_file in files:
             col1, col2, col3 = st.columns([0.7, 0.15, 0.15])
             with col1:
-                # O botão apenas define o arquivo a ser visto.
                 if st.button(f"📄 {content_file.name}", key=f"view_{content_file.path}", use_container_width=True):
-                    # A chamada da função de cache acontece aqui!
                     file_content = get_file_content(repo, content_file.path)
                     if file_content:
                         st.session_state.update(viewing_file_content=file_content, viewing_file_name=content_file.name)
@@ -174,7 +183,6 @@ def display_repo_structure(repo, path=""):
                 if btn_c1.button("Sim, excluir!", key=f"confirm_del_{content_file.path}", type="primary"):
                     file_info = st.session_state.pop('file_to_delete')
                     repo.delete_file(file_info['path'], f"Exclui {file_info['path']}", file_info['sha'])
-                    # Limpa o cache para o arquivo excluído, se necessário (aqui apenas limpamos a sessão)
                     if st.session_state.get('viewing_file_name') == os.path.basename(file_info['path']):
                         st.session_state.pop('viewing_file_content', None)
                         st.session_state.pop('viewing_file_name', None)
@@ -184,7 +192,7 @@ def display_repo_structure(repo, path=""):
                     st.session_state.pop('file_to_delete')
                     st.rerun()
     except Exception as e:
-        st.error(f"Erro ao listar arquivos: {e}")
+        st.error(f"Erro ao exibir a estrutura de arquivos: {e}")
 
 def save_dossier(repo, file_name_template: str, path_parts: list, content: str, required_fields: dict):
     if not all(required_fields.values()):
@@ -199,8 +207,8 @@ def save_dossier(repo, file_name_template: str, path_parts: list, content: str, 
         try:
             repo.create_file(full_path, commit_message, content)
             st.success(f"Dossiê '{full_path}' salvo com sucesso!")
-            # Limpa o cache da função que lista os arquivos para refletir a nova adição
-            # (Neste caso, o Streamlit gerencia isso bem ao redesenhar a página)
+            # Limpa o cache da listagem de arquivos para refletir o novo arquivo
+            list_repo_contents.clear()
         except Exception as e:
             st.error(f"Ocorreu um erro ao salvar: {e}")
             st.info("Verifique se um arquivo com este nome já não existe.")
